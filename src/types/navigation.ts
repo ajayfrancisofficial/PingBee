@@ -8,8 +8,8 @@ export type AuthStackParamList = {
 export type BottomTabParamList = {
   Chats: undefined;
   Status: undefined;
-
   Calls: undefined;
+  You: undefined;
 };
 
 export type AppStackParamList = {

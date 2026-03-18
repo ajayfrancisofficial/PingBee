@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import * as Keychain from 'react-native-keychain';
 import { useNavigation } from '@react-navigation/native';
 import { Input } from '../../components/foundations/Input';
 import { Button } from '../../components/foundations/Button';
@@ -14,13 +15,29 @@ export const LoginScreen = () => {
   const navigation = useNavigation<any>();
   const setLoggedIn = useAuthStore(state => state.setLoggedIn);
 
+  useEffect(() => {
+    console.log('LoginScreen mounted');
+    const mountfunction = async () => {
+      const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' });
+      const refreshToken = await Keychain.getGenericPassword({ service: 'refreshToken' });
+      console.log('accessToken got', accessToken);
+      console.log('refreshToken got', refreshToken);
+
+    }
+    mountfunction()
+  }, [])
   const handleLogin = async () => {
     setLoading(true);
     try {
       await authApi.login(email, password);
       // Status updates immediately swapping Stack globally!
+      const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' });
+      const refreshToken = await Keychain.getGenericPassword({ service: 'refreshToken' });
+      console.log('accessToken got', accessToken);
+      console.log('refreshToken got', refreshToken);
       setLoggedIn(true);
     } catch (e) {
+      console.log('error', e);
       console.warn('Login failed');
     } finally {
       setLoading(false);
