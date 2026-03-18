@@ -1,11 +1,7 @@
 import React from 'react';
 import { StatusBar, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { createStaticNavigation } from '@react-navigation/native';
-import { AppStack } from './src/navigation/AppStack';
-import { BottomTabNavigator } from './src/navigation/BottomTabNavigator';
-
-const AppNavigation = createStaticNavigation(AppStack);
+import { AuthSwitch } from './src/navigation/AuthSwitch';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -13,7 +9,7 @@ function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppNavigation />
+      <AuthSwitch />
     </SafeAreaProvider>
   );
 }
