@@ -5,27 +5,25 @@ import CallsScreen from '../screens/CallsScreen';
 import { YouScreen } from '../screens/YouScreen';
 import { BottomTabParamList } from '../types/navigation';
 
-export const BottomTabNavigator = createNativeBottomTabNavigator<BottomTabParamList>({
-  screens: {
-    Chats: {
-      screen: ChatsScreen,
-      options: {
-        // title: 'Chats',
+export const BottomTabNavigator =
+  createNativeBottomTabNavigator<BottomTabParamList>({
+    screens: {
+      Chats: {
+        screen: ChatsScreen,
+        options: {},
+      },
+      Status: {
+        screen: StatusScreen,
+        options: {},
+      },
+      Calls: {
+        screen: CallsScreen,
+      },
+      You: {
+        screen: YouScreen,
+        options: {
+          title: 'You',
+        },
       },
     },
-    Status: {
-      screen: StatusScreen,
-      options: {}
-    },
-    Calls: {
-      screen: CallsScreen,
-    },
-    You: {
-      screen: YouScreen,
-      options: {
-        title: 'You',
-      },
-    },
-  },
-});
-
+  });

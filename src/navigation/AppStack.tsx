@@ -8,7 +8,7 @@ export const AppStack = createNativeStackNavigator<AppStackParamList>({
     BottomTabs: {
       screen: BottomTabNavigator,
       options: {
-        headerShown: false,
+        headerShown: true,
       },
     },
     Chat: {
