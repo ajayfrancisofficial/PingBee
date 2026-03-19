@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://api.example.com/v1'; // To be updated
+export const API_BASE_URL = 'https://api.pingbee.com';
 
 export const ENDPOINTS = {
   AUTH: {

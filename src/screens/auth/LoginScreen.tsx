@@ -16,13 +16,8 @@ export const LoginScreen = () => {
   const setLoggedIn = useAuthStore(state => state.setLoggedIn);
 
   useEffect(() => {
-    console.log('LoginScreen mounted');
     const mountfunction = async () => {
-      const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' });
-      const refreshToken = await Keychain.getGenericPassword({ service: 'refreshToken' });
-      console.log('accessToken got', accessToken);
-      console.log('refreshToken got', refreshToken);
-
+      console.log('LoginScreen mounted');
     }
     mountfunction()
   }, [])
@@ -31,10 +26,6 @@ export const LoginScreen = () => {
     try {
       await authApi.login(email, password);
       // Status updates immediately swapping Stack globally!
-      const accessToken = await Keychain.getGenericPassword({ service: 'accessToken' });
-      const refreshToken = await Keychain.getGenericPassword({ service: 'refreshToken' });
-      console.log('accessToken got', accessToken);
-      console.log('refreshToken got', refreshToken);
       setLoggedIn(true);
     } catch (e) {
       console.log('error', e);
