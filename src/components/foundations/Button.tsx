@@ -1,6 +1,13 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, TouchableOpacityProps } from 'react-native';
-import { theme } from '../../theme';
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  TouchableOpacityProps,
+  StyleSheet,
+} from 'react-native';
+import { useAppTheme } from '../../hooks/useAppTheme';
+import { AppTheme } from '../../theme';
 
 interface ButtonProps extends TouchableOpacityProps {
   title: string;
@@ -16,6 +23,9 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
+  const theme = useAppTheme();
+  const styles = makeStyles(theme);
+
   const isSolid = variant === 'solid';
   const isOutline = variant === 'outline';
 
@@ -33,7 +43,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={isSolid ? theme.colors.white : theme.colors.primary} />
+        <ActivityIndicator color={isSolid ? theme.colors.absolute.white : theme.colors.brand.primary} />
       ) : (
         <Text
           style={[
@@ -50,36 +60,37 @@ export const Button: React.FC<ButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  button: {
-    height: 48,
-    borderRadius: theme.borderRadius.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-  },
-  solidButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  outlineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  text: {
-    fontSize: theme.typography.sizes.md,
-    fontWeight: theme.typography.weights.semiBold as any,
-  },
-  solidText: {
-    color: theme.colors.white,
-  },
-  outlineText: {
-    color: theme.colors.primary,
-  },
-  plainText: {
-    color: theme.colors.primary,
-  },
-});
+const makeStyles = ({ colors, borderRadius, spacing, typography }: AppTheme) =>
+  StyleSheet.create({
+    button: {
+      height: 48,
+      borderRadius: borderRadius.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+    },
+    solidButton: {
+      backgroundColor: colors.brand.primary,
+    },
+    outlineButton: {
+      backgroundColor: colors.absolute.transparent,
+      borderWidth: 1,
+      borderColor: colors.brand.primary,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    text: {
+      fontSize: typography.sizes.md,
+      fontWeight: typography.weights.semiBold,
+    },
+    solidText: {
+      color: colors.text.onPrimary,
+    },
+    outlineText: {
+      color: colors.brand.primary,
+    },
+    plainText: {
+      color: colors.brand.primary,
+    },
+  });
