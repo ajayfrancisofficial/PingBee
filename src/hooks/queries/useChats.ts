@@ -16,12 +16,21 @@ const fetchChats = async (): Promise<Chat[]> => {
   await new Promise(resolve => setTimeout(() => resolve(undefined), 1500));
   
   const { data } = await axiosClient.get('/users');
-  return data.map((user: any) => ({
+  console.log("🚀 ~ fetchChats ~ data:", data)
+  const baseChats: Chat[] = data.map((user: any) => ({
     id: user.id.toString(),
     name: user.name,
     lastMessage: `Hey, this is ${user.username}!`,
     unreadCount: Math.floor(Math.random() * 3), // Dummy unread count
   }));
+
+  // Duplicate the list to generate more dummy data for scrolling
+  return [
+    ...baseChats,
+    ...baseChats.map((c) => ({ ...c, id: `${c.id}_copy1`, name: `${c.name} (Copy 1)` })),
+    ...baseChats.map((c) => ({ ...c, id: `${c.id}_copy2`, name: `${c.name} (Copy 2)` })),
+    ...baseChats.map((c) => ({ ...c, id: `${c.id}_copy3`, name: `${c.name} (Copy 3)` })),
+  ];
 };
 
 export const useFetchChats = () => {

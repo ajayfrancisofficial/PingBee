@@ -5,6 +5,7 @@ import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
 import { YouScreen } from '../screens/YouScreen';
 import { BottomTabParamList } from '../types/navigation';
+import { darkColors } from '../theme/colors';
 
 export const BottomTabNavigator =
   createNativeBottomTabNavigator<BottomTabParamList>({
@@ -59,5 +60,11 @@ export const BottomTabNavigator =
         },
       },
     },
-    screenOptions: { headerShown: true, tabBarLabelVisibilityMode: 'selected' },
+    screenOptions: {
+      headerShown: true,
+      tabBarLabelVisibilityMode: 'selected',
+      tabBarMinimizeBehavior: 'onScrollDown',
+      tabBarActiveTintColor: darkColors.brand.primary,
+      headerLargeTitleEnabled: true,
+    },
   });

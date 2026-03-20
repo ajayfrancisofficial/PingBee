@@ -1,17 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { ScrollView, Text, StyleSheet } from 'react-native';
 
 const CallsScreen = () => {
     return (
-        <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.text}>CallsScreen</Text>
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
+        paddingBottom: 100,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#fff',

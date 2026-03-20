@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, ScrollView } from 'react-native';
 import { Edges, SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/foundations/Button';
 import { ThemeSwitch } from '../components/common/ThemeSwitch';
@@ -31,20 +31,22 @@ export const YouScreen = () => {
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
-      {/* Top row: Appearance toggle */}
-      <View style={styles.header}>
-        <ThemeSwitch />
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Top row: Appearance toggle */}
+        <View style={styles.header}>
+          <ThemeSwitch />
+        </View>
 
-      <View style={styles.spacer} />
+        <View style={styles.spacer} />
 
-      <Button
-        title="Logout"
-        onPress={handleLogout}
-        variant="outline"
-        isLoading={loading}
-        style={styles.logoutButton}
-      />
+        <Button
+          title="Logout"
+          onPress={handleLogout}
+          variant="outline"
+          isLoading={loading}
+          style={styles.logoutButton}
+        />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -53,8 +55,12 @@ const makeStyles = ({ colors, spacing }: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: spacing.lg,
       backgroundColor: colors.backgrounds.default,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      padding: spacing.lg,
+      paddingBottom: 100,
     },
     header: {
       flexDirection: 'row',
