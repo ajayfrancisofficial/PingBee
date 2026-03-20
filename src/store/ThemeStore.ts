@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { Appearance, Dimensions } from 'react-native';
 import { getStringItem, setStringItem } from '../utils/storage';
+import { COLOR_SCHEME_STORAGE_KEY } from '../constants/staticVariables';
 
-const COLOR_SCHEME_STORAGE_KEY = 'user_color_scheme';
 
 export type ColorScheme = 'light' | 'dark' | 'system';
 
