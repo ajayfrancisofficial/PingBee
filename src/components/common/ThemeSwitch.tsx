@@ -21,7 +21,7 @@ const SCHEME_CONFIG: {
 export const ThemeSwitch: React.FC = () => {
   const theme = useAppTheme();
   const { colors } = theme;
-  const styles = makeStyles(theme);
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const colorScheme = useThemeStore(state => state.colorScheme);
   const setColorScheme = useThemeStore(state => state.setColorScheme);
 

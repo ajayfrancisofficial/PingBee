@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, TextInput, Text, TextInputProps, StyleSheet } from 'react-native';
+import {
+  View,
+  TextInput,
+  Text,
+  TextInputProps,
+  StyleSheet,
+} from 'react-native';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 
@@ -8,9 +14,14 @@ interface InputProps extends TextInputProps {
   error?: string;
 }
 
-export const Input: React.FC<InputProps> = ({ label, error, style, ...props }) => {
+export const Input: React.FC<InputProps> = ({
+  label,
+  error,
+  style,
+  ...props
+}) => {
   const theme = useAppTheme();
-  const styles = makeStyles(theme);
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   return (
     <View style={styles.container}>

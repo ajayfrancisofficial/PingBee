@@ -24,7 +24,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const theme = useAppTheme();
-  const styles = makeStyles(theme);
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const isSolid = variant === 'solid';
   const isOutline = variant === 'outline';
@@ -43,7 +43,11 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
     >
       {isLoading ? (
-        <ActivityIndicator color={isSolid ? theme.colors.absolute.white : theme.colors.brand.primary} />
+        <ActivityIndicator
+          color={
+            isSolid ? theme.colors.absolute.white : theme.colors.brand.primary
+          }
+        />
       ) : (
         <Text
           style={[

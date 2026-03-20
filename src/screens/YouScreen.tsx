@@ -16,7 +16,7 @@ export const YouScreen = () => {
   const logout = useAuthStore(state => state.logout);
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
-  const styles = makeStyles(theme);
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const handleLogout = async () => {
     setLoading(true);

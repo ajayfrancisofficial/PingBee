@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Appearance } from 'react-native';
 import { useThemeStore } from '../store/ThemeStore';
 import { getTheme, type AppTheme } from '../theme';
 
 /**
  * Returns the resolved AppTheme plus current window dimensions.
- * Dimensions are kept in sync automatically via colorSchemeStore.
+ * Dimensions are kept in sync automatically via themeStore.
  */
 export const useAppTheme = (): AppTheme => {
   const colorScheme = useThemeStore(state => state.colorScheme);
@@ -31,5 +31,8 @@ export const useAppTheme = (): AppTheme => {
     }
   }, [colorScheme, resolvedColorScheme]);
 
-  return { ...theme, width, height, scale, fontScale, isPortrait, colorScheme };
+  return useMemo(
+    () => ({ ...theme, width, height, scale, fontScale, isPortrait, colorScheme }),
+    [theme, width, height, scale, fontScale, isPortrait, colorScheme]
+  );
 };

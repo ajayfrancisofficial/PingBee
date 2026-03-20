@@ -27,12 +27,18 @@ interface MenuProps {
   align?: 'left' | 'right';
 }
 
-export const Menu: React.FC<MenuProps> = ({ trigger, items, align = 'right' }) => {
+export const Menu: React.FC<MenuProps> = ({
+  trigger,
+  items,
+  align = 'right',
+}) => {
   const theme = useAppTheme();
-  const styles = makeStyles(theme);
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const [visible, setVisible] = useState(false);
-  const [triggerLayout, setTriggerLayout] = useState<LayoutRectangle | null>(null);
+  const [triggerLayout, setTriggerLayout] = useState<LayoutRectangle | null>(
+    null,
+  );
   const triggerRef = useRef<View>(null);
 
   const open = () => {
@@ -44,14 +50,15 @@ export const Menu: React.FC<MenuProps> = ({ trigger, items, align = 'right' }) =
 
   const close = () => setVisible(false);
 
-  const menuLeft =
-    triggerLayout
-      ? align === 'right'
-        ? triggerLayout.x + triggerLayout.width - 180 // right-align: push left by menu width
-        : triggerLayout.x
-      : 0;
+  const menuLeft = triggerLayout
+    ? align === 'right'
+      ? triggerLayout.x + triggerLayout.width - 180 // right-align: push left by menu width
+      : triggerLayout.x
+    : 0;
 
-  const menuTop = triggerLayout ? triggerLayout.y + triggerLayout.height + 8 : 0;
+  const menuTop = triggerLayout
+    ? triggerLayout.y + triggerLayout.height + 8
+    : 0;
 
   return (
     <>
@@ -88,7 +95,9 @@ export const Menu: React.FC<MenuProps> = ({ trigger, items, align = 'right' }) =
                       item.isActive && styles.menuItemActive,
                     ]}
                   >
-                    {item.icon && <View style={styles.menuItemIcon}>{item.icon}</View>}
+                    {item.icon && (
+                      <View style={styles.menuItemIcon}>{item.icon}</View>
+                    )}
                     <Text
                       style={[
                         styles.menuItemLabel,
