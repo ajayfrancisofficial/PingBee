@@ -31,5 +31,5 @@ export const useAppTheme = (): AppTheme => {
     }
   }, [colorScheme, resolvedColorScheme]);
 
-  return { ...theme, width, height, scale, fontScale, isPortrait };
+  return { ...theme, width, height, scale, fontScale, isPortrait, colorScheme };
 };
