@@ -1,5 +1,5 @@
-import React, { useLayoutEffect, useCallback } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useLayoutEffect, useCallback, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { useFetchMessages } from '../hooks/queries/useMessages';
@@ -14,6 +14,8 @@ const ChatScreen = () => {
   // Fetch messages for this specific chat
   const { data: messages = [], isPending } = useFetchMessages(chatId);
   console.log('🚀 ~ ChatScreen ~ messages:', messages);
+
+  const [replyMessage, setReplyMessage] = useState<any>(null);
 
   // Apply header title
   useLayoutEffect(() => {
@@ -33,12 +35,14 @@ const ChatScreen = () => {
         text: msg.text,
         senderId: msg.user._id,
         createdAt: msg.createdAt, // Send timestamp
+        replyMessage: replyMessage || undefined,
       };
 
       // Pushes the message to WebSocket. The websocket service will echo it locally causing React Query caching.
       socketService.send(socketPayload);
+      setReplyMessage(null);
     },
-    [chatId],
+    [chatId, replyMessage],
   );
 
   if (isPending && messages.length === 0) {
@@ -57,6 +61,26 @@ const ChatScreen = () => {
           onSend={msgs => onSend(msgs)}
           user={{
             _id: 'user-1', // Set our current generic user id
+          }}
+          isUserAvatarVisible={true}
+          isAvatarVisibleForEveryMessage={true}
+          isUsernameVisible={true}
+          isAvatarOnTop={true}
+          isScrollToBottomEnabled={true}
+          isSendButtonAlwaysVisible={true}
+          textInputProps={{ placeholder: 'Type a message...' }}
+          timeFormat="LT"
+          dateFormat="LL"
+          isTyping={false}
+          listProps={{ keyboardShouldPersistTaps: 'handled' }}
+          reply={{
+            swipe: {
+              isEnabled: true,
+              direction: 'left',
+              onSwipe: setReplyMessage as any,
+            },
+            message: replyMessage,
+            onClear: () => setReplyMessage(null),
           }}
         />
       </SafeAreaView>
