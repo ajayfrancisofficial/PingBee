@@ -1,5 +1,5 @@
 import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
-import { Platform } from 'react-native';
+import { Platform, Text } from 'react-native';
 import ChatsScreen from '../screens/ChatsScreen';
 import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
@@ -66,5 +66,8 @@ export const BottomTabNavigator =
       tabBarMinimizeBehavior: 'onScrollDown',
       tabBarActiveTintColor: darkColors.brand.primary,
       headerLargeTitleEnabled: true,
+      // headerLargeTitleShadowVisible: true,
+      headerTransparent: true,
+      headerLeft: () => <Text>hello</Text>,
     },
   });

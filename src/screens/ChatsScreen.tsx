@@ -24,6 +24,10 @@ const ChatsScreen = () => {
         isPending ? (
           <ActivityIndicator size="small" color={theme.colors.brand.primary} />
         ) : null,
+      headerSearchBarOptions: {
+        // search bar options
+        hideWhenScrolling: true,
+      },
     });
   }, [navigation, isPending, theme]);
 
