@@ -2,15 +2,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { YouScreen } from '../screens/YouScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { YouStackParamList } from '../types/navigation';
-import { Text } from 'react-native';
+import { Search } from 'lucide-react-native';
 
 export const YouScreenStack = createNativeStackNavigator<YouStackParamList>({
   screens: {
     You: {
       screen: YouScreen,
-      options: ({ route }) => ({
-        title: route.params?.name ?? 'You',
-        headerTitle: 'abcd',
+      options: ({ route, theme }) => ({
+        headerLeft: () => <Search size={24} color={theme.colors.text} />,
       }),
     },
     Profile: {
@@ -24,5 +23,6 @@ export const YouScreenStack = createNativeStackNavigator<YouStackParamList>({
   screenOptions: {
     headerShown: true,
     headerTransparent: true,
+    headerLargeTitleEnabled: false,
   },
 });

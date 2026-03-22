@@ -9,6 +9,7 @@ import { darkColors } from '../theme/colors';
 
 export const BottomTabNavigator =
   createNativeBottomTabNavigator<BottomTabParamList>({
+    initialRouteName: 'Chats',
     screens: {
       Status: {
         screen: StatusScreen,
@@ -48,7 +49,6 @@ export const BottomTabNavigator =
       You: {
         screen: YouScreenStack,
         options: {
-          title: 'You',
           headerShown: false,
           tabBarIcon: ({ focused }) =>
             Platform.select({

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -66,9 +66,14 @@ export const YouScreen = () => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, profilePicture } = useUserStore();
-
   const iconColor = theme.colors.text.secondary;
   const iconSize = 22;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: name ?? 'You',
+    });
+  }, [navigation]);
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
