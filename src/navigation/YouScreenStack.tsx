@@ -4,6 +4,7 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { YouStackParamList } from '../types/navigation';
 import { Search, QrCode } from 'lucide-react-native';
 import { sizing } from '../theme/sizing';
+import { ThemeSwitch } from '../components/common/ThemeSwitch';
 
 export const YouScreenStack = createNativeStackNavigator<YouStackParamList>({
   screens: {
@@ -19,15 +20,7 @@ export const YouScreenStack = createNativeStackNavigator<YouStackParamList>({
             }}
           />
         ),
-        headerRight: () => (
-          <QrCode
-            size={sizing.iconSizes.base}
-            color={theme.colors.primary}
-            onPress={() => {
-              console.log('qr code header preesed in youScreen');
-            }}
-          />
-        ),
+        headerRight: () => <ThemeSwitch />,
       }),
     },
     Profile: {

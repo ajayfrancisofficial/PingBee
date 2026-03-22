@@ -25,12 +25,15 @@ interface MenuProps {
   items: MenuItem[];
   /** Alignment of the popup relative to the trigger. Defaults to 'right'. */
   align?: 'left' | 'right';
+  /** Optional static layout coordinates to calculate from directly, bypassing the View measurements. Useful in native Navigation components like Headers where React Native measurements fail. */
+  fixedPosition?: { top?: number; right?: number; left?: number; bottom?: number };
 }
 
 export const Menu: React.FC<MenuProps> = ({
   trigger,
   items,
   align = 'right',
+  fixedPosition,
 }) => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
@@ -42,8 +45,12 @@ export const Menu: React.FC<MenuProps> = ({
   const triggerRef = useRef<View>(null);
 
   const open = () => {
-    triggerRef.current?.measure((_fx, _fy, width, height, px, py) => {
-      setTriggerLayout({ x: px, y: py, width, height });
+    if (fixedPosition) {
+      setVisible(true);
+      return;
+    }
+    triggerRef.current?.measureInWindow((x, y, width, height) => {
+      setTriggerLayout({ x, y, width, height });
       setVisible(true);
     });
   };
@@ -59,6 +66,8 @@ export const Menu: React.FC<MenuProps> = ({
   const menuTop = triggerLayout
     ? triggerLayout.y + triggerLayout.height + 8
     : 0;
+
+  const coordinateStyle = fixedPosition ? fixedPosition : { top: menuTop, left: menuLeft };
 
   return (
     <>
@@ -80,7 +89,7 @@ export const Menu: React.FC<MenuProps> = ({
         <TouchableWithoutFeedback onPress={close}>
           <View style={styles.overlay}>
             <TouchableWithoutFeedback>
-              <View style={[styles.menu, { top: menuTop, left: menuLeft }]}>
+              <View style={[styles.menu, coordinateStyle]}>
                 {items.map((item, index) => (
                   <TouchableOpacity
                     key={item.label}

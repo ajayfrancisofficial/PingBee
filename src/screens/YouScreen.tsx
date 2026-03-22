@@ -10,14 +10,11 @@ import {
 } from 'react-native';
 import { Edges, SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { ThemeSwitch } from '../components/common/ThemeSwitch';
 import { LogoutButton } from '../components/common/LogoutButton';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';
 import { AppTheme } from '../theme';
 import {
-  Search,
-  QrCode,
   List,
   Star,
   Megaphone,
@@ -59,7 +56,10 @@ const SettingsRow = ({
       {icon}
       <Text style={styles.settingsRowLabel}>{label}</Text>
     </View>
-    <ChevronRight size={sizing.iconSizes.md} color={theme.colors.text.tertiary} />
+    <ChevronRight
+      size={sizing.iconSizes.md}
+      color={theme.colors.text.tertiary}
+    />
   </TouchableOpacity>
 );
 
@@ -80,16 +80,6 @@ export const YouScreen = () => {
   return (
     <SafeAreaView edges={edges} style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Top Bar */}
-        <View style={styles.topBar}>
-          <TouchableOpacity style={styles.topBarIcon} activeOpacity={0.6}>
-            <Search size={sizing.iconSizes.base} color={theme.colors.text.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.topBarIcon} activeOpacity={0.6}>
-            <QrCode size={sizing.iconSizes.base} color={theme.colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-
         {/* Profile Section */}
         <View style={styles.profileSection}>
           {/* About tooltip */}
@@ -170,12 +160,6 @@ export const YouScreen = () => {
             theme={theme}
           />
         </View>
-
-        {/* Appearance toggle */}
-        <View style={styles.themeRow}>
-          <ThemeSwitch />
-        </View>
-
         {/* Logout */}
         <LogoutButton />
       </ScrollView>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Sun, Moon, SunMoon } from 'lucide-react-native';
 import { Menu, type MenuItem } from '../foundations/Menu';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -23,6 +24,11 @@ export const ThemeSwitch: React.FC = () => {
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const colorScheme = useThemeStore(state => state.colorScheme);
   const setColorScheme = useThemeStore(state => state.setColorScheme);
+  const insets = useSafeAreaInsets();
+  
+  // Calculate fixed header position to prevent native coordinate mismatch inside headers
+  const headerHeight = Platform.OS === 'ios' ? 44 : 56;
+  const topOffset = insets.top + headerHeight;
 
   // The active scheme's icon is shown as the trigger button
   const activeConfig =
@@ -47,6 +53,7 @@ export const ThemeSwitch: React.FC = () => {
     <Menu
       items={menuItems}
       align="right"
+      fixedPosition={{ top: topOffset, right: theme.spacing.md }}
       trigger={
         <View style={styles.triggerButton}>
           <ActiveIcon size={sizing.iconSizes.base} color={colors.text.primary} />
