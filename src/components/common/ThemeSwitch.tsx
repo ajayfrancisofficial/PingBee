@@ -2,11 +2,10 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Sun, Moon, SunMoon } from 'lucide-react-native';
 import { Menu, type MenuItem } from '../foundations/Menu';
-import { useThemeStore, type ColorScheme } from '../../store/ThemeStore';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import { useThemeStore, type ColorScheme } from '../../store/ThemeStore';
 import { AppTheme } from '../../theme';
-
-const ICON_SIZE = 20;
+import { sizing } from '../../theme/sizing';
 
 const SCHEME_CONFIG: {
   value: ColorScheme;
@@ -35,7 +34,7 @@ export const ThemeSwitch: React.FC = () => {
     isActive: colorScheme === value,
     icon: (
       <Icon
-        size={ICON_SIZE}
+        size={sizing.iconSizes.base}
         color={
           colorScheme === value ? colors.brand.primary : colors.text.secondary
         }
@@ -50,7 +49,7 @@ export const ThemeSwitch: React.FC = () => {
       align="right"
       trigger={
         <View style={styles.triggerButton}>
-          <ActiveIcon size={ICON_SIZE} color={colors.text.primary} />
+          <ActiveIcon size={sizing.iconSizes.base} color={colors.text.primary} />
         </View>
       }
     />

@@ -135,8 +135,7 @@ const makeStyles = ({ colors, spacing, typography }: AppTheme) =>
       justifyContent: 'center',
     },
     title: {
-      fontSize: typography.sizes.xl,
-      fontWeight: typography.weights.bold,
+      ...typography.variants.heading2,
       color: colors.text.primary,
       marginBottom: spacing.xl,
       textAlign: 'center',

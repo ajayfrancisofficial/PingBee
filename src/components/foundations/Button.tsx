@@ -85,8 +85,8 @@ const makeStyles = ({ colors, borderRadius, spacing, typography }: AppTheme) =>
       opacity: 0.5,
     },
     text: {
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.semiBold,
+      ...typography.variants.bodyMedium,
+      textAlign: 'center',
     },
     solidText: {
       color: colors.text.onPrimary,

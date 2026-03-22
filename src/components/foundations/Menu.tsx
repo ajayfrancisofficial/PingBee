@@ -156,13 +156,12 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
     },
     menuItemLabel: {
       flex: 1,
-      fontSize: typography.sizes.sm,
+      ...typography.variants.body,
       color: colors.text.primary,
-      fontWeight: typography.weights.regular,
     },
     menuItemLabelActive: {
-      color: colors.brand.primary,
-      fontWeight: typography.weights.semiBold,
+      ...typography.variants.bodyMedium,
+      color: colors.semantic.error,
     },
     activeIndicator: {
       width: 7,

@@ -2,14 +2,32 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { YouScreen } from '../screens/YouScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { YouStackParamList } from '../types/navigation';
-import { Search } from 'lucide-react-native';
+import { Search, QrCode } from 'lucide-react-native';
+import { sizing } from '../theme/sizing';
 
 export const YouScreenStack = createNativeStackNavigator<YouStackParamList>({
   screens: {
     You: {
       screen: YouScreen,
       options: ({ route, theme }) => ({
-        headerLeft: () => <Search size={24} color={theme.colors.text} />,
+        headerLeft: () => (
+          <Search
+            size={sizing.iconSizes.base}
+            color={theme.colors.primary}
+            onPress={() => {
+              console.log('search header preesed in youScreen');
+            }}
+          />
+        ),
+        headerRight: () => (
+          <QrCode
+            size={sizing.iconSizes.base}
+            color={theme.colors.primary}
+            onPress={() => {
+              console.log('qr code header preesed in youScreen');
+            }}
+          />
+        ),
       }),
     },
     Profile: {

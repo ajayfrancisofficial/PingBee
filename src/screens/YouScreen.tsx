@@ -33,6 +33,8 @@ const edges: Edges = Platform.select({
   default: [],
 });
 
+import { sizing } from '../theme/sizing';
+
 interface SettingsRowProps {
   icon: React.ReactNode;
   label: string;
@@ -57,7 +59,7 @@ const SettingsRow = ({
       {icon}
       <Text style={styles.settingsRowLabel}>{label}</Text>
     </View>
-    <ChevronRight size={20} color={theme.colors.text.tertiary} />
+    <ChevronRight size={sizing.iconSizes.md} color={theme.colors.text.tertiary} />
   </TouchableOpacity>
 );
 
@@ -67,7 +69,7 @@ export const YouScreen = () => {
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, profilePicture } = useUserStore();
   const iconColor = theme.colors.text.secondary;
-  const iconSize = 22;
+  const iconSize = sizing.iconSizes.base;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -81,10 +83,10 @@ export const YouScreen = () => {
         {/* Top Bar */}
         <View style={styles.topBar}>
           <TouchableOpacity style={styles.topBarIcon} activeOpacity={0.6}>
-            <Search size={24} color={theme.colors.text.primary} />
+            <Search size={sizing.iconSizes.base} color={theme.colors.text.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.topBarIcon} activeOpacity={0.6}>
-            <QrCode size={24} color={theme.colors.text.primary} />
+            <QrCode size={sizing.iconSizes.base} color={theme.colors.text.primary} />
           </TouchableOpacity>
         </View>
 
@@ -223,7 +225,7 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       position: 'relative',
     },
     aboutText: {
-      fontSize: typography.sizes.md,
+      ...typography.variants.body,
       color: colors.text.primary,
     },
     aboutBubbleArrow: {
@@ -251,8 +253,8 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       gap: spacing.sm,
     },
     nameText: {
-      fontSize: typography.sizes.xl,
-      fontWeight: typography.weights.bold,
+      ...typography.variants.heading1,
+      fontSize: 28, // slight override
       color: colors.text.primary,
     },
     plusBadge: {
@@ -272,9 +274,9 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
 
     /* Section label */
     sectionLabel: {
-      fontSize: typography.sizes.sm,
-      color: colors.text.secondary,
+      ...typography.variants.description,
       fontWeight: typography.weights.medium,
+      color: colors.text.secondary,
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.lg,
       paddingBottom: spacing.sm,
@@ -301,9 +303,8 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       gap: spacing.md,
     },
     settingsRowLabel: {
-      fontSize: typography.sizes.md,
+      ...typography.variants.body,
       color: colors.text.primary,
-      fontWeight: typography.weights.regular,
     },
 
     /* Theme row */

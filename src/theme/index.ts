@@ -2,6 +2,7 @@ import { Dimensions } from 'react-native';
 import { lightColors, darkColors, type ThemeColors } from './colors';
 import { spacing } from './spacing';
 import { typography } from './typography';
+import { sizing } from './sizing';
 import type { ColorScheme } from '../store/ThemeStore';
 
 const borderRadius = {
@@ -16,6 +17,7 @@ export interface AppTheme {
   colors: ThemeColors;
   spacing: typeof spacing;
   typography: typeof typography;
+  sizing: typeof sizing;
   borderRadius: typeof borderRadius;
   width: number;
   height: number;
@@ -38,6 +40,7 @@ export const lightTheme: AppTheme = {
   colors: lightColors,
   spacing,
   typography,
+  sizing,
   borderRadius,
   ...initialDimensions,
   colorScheme: 'light',
@@ -47,6 +50,7 @@ export const darkTheme: AppTheme = {
   colors: darkColors,
   spacing,
   typography,
+  sizing,
   borderRadius,
   ...initialDimensions,
   colorScheme: 'dark',

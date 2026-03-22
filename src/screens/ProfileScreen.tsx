@@ -14,6 +14,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';
 import { AppTheme } from '../theme';
 import { ChevronRight } from 'lucide-react-native';
+import { sizing } from '../theme/sizing';
 
 const edges: Edges = Platform.select({
   ios: ['bottom'],
@@ -37,7 +38,7 @@ const ProfileRow = ({ label, value, styles, theme, onPress }: ProfileRowProps) =
       activeOpacity={0.6}
     >
       <Text style={styles.rowValue}>{value}</Text>
-      <ChevronRight size={20} color={theme.colors.text.tertiary} />
+      <ChevronRight size={sizing.iconSizes.md} color={theme.colors.text.tertiary} />
     </TouchableOpacity>
   </View>
 );
@@ -90,7 +91,7 @@ export const ProfileScreen = () => {
           <Text style={styles.rowLabel}>Links</Text>
           <TouchableOpacity style={styles.rowCard} activeOpacity={0.6}>
             <Text style={styles.addLinksText}>Add links</Text>
-            <ChevronRight size={20} color={theme.colors.text.tertiary} />
+            <ChevronRight size={sizing.iconSizes.md} color={theme.colors.text.tertiary} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -121,8 +122,7 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
     },
     editText: {
       color: colors.brand.primary,
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.semiBold,
+      ...typography.variants.bodyMedium,
       marginTop: spacing.sm,
     },
 
@@ -132,9 +132,9 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       marginBottom: spacing.md,
     },
     rowLabel: {
-      fontSize: typography.sizes.sm,
-      color: colors.text.secondary,
+      ...typography.variants.description,
       fontWeight: typography.weights.medium,
+      color: colors.text.secondary,
       marginBottom: spacing.xs,
     },
     rowCard: {
@@ -147,14 +147,13 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       borderRadius: borderRadius.lg,
     },
     rowValue: {
-      fontSize: typography.sizes.md,
+      ...typography.variants.body,
       color: colors.text.primary,
       flex: 1,
     },
     addLinksText: {
-      fontSize: typography.sizes.md,
+      ...typography.variants.bodyMedium,
       color: colors.brand.primary,
-      fontWeight: typography.weights.medium,
       flex: 1,
     },
   });

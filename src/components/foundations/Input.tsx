@@ -48,6 +48,7 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       fontWeight: typography.weights.medium,
     },
     input: {
+      ...typography.variants.body,
       height: 48,
       backgroundColor: colors.surfaces.default,
       borderWidth: 1,

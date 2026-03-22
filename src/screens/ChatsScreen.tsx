@@ -124,28 +124,27 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
       borderColor: colors.borders.light,
     },
     avatarText: {
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.bold,
-      color: colors.brand.primaryDark,
+      ...typography.variants.heading1,
+      fontSize: 28, // Maintain slight override for heading
+      color: colors.text.primary,
     },
     chatContent: {
       flex: 1,
       justifyContent: 'center',
     },
     chatName: {
-      fontSize: typography.sizes.md,
-      fontWeight: typography.weights.semiBold,
+      ...typography.variants.bodyMedium,
       color: colors.text.primary,
       marginBottom: 4,
     },
     lastMessage: {
-      fontSize: typography.sizes.sm,
+      ...typography.variants.description,
       color: colors.text.secondary,
-      fontWeight: typography.weights.regular,
     },
     lastMessageUnread: {
-      color: colors.text.primary,
+      ...typography.variants.description,
       fontWeight: typography.weights.medium,
+      color: typography.variants.bodyMedium.fontWeight ? colors.brand.primary : colors.brand.primary,
     },
     badge: {
       backgroundColor: colors.brand.primary,
@@ -159,14 +158,14 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
     },
     badgeText: {
       color: colors.absolute.white,
-      fontSize: typography.sizes.xs,
-      fontWeight: typography.weights.bold,
+      ...typography.variants.caption,
+      fontWeight: '700', // keeping bold
     },
     errorText: {
       textAlign: 'center',
       marginTop: spacing.xl,
       color: colors.semantic.error,
-      fontSize: typography.sizes.sm,
+      ...typography.variants.description,
     },
   });
 
