@@ -81,6 +81,7 @@ const ChatsScreen = () => {
 
   return (
     <FlatList
+      style={styles.container}
       contentInsetAdjustmentBehavior={'automatic'}
       data={chats}
       keyExtractor={item => item.id}
@@ -144,7 +145,9 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
     lastMessageUnread: {
       ...typography.variants.description,
       fontWeight: typography.weights.medium,
-      color: typography.variants.bodyMedium.fontWeight ? colors.brand.primary : colors.brand.primary,
+      color: typography.variants.bodyMedium.fontWeight
+        ? colors.brand.primary
+        : colors.brand.primary,
     },
     badge: {
       backgroundColor: colors.brand.primary,

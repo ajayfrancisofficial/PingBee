@@ -1,11 +1,10 @@
 import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
-import { Platform, Text } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import ChatsScreen from '../screens/ChatsScreen';
 import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
-import { YouScreenStack } from './YouScreenStack';
+import { YouStack } from './YouStack';
 import { BottomTabParamList } from '../types/navigation';
-import { darkColors } from '../theme/colors';
 
 export const BottomTabNavigator =
   createNativeBottomTabNavigator<BottomTabParamList>({
@@ -46,8 +45,8 @@ export const BottomTabNavigator =
           //use unread mssges count
         },
       },
-      You: {
-        screen: YouScreenStack,
+      YouStack: {
+        screen: YouStack,
         options: {
           headerShown: false,
           tabBarIcon: ({ focused }) =>
@@ -61,14 +60,14 @@ export const BottomTabNavigator =
         },
       },
     },
-    screenOptions: {
+    screenOptions: ({ theme }) => ({
       headerShown: true,
       tabBarLabelVisibilityMode: 'selected',
       tabBarMinimizeBehavior: 'onScrollDown',
-      tabBarActiveTintColor: darkColors.brand.primary,
+      tabBarActiveTintColor: theme.colors.primary,
       headerLargeTitleEnabled: true,
-      // headerLargeTitleShadowVisible: true,
       headerTransparent: true,
-      headerLeft: () => <Text>hello</Text>,
-    },
+      headerLargeTitleShadowVisible: true,
+      headerTintColor: theme.colors.primary,
+    }),
   });

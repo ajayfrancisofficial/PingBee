@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   Platform,
-  ScrollView,
+  FlatList,
   Image,
   TouchableOpacity,
 } from 'react-native';
@@ -29,7 +29,13 @@ interface ProfileRowProps {
   onPress?: () => void;
 }
 
-const ProfileRow = ({ label, value, styles, theme, onPress }: ProfileRowProps) => (
+const ProfileRow = ({
+  label,
+  value,
+  styles,
+  theme,
+  onPress,
+}: ProfileRowProps) => (
   <View style={styles.rowSection}>
     <Text style={styles.rowLabel}>{label}</Text>
     <TouchableOpacity
@@ -38,7 +44,10 @@ const ProfileRow = ({ label, value, styles, theme, onPress }: ProfileRowProps) =
       activeOpacity={0.6}
     >
       <Text style={styles.rowValue}>{value}</Text>
-      <ChevronRight size={sizing.iconSizes.md} color={theme.colors.text.tertiary} />
+      <ChevronRight
+        size={sizing.iconSizes.md}
+        color={theme.colors.text.tertiary}
+      />
     </TouchableOpacity>
   </View>
 );
@@ -49,52 +58,64 @@ export const ProfileScreen = () => {
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, phoneNumber, profilePicture } = useUserStore();
 
-
-
   return (
     <SafeAreaView edges={edges} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Profile Image */}
-        <View style={styles.imageSection}>
-          <Image source={{ uri: profilePicture }} style={styles.profileImage} />
-          <TouchableOpacity activeOpacity={0.6}>
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
+      <FlatList
+        data={[]}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={() => null}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <>
+            {/* Profile Image */}
+            <View style={styles.imageSection}>
+              <Image
+                source={{ uri: profilePicture }}
+                style={styles.profileImage}
+              />
+              <TouchableOpacity activeOpacity={0.6}>
+                <Text style={styles.editText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
 
-        {/* About */}
-        <ProfileRow
-          label="About"
-          value={about}
-          styles={styles}
-          theme={theme}
-        />
+            {/* About */}
+            <ProfileRow
+              label="About"
+              value={about}
+              styles={styles}
+              theme={theme}
+            />
 
-        {/* Name */}
-        <ProfileRow
-          label="Name"
-          value={name}
-          styles={styles}
-          theme={theme}
-        />
+            {/* Name */}
+            <ProfileRow
+              label="Name"
+              value={name}
+              styles={styles}
+              theme={theme}
+            />
 
-        {/* Phone Number */}
-        <ProfileRow
-          label="Phone number"
-          value={phoneNumber}
-          styles={styles}
-          theme={theme}
-        />
+            {/* Phone Number */}
+            <ProfileRow
+              label="Phone number"
+              value={phoneNumber}
+              styles={styles}
+              theme={theme}
+            />
 
-        {/* Links */}
-        <View style={styles.rowSection}>
-          <Text style={styles.rowLabel}>Links</Text>
-          <TouchableOpacity style={styles.rowCard} activeOpacity={0.6}>
-            <Text style={styles.addLinksText}>Add links</Text>
-            <ChevronRight size={sizing.iconSizes.md} color={theme.colors.text.tertiary} />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            {/* Links */}
+            <View style={styles.rowSection}>
+              <Text style={styles.rowLabel}>Links</Text>
+              <TouchableOpacity style={styles.rowCard} activeOpacity={0.6}>
+                <Text style={styles.addLinksText}>Add links</Text>
+                <ChevronRight
+                  size={sizing.iconSizes.md}
+                  color={theme.colors.text.tertiary}
+                />
+              </TouchableOpacity>
+            </View>
+          </>
+        }
+      />
     </SafeAreaView>
   );
 };

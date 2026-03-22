@@ -1,27 +1,40 @@
-import React from 'react';
-import { ScrollView, Text, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { FlatList, Text, StyleSheet, View } from 'react-native';
+import { useAppTheme } from '../hooks/useAppTheme';
+import { AppTheme } from '../theme/index';
 
 const CallsScreen = () => {
-    return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.text}>CallsScreen</Text>
-        </ScrollView>
-    );
+  const theme = useAppTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
+  return (
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      data={[]}
+      keyExtractor={(_, index) => index.toString()}
+      renderItem={() => null}
+      ListHeaderComponent={<Text style={styles.text}>Calls</Text>}
+    />
+  );
 };
 
-const styles = StyleSheet.create({
+const makeStyles = ({ colors, typography }: AppTheme) =>
+  StyleSheet.create({
     container: {
-        flexGrow: 1,
-        paddingBottom: 100,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#fff',
+      flex: 1,
+      backgroundColor: colors.backgrounds.default,
+    },
+    contentContainer: {
+      flexGrow: 1,
+      paddingBottom: 100,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
     text: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#333',
+      ...typography.variants.heading1,
+      color: colors.text.primary,
     },
-});
+  });
 
 export default CallsScreen;

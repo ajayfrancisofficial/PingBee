@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   Platform,
-  ScrollView,
+  FlatList,
   Image,
   TouchableOpacity,
 } from 'react-native';
@@ -79,90 +79,98 @@ export const YouScreen = () => {
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Profile Section */}
-        <View style={styles.profileSection}>
-          {/* About tooltip */}
-          <View style={styles.aboutBubble}>
-            <Text style={styles.aboutText}>{about}</Text>
-            <View style={styles.aboutBubbleArrow} />
-          </View>
+      <FlatList
+        data={[]}
+        keyExtractor={(_, index) => index.toString()}
+        renderItem={() => null}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <>
+            {/* Profile Section */}
+            <View style={styles.profileSection}>
+              {/* About tooltip */}
+              <View style={styles.aboutBubble}>
+                <Text style={styles.aboutText}>{about}</Text>
+                <View style={styles.aboutBubbleArrow} />
+              </View>
 
-          {/* Profile Image */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Profile')}
-            activeOpacity={0.8}
-          >
-            <Image
-              source={{ uri: profilePicture }}
-              style={styles.profileImage}
-            />
-          </TouchableOpacity>
+              {/* Profile Image */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Profile')}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={{ uri: profilePicture }}
+                  style={styles.profileImage}
+                />
+              </TouchableOpacity>
 
-          {/* Name */}
-          <View style={styles.nameRow}>
-            <Text style={styles.nameText}>{name}</Text>
-            <View style={styles.plusBadge}>
-              <Text style={styles.plusText}>+</Text>
+              {/* Name */}
+              <View style={styles.nameRow}>
+                <Text style={styles.nameText}>{name}</Text>
+                <View style={styles.plusBadge}>
+                  <Text style={styles.plusText}>+</Text>
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
 
-        {/* Settings Label */}
-        <Text style={styles.sectionLabel}>Settings</Text>
+            {/* Settings Label */}
+            <Text style={styles.sectionLabel}>Settings</Text>
 
-        {/* Settings Group 1 */}
-        <View style={styles.settingsGroup}>
-          <SettingsRow
-            icon={<List size={iconSize} color={iconColor} />}
-            label="Lists"
-            styles={styles}
-            theme={theme}
-          />
-          <SettingsRow
-            icon={<Star size={iconSize} color={iconColor} />}
-            label="Starred"
-            styles={styles}
-            theme={theme}
-          />
-          <SettingsRow
-            icon={<Megaphone size={iconSize} color={iconColor} />}
-            label="Broadcast messages"
-            styles={styles}
-            theme={theme}
-          />
-          <SettingsRow
-            icon={<Monitor size={iconSize} color={iconColor} />}
-            label="Linked devices"
-            styles={styles}
-            theme={theme}
-          />
-        </View>
+            {/* Settings Group 1 */}
+            <View style={styles.settingsGroup}>
+              <SettingsRow
+                icon={<List size={iconSize} color={iconColor} />}
+                label="Lists"
+                styles={styles}
+                theme={theme}
+              />
+              <SettingsRow
+                icon={<Star size={iconSize} color={iconColor} />}
+                label="Starred"
+                styles={styles}
+                theme={theme}
+              />
+              <SettingsRow
+                icon={<Megaphone size={iconSize} color={iconColor} />}
+                label="Broadcast messages"
+                styles={styles}
+                theme={theme}
+              />
+              <SettingsRow
+                icon={<Monitor size={iconSize} color={iconColor} />}
+                label="Linked devices"
+                styles={styles}
+                theme={theme}
+              />
+            </View>
 
-        {/* Settings Group 2 */}
-        <View style={styles.settingsGroup}>
-          <SettingsRow
-            icon={<UserRound size={iconSize} color={iconColor} />}
-            label="Account"
-            styles={styles}
-            theme={theme}
-          />
-          <SettingsRow
-            icon={<Lock size={iconSize} color={iconColor} />}
-            label="Privacy"
-            styles={styles}
-            theme={theme}
-          />
-          <SettingsRow
-            icon={<MessageCircle size={iconSize} color={iconColor} />}
-            label="Chats"
-            styles={styles}
-            theme={theme}
-          />
-        </View>
-        {/* Logout */}
-        <LogoutButton />
-      </ScrollView>
+            {/* Settings Group 2 */}
+            <View style={styles.settingsGroup}>
+              <SettingsRow
+                icon={<UserRound size={iconSize} color={iconColor} />}
+                label="Account"
+                styles={styles}
+                theme={theme}
+              />
+              <SettingsRow
+                icon={<Lock size={iconSize} color={iconColor} />}
+                label="Privacy"
+                styles={styles}
+                theme={theme}
+              />
+              <SettingsRow
+                icon={<MessageCircle size={iconSize} color={iconColor} />}
+                label="Chats"
+                styles={styles}
+                theme={theme}
+              />
+            </View>
+            {/* Logout */}
+            <LogoutButton />
+          </>
+        }
+      />
     </SafeAreaView>
   );
 };

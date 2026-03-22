@@ -6,7 +6,7 @@ import { Search, QrCode } from 'lucide-react-native';
 import { sizing } from '../theme/sizing';
 import { ThemeSwitch } from '../components/common/ThemeSwitch';
 
-export const YouScreenStack = createNativeStackNavigator<YouStackParamList>({
+export const YouStack = createNativeStackNavigator<YouStackParamList>({
   screens: {
     You: {
       screen: YouScreen,

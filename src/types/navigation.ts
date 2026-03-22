@@ -14,7 +14,7 @@ export type BottomTabParamList = {
   Chats: undefined;
   Status: undefined;
   Calls: undefined;
-  You: NavigatorScreenParams<YouStackParamList>;
+  YouStack: NavigatorScreenParams<YouStackParamList>;
 };
 
 export type AppStackParamList = {
