@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Appearance, Dimensions } from 'react-native';
-import { getStringItem, setStringItem } from '../utils/storage';
+import { getStringItem, setStringItem } from '../utils/mmkvStorage';
 import { COLOR_SCHEME_STORAGE_KEY } from '../constants/staticVariables';
 
 
