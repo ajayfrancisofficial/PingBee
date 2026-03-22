@@ -65,6 +65,8 @@ export const BottomTabNavigator =
       tabBarLabelVisibilityMode: 'selected',
       tabBarMinimizeBehavior: 'onScrollDown',
       tabBarActiveTintColor: theme.colors.primary,
+      tabBarActiveIndicatorColor: theme.colors.primary,
+      tabBarRippleColor: theme.colors.primary,
       headerLargeTitleEnabled: true,
       headerTransparent: true,
       headerLargeTitleShadowVisible: true,

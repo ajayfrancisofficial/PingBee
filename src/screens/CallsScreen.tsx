@@ -11,9 +11,9 @@ const CallsScreen = () => {
     <FlatList
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
-      data={[]}
+      data={Array(200)}
       keyExtractor={(_, index) => index.toString()}
-      renderItem={() => null}
+      renderItem={() => <Text>Call</Text>}
       ListHeaderComponent={<Text style={styles.text}>Calls</Text>}
     />
   );
