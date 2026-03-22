@@ -3,7 +3,7 @@ import { Platform, Text } from 'react-native';
 import ChatsScreen from '../screens/ChatsScreen';
 import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
-import { YouScreen } from '../screens/YouScreen';
+import { YouScreenStack } from './YouScreenStack';
 import { BottomTabParamList } from '../types/navigation';
 import { darkColors } from '../theme/colors';
 
@@ -46,9 +46,10 @@ export const BottomTabNavigator =
         },
       },
       You: {
-        screen: YouScreen,
+        screen: YouScreenStack,
         options: {
           title: 'You',
+          headerShown: false,
           tabBarIcon: ({ focused }) =>
             Platform.select({
               ios: {

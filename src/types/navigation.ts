@@ -5,11 +5,16 @@ export type AuthStackParamList = {
   Register: undefined;
 };
 
+export type YouStackParamList = {
+  You: { name?: string } | undefined;
+  Profile: undefined;
+};
+
 export type BottomTabParamList = {
   Chats: undefined;
   Status: undefined;
   Calls: undefined;
-  You: undefined;
+  You: NavigatorScreenParams<YouStackParamList>;
 };
 
 export type AppStackParamList = {
@@ -17,7 +22,7 @@ export type AppStackParamList = {
   Chat: { name: string; chatId?: string };
 };
 
-export type RootStackParamList = AppStackParamList & BottomTabParamList;
+export type RootStackParamList = AppStackParamList & BottomTabParamList & YouStackParamList;
 
 declare global {
   namespace ReactNavigation {
