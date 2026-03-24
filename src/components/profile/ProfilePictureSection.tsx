@@ -11,7 +11,7 @@ import { updateProfilePictureApi } from '../../services/userService';
 export const ProfilePictureSection = () => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-  const { profilePicture, updateProfilePicture, deleteProfilePicture } =
+  const { profilePicture, avatar, updateProfilePicture, deleteProfilePicture } =
     useUserStore();
 
   const [isOptionsVisible, setIsOptionsVisible] = React.useState(false);
@@ -28,8 +28,19 @@ export const ProfilePictureSection = () => {
         if (assets && assets.length > 0) {
           const uri = assets[0].uri;
           if (uri) {
+            const oldProfileUri = profilePicture;
+            const oldAvatarUri = avatar;
+
             await updateProfilePicture(uri);
-            updateProfilePictureApi(uri, 'gallery').catch(console.error);
+            await updateProfilePictureApi(uri, 'gallery');
+
+            // Delete old profile picture and avatar ONLY after successful update
+            if (oldProfileUri) {
+              await MediaUtils.deleteMedia(oldProfileUri);
+            }
+            if (oldAvatarUri) {
+              await MediaUtils.deleteMedia(oldAvatarUri);
+            }
           }
         }
       } catch (error) {
@@ -43,13 +54,26 @@ export const ProfilePictureSection = () => {
     // do we need this request animation frame?
     requestAnimationFrame(async () => {
       try {
-        const uris = await MediaUtils.pickUsingCamera({
+        const assets = await MediaUtils.pickUsingCamera({
           mediaType: 'photo',
         });
-        if (uris && uris.length > 0) {
-          const uri = uris[0];
-          await updateProfilePicture(uri);
-          updateProfilePictureApi(uri, 'camera').catch(console.error);
+        if (assets && assets.length > 0) {
+          const uri = assets[0].uri;
+          if (uri) {
+            const oldProfileUri = profilePicture;
+            const oldAvatarUri = avatar;
+
+            await updateProfilePicture(uri);
+            await updateProfilePictureApi(uri, 'camera');
+
+            // Delete old profile picture and avatar ONLY after successful update
+            if (oldProfileUri) {
+              await MediaUtils.deleteMedia(oldProfileUri);
+            }
+            if (oldAvatarUri) {
+              await MediaUtils.deleteMedia(oldAvatarUri);
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to take photo', error);
@@ -64,6 +88,12 @@ export const ProfilePictureSection = () => {
 
   const confirmDelete = async () => {
     setIsConfirmVisible(false);
+    if (profilePicture) {
+      await MediaUtils.deleteMedia(profilePicture);
+    }
+    if (avatar) {
+      await MediaUtils.deleteMedia(avatar);
+    }
     deleteProfilePicture();
     updateProfilePictureApi('', 'removed').catch(console.error);
   };
