@@ -40,14 +40,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const navigation = useNavigation<any>();
   const setLoggedIn = useAuthStore(state => state.setLoggedIn);
   const theme = useAppTheme();
-  console.log('🚀 ~ AuthForm ~ theme:', theme);
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-
   const config = CONFIG[type];
-
-  useEffect(() => {
-    console.log(`${type}Screen mounted`);
-  }, [type]);
 
   const handleSubmit = async () => {
     setLoading(true);

@@ -10,6 +10,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-documents/picker": "^12.0.1",
+    "@react-native-documents/viewer": "^4.0.0",
     "@react-native/new-app-screen": "0.84.1",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/devtools": "^7.0.52",
@@ -23,6 +25,7 @@
     "react": "19.2.3",
     "react-native": "0.84.1",
     "react-native-blob-util": "^0.24.7",
+    "react-native-compressor": "^1.16.0",
     "react-native-device-info": "^15.0.2",
     "react-native-gesture-handler": "^2.30.0",
     "react-native-gifted-chat": "^3.3.2",

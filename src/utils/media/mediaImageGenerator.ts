@@ -6,17 +6,27 @@
  * 3. Progressive loading features
  */
 
+import { Image as ImageCompressor } from 'react-native-compressor';
+
 /**
  * Compresses an image at the given local path.
- * Can be wired up with 'react-native-image-crop-picker' or 'react-native-compressor' in future.
+ * Uses 'react-native-compressor' to return a new cached, compressed local path string.
  * @param localPath The local path to the image
  * @param quality Compression quality from 0 to 1
  */
 export const compressImage = async (localPath: string, quality: number = 0.8): Promise<string> => {
   console.log(`[MediaImageGenerator] Compressing image at ${localPath} with quality ${quality}`);
-  // TODO: Add compression logic here when we add a compression library.
-  // For now, return original path as a working stub.
-  return localPath;
+  try {
+    const result = await ImageCompressor.compress(localPath, {
+      compressionMethod: 'auto',
+      quality: quality,
+      input: 'uri',
+    });
+    return result;
+  } catch (error) {
+    console.error('[MediaImageGenerator] Failed to compress image', error);
+    return localPath; // fallback to original on error
+  }
 };
 
 /**

@@ -3,8 +3,6 @@ import { AppTheme } from './index';
 
 export const getNavigationTheme = (appTheme: AppTheme): Theme => {
   const baseTheme = appTheme.colorScheme === 'dark' ? DarkTheme : DefaultTheme;
-  console.log('darkTheme from navigationTheme', DarkTheme);
-  console.log('defaultTheme from navigationTheme', DefaultTheme);
 
   return {
     ...baseTheme,

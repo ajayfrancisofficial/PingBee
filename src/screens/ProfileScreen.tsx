@@ -15,6 +15,7 @@ import { useUserStore } from '../store/userStore';
 import { AppTheme } from '../theme';
 import { ChevronRight } from 'lucide-react-native';
 import { sizing } from '../theme/sizing';
+import { ProfilePictureSection } from '../components/profile/ProfilePictureSection';
 
 const edges: Edges = Platform.select({
   ios: ['bottom'],
@@ -56,7 +57,7 @@ export const ProfileScreen = () => {
   const navigation = useNavigation<any>();
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-  const { name, about, phoneNumber, profilePicture } = useUserStore();
+  const { name, about, phoneNumber } = useUserStore();
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
@@ -67,16 +68,8 @@ export const ProfileScreen = () => {
         contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <>
-            {/* Profile Image */}
-            <View style={styles.imageSection}>
-              <Image
-                source={{ uri: profilePicture }}
-                style={styles.profileImage}
-              />
-              <TouchableOpacity activeOpacity={0.6}>
-                <Text style={styles.editText}>Edit</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Profile Image Section */}
+            <ProfilePictureSection />
 
             {/* About */}
             <ProfileRow
@@ -129,22 +122,6 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
     scrollContent: {
       flexGrow: 1,
       paddingBottom: 100,
-    },
-
-    /* Image Section */
-    imageSection: {
-      alignItems: 'center',
-      paddingVertical: spacing.xl,
-    },
-    profileImage: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-    },
-    editText: {
-      color: colors.brand.primary,
-      ...typography.variants.bodyMedium,
-      marginTop: spacing.sm,
     },
 
     /* Rows */
