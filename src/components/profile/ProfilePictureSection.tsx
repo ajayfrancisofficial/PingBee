@@ -25,7 +25,6 @@ export const ProfilePictureSection = () => {
           copyTo: 'cachesDirectory',
           allowMultiSelection: false,
         });
-        console.log('🚀 ~ handleChoosePhoto ~ uris:', uris);
         if (uris && uris.length > 0) {
           const uri = uris[0];
           await updateProfilePicture(uri);

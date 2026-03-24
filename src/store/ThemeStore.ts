@@ -1,13 +1,12 @@
 import { create } from 'zustand';
 import { Appearance, Dimensions } from 'react-native';
-import { getStringItem, setStringItem } from '../utils/mmkvStorage';
+import { mmkvStorage } from '../utils/mmkvStorage';
 import { COLOR_SCHEME_STORAGE_KEY } from '../constants/staticVariables';
-
 
 export type ColorScheme = 'light' | 'dark' | 'system';
 
 const getInitialColorScheme = (): ColorScheme => {
-  const stored = getStringItem(COLOR_SCHEME_STORAGE_KEY);
+  const stored = mmkvStorage.getStringItem(COLOR_SCHEME_STORAGE_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
     return stored;
   }
@@ -36,8 +35,8 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>((set, get) => ({
   colorScheme: getInitialColorScheme(),
 
-  setColorScheme: (scheme) => {
-    setStringItem(COLOR_SCHEME_STORAGE_KEY, scheme);
+  setColorScheme: scheme => {
+    mmkvStorage.setStringItem(COLOR_SCHEME_STORAGE_KEY, scheme);
     set({ colorScheme: scheme });
   },
 

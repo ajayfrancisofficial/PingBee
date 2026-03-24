@@ -15,7 +15,6 @@ import { Image as ImageCompressor } from 'react-native-compressor';
  * @param quality Compression quality from 0 to 1
  */
 export const compressImage = async (localPath: string, quality: number = 0.8): Promise<string> => {
-  console.log(`[MediaImageGenerator] Compressing image at ${localPath} with quality ${quality}`);
   try {
     const result = await ImageCompressor.compress(localPath, {
       compressionMethod: 'auto',
