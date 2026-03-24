@@ -1,40 +1,46 @@
-import { FileToCopy, keepLocalCopy, pick, types } from '@react-native-documents/picker';
+import {
+  FileToCopy,
+  keepLocalCopy,
+  pick,
+  types as libTypes,
+} from '@react-native-documents/picker';
 
-
-export interface PickImageOptions {
+export interface PickDocumentOptions {
+  types?: (keyof typeof libTypes)[];
   allowMultiSelection?: boolean;
   copyTo?: 'cachesDirectory' | 'documentDirectory';
 }
 
 /**
- * Reusable utility to pick an image from the gallery using @react-native-documents/picker.
+ * Reusable utility to pick documents (PDFs, images, etc.) using @react-native-documents/picker.
  * Automatically requests permissions implicitly via the document picker UI.
- * @returns The local URI of the picked image or null if cancelled.
+ * @returns The local URIs of the picked documents or null if cancelled.
  */
 let isPicking = false;
 
-export const pickImagesFromGallery = async (
-  {
-    allowMultiSelection = true,
-    copyTo = 'cachesDirectory'
-  }: PickImageOptions = {}
-): Promise<string[] | null> => {
+export const pickDocuments = async ({
+  types = ['allFiles'],
+  allowMultiSelection = true,
+  copyTo = 'cachesDirectory',
+}: PickDocumentOptions = {}): Promise<string[] | null> => {
   if (isPicking) {
     return null;
   }
-  
+
   isPicking = true;
   try {
+    const typeDefinitions = types.map(t => libTypes[t]);
+
     const pickerResponse = await pick({
-      type: [types.images],
+      type: typeDefinitions,
       allowMultiSelection,
       mode: 'import',
-      allowVirtualFiles:false,
+      allowVirtualFiles: false,
     });
-    const filesToCopy:FileToCopy[] = pickerResponse.map((file: any) => ({
-      uri:file.uri,
-      fileName:file.name,
-    }))
+    const filesToCopy: FileToCopy[] = pickerResponse.map((file: any) => ({
+      uri: file.uri,
+      fileName: file.name,
+    }));
 
     if (filesToCopy.length === 0) {
       return null;
@@ -53,9 +59,22 @@ export const pickImagesFromGallery = async (
     if (err.code === 'OPERATION_CANCELED') {
       return null;
     }
-    console.error('Error picking images from gallery: ', err);
+    console.error('Error picking documents: ', err);
     throw err;
   } finally {
     isPicking = false;
   }
+};
+
+/**
+ * Reusable utility to pick an image/video specifically from the gallery.
+ * TODO: Implement using a library like react-native-image-crop-picker or expo-image-picker
+ * that specifically target the iOS/Android gallery UI.
+ */
+export const pickImagesFromGallery = async (
+  //add type for the options
+  _options: aa = {},
+): Promise<string[] | null> => {
+  console.log('[MediaPicker] pickImagesFromGallery - Not implemented yet');
+  return null;
 };

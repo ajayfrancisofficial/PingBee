@@ -21,7 +21,8 @@ export const ProfilePictureSection = () => {
     setIsOptionsVisible(false);
     requestAnimationFrame(async () => {
       try {
-        const uris = await MediaUtils.pickImagesFromGallery({
+        const uris = await MediaUtils.pickDocuments({
+          types: ['images'],
           copyTo: 'cachesDirectory',
           allowMultiSelection: false,
         });
