@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { MediaUtils } from '../utils/media';
 
 interface UserState {
   userId: string;
@@ -30,8 +31,7 @@ export const useUserStore = create<UserState>((set) => ({
     
     try {
       // Create a compressed avatar version
-      const { compressImage } = await import('../utils/media/mediaImageGenerator');
-      const avatarUrl = await compressImage(url, 0.4); // 40% quality thumbnail
+      const avatarUrl = await MediaUtils.compressImage(url, 0.4); // 40% quality thumbnail
       
       set((state) => ({ ...state, avatar: avatarUrl }));
     } catch (error) {

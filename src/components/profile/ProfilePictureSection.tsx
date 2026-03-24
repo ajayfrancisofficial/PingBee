@@ -5,7 +5,7 @@ import { AppTheme } from '../../theme';
 import { useUserStore } from '../../store/userStore';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { ProfilePictureOptionsModal } from './ProfilePictureOptionsModal';
-import { pickImagesFromGallery } from '../../utils/media/mediaPicker';
+import { MediaUtils } from '../../utils/media';
 import { updateProfilePictureApi } from '../../services/userService';
 
 export const ProfilePictureSection = () => {
@@ -21,7 +21,7 @@ export const ProfilePictureSection = () => {
     setIsOptionsVisible(false);
     requestAnimationFrame(async () => {
       try {
-        const uris = await pickImagesFromGallery({
+        const uris = await MediaUtils.pickImagesFromGallery({
           copyTo: 'cachesDirectory',
           allowMultiSelection: false,
         });
