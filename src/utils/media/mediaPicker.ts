@@ -4,6 +4,13 @@ import {
   pick,
   types as libTypes,
 } from '@react-native-documents/picker';
+import {
+  launchImageLibrary,
+  launchCamera,
+  ImageLibraryOptions,
+  CameraOptions,
+  Asset,
+} from 'react-native-image-picker';
 
 export interface PickDocumentOptions {
   types?: (keyof typeof libTypes)[];
@@ -68,13 +75,65 @@ export const pickDocuments = async ({
 
 /**
  * Reusable utility to pick an image/video specifically from the gallery.
- * TODO: Implement using a library like react-native-image-crop-picker or expo-image-picker
- * that specifically target the iOS/Android gallery UI.
+ * Uses react-native-image-picker's launchImageLibrary.
+ * @param options - Configuration for the picker (mediaType, selectionLimit, etc.)
+ * @returns Array of local URIs of the picked media or null if cancelled.
  */
-export const pickImagesFromGallery = async (
-  //add type for the options
-  _options: aa = {},
-): Promise<string[] | null> => {
-  console.log('[MediaPicker] pickImagesFromGallery - Not implemented yet');
-  return null;
+export const pickFromGallery = async (
+  options: Partial<ImageLibraryOptions> = {},
+): Promise<Asset[] | null> => {
+  try {
+    const pickerOptions: ImageLibraryOptions = {
+      selectionLimit: 0, // Default to 0 (unlimited/many depending on OS)
+      mediaType: 'mixed',
+      ...options,
+    };
+    const result = await launchImageLibrary(pickerOptions);
+    console.log('🚀 ~ pickFromGallery ~ result:', result);
+
+    if (result.didCancel) {
+      return null;
+    }
+
+    if (result.errorCode) {
+      throw new Error(result.errorMessage || result.errorCode);
+    }
+
+    return result?.assets || null;
+  } catch (error) {
+    console.error('Error in pickFromGallery:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reusable utility to capture an image/video using the camera.
+ * Uses react-native-image-picker's launchCamera.
+ * @param options - Configuration for the camera (mediaType, quality, etc.)
+ * @returns Array containing the local URI of the captured media or null if cancelled.
+ */
+export const pickUsingCamera = async (
+  options: Partial<CameraOptions> = {},
+): Promise<Asset[] | null> => {
+  try {
+    const cameraOptions: CameraOptions = {
+      mediaType: 'photo',
+      saveToPhotos: true,
+      ...options,
+    };
+    const result = await launchCamera(cameraOptions);
+
+    if (result.didCancel) {
+      return null;
+    }
+
+    if (result.errorCode) {
+      throw new Error(result.errorMessage || result.errorCode);
+    }
+
+    return result?.assets || null;
+  } catch (error) {
+    console.error('Error in pickUsingCamera:', error);
+    throw error;
+  }
 };

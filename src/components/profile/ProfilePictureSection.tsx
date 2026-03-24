@@ -21,15 +21,16 @@ export const ProfilePictureSection = () => {
     setIsOptionsVisible(false);
     requestAnimationFrame(async () => {
       try {
-        const uris = await MediaUtils.pickDocuments({
-          types: ['images'],
-          copyTo: 'cachesDirectory',
-          allowMultiSelection: false,
+        const assets = await MediaUtils.pickFromGallery({
+          mediaType: 'photo',
+          selectionLimit: 1,
         });
-        if (uris && uris.length > 0) {
-          const uri = uris[0];
-          await updateProfilePicture(uri);
-          updateProfilePictureApi(uri, 'gallery').catch(console.error);
+        if (assets && assets.length > 0) {
+          const uri = assets[0].uri;
+          if (uri) {
+            await updateProfilePicture(uri);
+            updateProfilePictureApi(uri, 'gallery').catch(console.error);
+          }
         }
       } catch (error) {
         console.error('Failed to update picture', error);
@@ -39,8 +40,21 @@ export const ProfilePictureSection = () => {
 
   const handleTakePhoto = () => {
     setIsOptionsVisible(false);
-    // Placeholder for future camera implementation
-    console.log('Take photo clicked');
+    // do we need this request animation frame?
+    requestAnimationFrame(async () => {
+      try {
+        const uris = await MediaUtils.pickUsingCamera({
+          mediaType: 'photo',
+        });
+        if (uris && uris.length > 0) {
+          const uri = uris[0];
+          await updateProfilePicture(uri);
+          updateProfilePictureApi(uri, 'camera').catch(console.error);
+        }
+      } catch (error) {
+        console.error('Failed to take photo', error);
+      }
+    });
   };
 
   const handleDeletePhoto = () => {

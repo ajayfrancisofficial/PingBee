@@ -56,6 +56,12 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your photo library to select photos for your profile and messages.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to use your camera to take photos for your profile and messages.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to use your microphone to record videos.</string>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
 </dict>
