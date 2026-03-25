@@ -48,6 +48,7 @@ export const BottomTabNavigator =
       YouStack: {
         screen: YouStack,
         options: {
+          title: 'You',
           headerShown: false,
           tabBarIcon: ({ focused }) =>
             Platform.select({

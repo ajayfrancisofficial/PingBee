@@ -4,23 +4,25 @@ import {
   Text,
   StyleSheet,
   Image,
-  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Mail, Globe, Phone, ArrowLeft } from 'lucide-react-native';
+import { Mail, Lock, ArrowLeft } from 'lucide-react-native';
 import { Button } from '../../components/foundations/Button';
 import { Input } from '../../components/foundations/Input';
 import { ThemeSwitch } from '../../components/common/ThemeSwitch';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
+import { authApi } from '../../api/auth';
 
-export const LoginScreen = () => {
-  const [phoneNumber, setPhoneNumber] = useState('');
+export const EmailLoginScreen = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
   const navigation = useNavigation<any>();
@@ -28,41 +30,38 @@ export const LoginScreen = () => {
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const handleLogin = async () => {
-    if (phoneNumber.length < 5) return;
+    if (!email || !password) return;
     setLoading(true);
-    // Simulate API call for OTP request
-    setTimeout(() => {
+    try {
+      await authApi.login({
+        type: 'emailLogin',
+        email,
+        password,
+      });
+      setLoggedIn(true);
+    } catch (e) {
+      console.warn('Email login failed', e);
+    } finally {
       setLoading(false);
-      navigation.navigate('Verification', { phoneNumber });
-    }, 1000);
-  };
-
-  const handleGoogleLogin = () => {
-    // Implement Google login
-    console.log('Google login');
-  };
-
-  const handleEmailLogin = () => {
-    navigation.navigate('EmailLogin');
-  };
-
-  const navigateToRegister = () => {
-    navigation.navigate('Register');
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        {navigation.canGoBack() && (
+        {navigation.canGoBack() ? (
           <TouchableOpacity
-            style={styles.backButton}
             onPress={() => navigation.goBack()}
+            style={styles.backButton}
           >
             <ArrowLeft size={24} color={theme.colors.text.primary} />
           </TouchableOpacity>
+        ) : (
+          <View />
         )}
         <ThemeSwitch />
       </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -77,48 +76,50 @@ export const LoginScreen = () => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.signInText}>Sign in</Text>
+            <Text style={styles.title}>Email Login</Text>
+            <Text style={styles.description}>
+              Enter your credentials to continue
+            </Text>
           </View>
 
           <View style={styles.form}>
             <Input
-              label="Phone Number"
-              placeholder="+1 234 567 890"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-              keyboardType="phone-pad"
-              leftIcon={<Phone size={20} color={theme.colors.text.secondary} />}
+              label="Email Address"
+              placeholder="example@pingbee.app"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={<Mail size={20} color={theme.colors.text.secondary} />}
+            />
+
+            <Input
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              leftIcon={<Lock size={20} color={theme.colors.text.secondary} />}
             />
 
             <Button
               title="Login"
               onPress={handleLogin}
               isLoading={loading}
+              disabled={!email || password.length < 6}
               style={styles.loginButton}
             />
-
-            <View style={styles.separatorContainer}>
-              <View style={styles.line} />
-              <Text style={styles.orText}>or</Text>
-              <View style={styles.line} />
-            </View>
-
-            <View style={styles.socialButtons}>
-              <TouchableOpacity
-                style={styles.socialIconContainer}
-                onPress={handleGoogleLogin}
-              >
-                <Globe size={24} color={theme.colors.text.primary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.socialIconContainer}
-                onPress={handleEmailLogin}
-              >
-                <Mail size={24} color={theme.colors.text.primary} />
-              </TouchableOpacity>
-            </View>
           </View>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate('RegisterEmail')}
+            style={styles.footer}
+          >
+            <Text style={styles.footerText}>
+              Don't have an account?{' '}
+              <Text style={styles.signUpText}>Sign up</Text>
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -153,51 +154,39 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       marginBottom: spacing.xxl,
     },
     logo: {
-      width: 120,
-      height: 120,
+      width: 100,
+      height: 100,
       marginBottom: spacing.lg,
     },
-    signInText: {
+    title: {
       ...typography.variants.heading2,
       color: colors.text.primary,
+      marginBottom: spacing.sm,
+    },
+    description: {
+      ...typography.variants.body,
+      color: colors.text.secondary,
+      textAlign: 'center',
     },
     form: {
       flex: 1,
     },
     loginButton: {
-      marginTop: spacing.lg,
+      marginTop: spacing.xl,
       height: 56,
       borderRadius: borderRadius.lg,
     },
-    separatorContainer: {
-      flexDirection: 'row',
+    footer: {
+      marginTop: 'auto',
+      paddingVertical: spacing.xl,
       alignItems: 'center',
-      marginVertical: spacing.xl,
     },
-    line: {
-      flex: 1,
-      height: 1,
-      backgroundColor: colors.borders.default,
-    },
-    orText: {
-      ...typography.variants.caption,
+    footerText: {
+      ...typography.variants.body,
       color: colors.text.secondary,
-      marginHorizontal: spacing.md,
-      textTransform: 'uppercase',
     },
-    socialButtons: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: spacing.xl,
-    },
-    socialIconContainer: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      borderWidth: 1,
-      borderColor: colors.borders.default,
-      backgroundColor: colors.backgrounds.elevated,
-      justifyContent: 'center',
-      alignItems: 'center',
+    signUpText: {
+      color: colors.brand.primary,
+      fontWeight: '600',
     },
   });

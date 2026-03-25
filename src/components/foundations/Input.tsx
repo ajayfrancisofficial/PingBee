@@ -12,11 +12,13 @@ import { AppTheme } from '../../theme';
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  leftIcon?: React.ReactNode;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
+  leftIcon,
   style,
   ...props
 }) => {
@@ -26,11 +28,14 @@ export const Input: React.FC<InputProps> = ({
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput
-        style={[styles.input, error ? styles.inputError : null, style]}
-        placeholderTextColor={theme.colors.text.secondary}
-        {...props}
-      />
+      <View style={[styles.inputWrapper, error ? styles.inputError : null]}>
+        {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
+        <TextInput
+          style={[styles.input, style]}
+          placeholderTextColor={theme.colors.text.secondary}
+          {...props}
+        />
+      </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
@@ -47,15 +52,24 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       marginBottom: spacing.xs,
       fontWeight: typography.weights.medium,
     },
-    input: {
-      ...typography.variants.body,
+    inputWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
       height: 48,
       backgroundColor: colors.surfaces.default,
       borderWidth: 1,
       borderColor: colors.borders.default,
       borderRadius: borderRadius.md,
       paddingHorizontal: spacing.md,
+    },
+    input: {
+      ...typography.variants.body,
+      flex: 1,
+      height: '100%',
       color: colors.text.primary,
+    },
+    leftIcon: {
+      marginRight: spacing.sm,
     },
     inputError: {
       borderColor: colors.semantic.error,
