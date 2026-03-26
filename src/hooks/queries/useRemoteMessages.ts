@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { socketService } from '../../services/websocket';
+import { onMessage, connect } from '../../services/websocket';
 import { IMessage } from 'react-native-gifted-chat';
 
 export interface ExtendedMessage extends Omit<IMessage, 'createdAt'> {
@@ -8,7 +8,7 @@ export interface ExtendedMessage extends Omit<IMessage, 'createdAt'> {
   createdAt: Date | number; // Override to allow both Types for GiftedChat
 }
 
-const fetchMessages = async (chatId: string): Promise<ExtendedMessage[]> => {
+const fetchRemoteMessages = async (chatId: string): Promise<ExtendedMessage[]> => {
   // Mock fetching messages for a specific chat
   await new Promise(resolve => setTimeout(() => resolve(undefined), 1000));
   
@@ -38,19 +38,19 @@ const fetchMessages = async (chatId: string): Promise<ExtendedMessage[]> => {
   ];
 };
 
-export const useFetchMessages = (chatId: string) => {
+export const useRemoteMessages = (chatId: string) => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['messages', chatId],
-    queryFn: () => fetchMessages(chatId),
+    queryFn: () => fetchRemoteMessages(chatId),
   });
 
   // Example of integrating WebSocket for real-time updates
   useEffect(() => {
-    socketService.connect();
+    connect();
 
-    const unsubscribe = socketService.on('onMessage', (newMessage: any) => {
+    const unsubscribe = onMessage('onMessage', (newMessage: any) => {
       // If the message is for this chat, append it to the cache
       if (newMessage.chatId === chatId || newMessage.chatId === '1') {
         

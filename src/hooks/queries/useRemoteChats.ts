@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { axiosClient } from '../../api/axiosClient';
-import { socketService } from '../../services/websocket';
+import { onMessage, connect } from '../../services/websocket';
 
 // Using JSONPlaceholder /users as dummy chat data for now
 export interface Chat {
@@ -11,12 +11,11 @@ export interface Chat {
   unreadCount?: number;
 }
 
-const fetchChats = async (): Promise<Chat[]> => {
+const fetchRemoteChats = async (): Promise<Chat[]> => {
   // Simulate network delay to see the loader in the header
   await new Promise(resolve => setTimeout(() => resolve(undefined), 1500));
   
   const { data } = await axiosClient.get('/users');
-  console.log("🚀 ~ fetchChats ~ data:", data)
   const baseChats: Chat[] = data.map((user: any) => ({
     id: user.id.toString(),
     name: user.name,
@@ -24,7 +23,6 @@ const fetchChats = async (): Promise<Chat[]> => {
     unreadCount: Math.floor(Math.random() * 3), // Dummy unread count
   }));
 
-  // Duplicate the list to generate more dummy data for scrolling
   return [
     ...baseChats,
     ...baseChats.map((c) => ({ ...c, id: `${c.id}_copy1`, name: `${c.name} (Copy 1)` })),
@@ -33,26 +31,25 @@ const fetchChats = async (): Promise<Chat[]> => {
   ];
 };
 
-export const useFetchChats = () => {
+export const useRemoteChats = () => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
     queryKey: ['chats'],
-    queryFn: fetchChats,
+    queryFn: fetchRemoteChats,
   });
 
   // Listen to WebSocket and natively update the Chats Inbox list cache
   useEffect(() => {
-    socketService.connect();
+    connect();
 
-    const unsubscribe = socketService.on('onMessage', (newMessage: any) => {
+    const unsubscribe = onMessage('onMessage', (newMessage: any) => {
       queryClient.setQueryData(['chats'], (oldChats: Chat[] | undefined) => {
         if (!oldChats) return oldChats;
 
         const chatIndex = oldChats.findIndex(chat => chat.id === newMessage.chatId);
         
         if (chatIndex > -1) {
-          // If the chat already exists in our list, update its last message and move it to the top!
           const updatedChat = {
             ...oldChats[chatIndex],
             lastMessage: newMessage.text,
@@ -65,7 +62,6 @@ export const useFetchChats = () => {
           
           return newChatsList;
         } else {
-          // A new conversation started entirely, we prepend it to the Inbox
           const newChat: Chat = {
             id: newMessage.chatId,
             name: `User ${newMessage.senderId}`,

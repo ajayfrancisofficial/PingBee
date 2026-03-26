@@ -2,8 +2,8 @@ import React, { useLayoutEffect, useCallback, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
-import { useFetchMessages } from '../hooks/queries/useMessages';
-import { socketService } from '../services/websocket';
+import { useRemoteMessages } from '../hooks/queries/useRemoteMessages';
+import { sendMessage } from '../services/websocket';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';
@@ -16,7 +16,7 @@ const ChatScreen = () => {
   const { userId, avatar, name: userName } = useUserStore();
   const user = { _id: userId, avatar, name: userName };
   // Fetch messages for this specific chat
-  const { data: messages = [], isPending } = useFetchMessages(chatId);
+  const { data: messages = [], isPending } = useRemoteMessages(chatId);
   console.log('🚀 ~ ChatScreen ~ messages:', messages);
 
   const [replyMessage, setReplyMessage] = useState<any>(null);
@@ -44,7 +44,7 @@ const ChatScreen = () => {
       };
 
       // Pushes the message to WebSocket. The websocket service will echo it locally causing React Query caching.
-      socketService.send(socketPayload);
+      sendMessage(socketPayload);
       setReplyMessage(null);
     },
     [chatId, replyMessage],

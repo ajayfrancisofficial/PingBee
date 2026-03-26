@@ -8,13 +8,13 @@ import {
   ActivityIndicator,
   FlatList,
 } from 'react-native';
-import { useFetchChats, Chat } from '../hooks/queries/useChats';
+import { useRemoteChats, Chat } from '../hooks/queries/useRemoteChats';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
 
 const ChatsScreen = () => {
   const navigation = useNavigation<any>();
-  const { data: chats, isPending, isError } = useFetchChats();
+  const { data: chats, isPending, isError } = useRemoteChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 

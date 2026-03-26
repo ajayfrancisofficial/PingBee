@@ -1,116 +1,122 @@
+import { database } from '../db';
+import Message from '../db/models/Message';
+
 export type MessageCallback = (data: any) => void;
 
-class WebSocketService {
-  private socket: WebSocket | null = null;
-  private url: string;
-  private listeners: Map<string, MessageCallback[]> = new Map();
-  private reconnectInterval: number = 3000;
-  private mockInterval: ReturnType<typeof setInterval> | null = null;
-  private isConnected: boolean = false;
+let socket: WebSocket | null = null;
+const url = 'wss://echo.websocket.org';
+const listeners: Map<string, MessageCallback[]> = new Map();
+const reconnectInterval: number = 3000;
+let isConnected: boolean = false;
 
-  constructor(url: string) {
-    this.url = url;
+const emit = (event: string, data: any) => {
+  const eventListeners = listeners.get(event);
+  if (eventListeners) {
+    eventListeners.forEach(callback => callback(data));
   }
+};
 
-  connect() {
-    console.log('[WebSocket] Connecting to:', this.url);
-    
-    // For now we'll simulate a connection since we only have dummy data
-    // In production, uncomment the native WebSocket usage:
-    /*
-    this.socket = new WebSocket(this.url);
-    
-    this.socket.onopen = () => {
-      console.log('[WebSocket] Connected');
-      this.isConnected = true;
-      this.emit('onConnect', null);
-    };
+const handleIncomingMessage = async (data: any) => {
+  const { type, payload } = data;
 
-    this.socket.onmessage = (event) => {
-      try {
-        const parsedData = JSON.parse(event.data);
-        this.emit('onMessage', parsedData);
-      } catch(e) {
-        console.warn('Failed to parse WebSocket message', e);
-      }
-    };
+  try {
+    switch (type) {
+      case 'MSG':
+        await database.write(async () => {
+          const messagesCollection = database.get<Message>('messages');
+          await messagesCollection.create(msg => {
+            msg.chatId = payload.chatId;
+            msg.senderId = payload.senderId;
+            msg.text = payload.text;
+            msg.status = 'sent';
+            msg.isMine = false;
+            msg.createdAt = new Date(payload.createdAt).getTime();
+            msg.serverTimestamp = payload.serverTimestamp;
+          });
 
-    this.socket.onclose = () => {
-      console.log('[WebSocket] Disconnected. Reconnecting in', this.reconnectInterval);
-      this.isConnected = false;
-      this.emit('onDisconnect', null);
-      setTimeout(() => this.connect(), this.reconnectInterval);
-    };
-    */
-    
-    // --- MOCK CONNECTION FOR TESTING ---
-    setTimeout(() => {
-      console.log('[WebSocket] Mock Connected');
-      this.isConnected = true;
-      this.emit('onConnect', null);
-      this.startMockMessages();
-    }, 1000);
-  }
+          const chat = await database.get<any>('chats').find(payload.chatId);
+          await chat.update((c: any) => {
+            c.lastMessageId = payload.id;
+            c.unreadCount += 1;
+            c.updatedAt = Date.now();
+          });
+        });
+        break;
 
-  private startMockMessages() {
-    if (this.mockInterval) clearInterval(this.mockInterval);
-    // Every 10 seconds, receive a new dummy message for chat "1"
-    this.mockInterval = setInterval(() => {
-      const mockMsg = {
-        id: Math.random().toString(36).substring(7),
-        chatId: '1', // Default dummy chat ID, update based on realistic data if needed
-        text: 'This is a mock real-time message at ' + new Date().toLocaleTimeString(),
-        senderId: '2', // Someone else
-        createdAt: new Date().toISOString(),
-      };
-      this.emit('onMessage', mockMsg);
-    }, 10000); 
-  }
+      case 'ACK':
+        const { tempId, serverTimestamp } = payload;
+        await database.write(async () => {
+          const message = await database.get<Message>('messages').find(tempId);
+          await message.update(m => {
+            m.status = 'sent';
+            m.serverTimestamp = serverTimestamp;
+          });
+        });
+        break;
 
-  disconnect() {
-    if (this.socket) {
-      this.socket.close();
+      default:
+        console.log('[WebSocket] Unknown message type:', type);
     }
-    if (this.mockInterval) {
-      clearInterval(this.mockInterval);
-    }
-    this.isConnected = false;
+  } catch (error) {
+    console.error('[WebSocket] Error processing incoming message:', error);
   }
+};
 
-  on(event: 'onConnect' | 'onDisconnect' | 'onMessage', callback: MessageCallback) {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, []);
+export const connect = () => {
+  console.log('[WebSocket] Connecting to:', url);
+  
+  socket = new WebSocket(url);
+  
+  socket.onopen = () => {
+    console.log('[WebSocket] Connected');
+    isConnected = true;
+    emit('onConnect', null);
+  };
+
+  socket.onmessage = (event) => {
+    try {
+      const parsedData = JSON.parse(event.data);
+      handleIncomingMessage(parsedData);
+      emit('onMessage', parsedData);
+    } catch(e) {
+      console.warn('Failed to parse WebSocket message', e);
     }
-    this.listeners.get(event)?.push(callback);
-    return () => this.off(event, callback);
-  }
+  };
 
-  off(event: string, callback: MessageCallback) {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      this.listeners.set(event, eventListeners.filter(cb => cb !== callback));
-    }
-  }
+  socket.onclose = () => {
+    console.log('[WebSocket] Disconnected. Reconnecting in', reconnectInterval);
+    isConnected = false;
+    emit('onDisconnect', null);
+    setTimeout(() => connect(), reconnectInterval);
+  };
+};
 
-  private emit(event: string, data: any) {
-    const eventListeners = this.listeners.get(event);
-    if (eventListeners) {
-      eventListeners.forEach(callback => callback(data));
-    }
+export const disconnect = () => {
+  if (socket) {
+    socket.close();
   }
+  isConnected = false;
+};
 
-  send(data: any) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify(data));
-    } else {
-      console.log('[WebSocket] Mock send:', data);
-      // Mock echo back after a delay
-      setTimeout(() => {
-        this.emit('onMessage', { ...data, id: Math.random().toString(), createdAt: new Date().toISOString() });
-      }, 500);
-    }
+export const onMessage = (event: 'onConnect' | 'onDisconnect' | 'onMessage', callback: MessageCallback) => {
+  if (!listeners.has(event)) {
+    listeners.set(event, []);
   }
-}
+  listeners.get(event)?.push(callback);
+  return () => offMessage(event, callback);
+};
 
-// Export a singleton instance. Change URL to actual wss:// endpoint later
-export const socketService = new WebSocketService('wss://echo.websocket.org');
+export const offMessage = (event: string, callback: MessageCallback) => {
+  const eventListeners = listeners.get(event);
+  if (eventListeners) {
+    listeners.set(event, eventListeners.filter(cb => cb !== callback));
+  }
+};
+
+export const sendMessage = (data: any) => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify(data));
+  } else {
+    console.warn('[WebSocket] Cannot send, socket not connected');
+  }
+};
