@@ -25,7 +25,7 @@ export const EmailLoginScreen = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const setLoggedIn = useAuthStore(state => state.setLoggedIn);
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 

@@ -23,7 +23,7 @@ export const LoginScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const setLoggedIn = useAuthStore(state => state.setLoggedIn);
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
@@ -47,7 +47,7 @@ export const LoginScreen = () => {
   };
 
   const navigateToRegister = () => {
-    navigation.navigate('Register');
+    navigation.navigate('RegisterEmail');
   };
 
   return (

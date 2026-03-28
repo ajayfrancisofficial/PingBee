@@ -1,9 +1,9 @@
+import { StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BottomTabNavigator } from './BottomTabNavigator';
 import ChatScreen from '../screens/ChatScreen';
-import { AppStackParamList } from '../types/navigation';
 
-export const AppStack = createNativeStackNavigator<AppStackParamList>({
+export const AppStack = createNativeStackNavigator({
   screens: {
     BottomTabs: {
       screen: BottomTabNavigator,
@@ -13,10 +13,8 @@ export const AppStack = createNativeStackNavigator<AppStackParamList>({
     },
     Chat: {
       screen: ChatScreen,
-      options: ({ route }) => ({
-        title: route.params.name,
-        headerBackTitle: 'Chats',
-      }),
     },
   },
 });
+
+export type AppStackParamList = StaticParamList<typeof AppStack>;

@@ -1,13 +1,12 @@
+import { StaticParamList } from '@react-navigation/native';
 import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
 import { Platform, Text, View } from 'react-native';
 import ChatsScreen from '../screens/ChatsScreen';
 import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
 import { YouStack } from './YouStack';
-import { BottomTabParamList } from '../types/navigation';
 
-export const BottomTabNavigator =
-  createNativeBottomTabNavigator<BottomTabParamList>({
+export const BottomTabNavigator = createNativeBottomTabNavigator({
     initialRouteName: 'Chats',
     screens: {
       Status: {
@@ -74,3 +73,5 @@ export const BottomTabNavigator =
       headerTintColor: theme.colors.primary,
     }),
   });
+
+export type BottomTabParamList = StaticParamList<typeof BottomTabNavigator>;

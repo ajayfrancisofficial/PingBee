@@ -16,7 +16,7 @@ import { AppTheme } from '../../theme';
 
 export const WelcomeScreen = () => {
   const theme = useAppTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const handleAgreeAndContinue = () => {

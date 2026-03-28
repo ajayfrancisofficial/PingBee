@@ -7,7 +7,7 @@ import { AppTheme } from '../theme/index';
 import Chat from '../db/models/Chat';
 
 const ChatsScreen = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const chats = useLocalChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);

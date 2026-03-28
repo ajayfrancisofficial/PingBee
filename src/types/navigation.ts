@@ -1,31 +1,16 @@
-import type { NavigatorScreenParams } from '@react-navigation/native';
+import type { StaticParamList } from '@react-navigation/native';
+import { AppStack } from '../navigation/AppStack';
+import { AuthStack } from '../navigation/AuthStack';
+import { BottomTabNavigator } from '../navigation/BottomTabNavigator';
+import { YouStack } from '../navigation/YouStack';
 
-export type AuthStackParamList = {
-  Welcome: undefined;
-  Login: undefined;
-  RegisterEmail: undefined;
-  Verification: { phoneNumber: string };
-  EmailLogin: undefined;
-};
-
-export type YouStackParamList = {
-  You: { name?: string } | undefined;
-  Profile: undefined;
-};
-
-export type BottomTabParamList = {
-  Chats: undefined;
-  Status: undefined;
-  Calls: undefined;
-  YouStack: NavigatorScreenParams<YouStackParamList>;
-};
-
-export type AppStackParamList = {
-  BottomTabs: NavigatorScreenParams<BottomTabParamList>;
-  Chat: { name: string; chatId: string };
-};
+export type AppStackParamList = StaticParamList<typeof AppStack>;
+export type AuthStackParamList = StaticParamList<typeof AuthStack>;
+export type BottomTabParamList = StaticParamList<typeof BottomTabNavigator>;
+export type YouStackParamList = StaticParamList<typeof YouStack>;
 
 export type RootStackParamList = AppStackParamList &
+  AuthStackParamList &
   BottomTabParamList &
   YouStackParamList;
 

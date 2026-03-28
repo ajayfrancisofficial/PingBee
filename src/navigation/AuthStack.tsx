@@ -1,12 +1,12 @@
+import { StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { WelcomeScreen } from '../screens/auth/WelcomeScreen';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterEmailScreen } from '../screens/auth/RegisterEmailScreen';
 import { VerificationScreen } from '../screens/auth/VerificationScreen';
 import { EmailLoginScreen } from '../screens/auth/EmailLoginScreen';
-import { AuthStackParamList } from '../types/navigation';
 
-export const AuthStack = createNativeStackNavigator<AuthStackParamList>({
+export const AuthStack = createNativeStackNavigator({
   initialRouteName: 'Welcome',
   screens: {
     Welcome: {
@@ -31,3 +31,5 @@ export const AuthStack = createNativeStackNavigator<AuthStackParamList>({
     },
   },
 });
+
+export type AuthStackParamList = StaticParamList<typeof AuthStack>;

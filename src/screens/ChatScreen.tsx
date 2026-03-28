@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useCallback, useState, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
+import { StyleSheet } from 'react-native';
+import {
+  useNavigation,
+  type StaticScreenProps,
+} from '@react-navigation/native';
 import { GiftedChat, IMessage, ReplyMessage } from 'react-native-gifted-chat';
 import { useLocalMessages } from '../hooks/db/useLocalMessages';
 import { sendMessage } from '../services/messageController';
@@ -30,10 +30,11 @@ const mapToGiftedChat = (msg: Message, currentUserId: string): IMessage => ({
   ...(msg.mediaUrl && msg.mediaType === 'video' && { video: msg.mediaUrl }),
 });
 
-const ChatScreen = () => {
-  const route = useRoute<RouteProp<RootStackParamList, 'Chat'>>();
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+export type ChatScreenParams = { name: string; chatId: string };
+type Props = StaticScreenProps<ChatScreenParams>;
+
+const ChatScreen = ({ route }: Props) => {
+  const navigation = useNavigation();
   const { name, chatId } = route.params;
   const { userId, avatar, name: userName } = useUserStore();
   const user = { _id: userId, avatar, name: userName };
@@ -97,7 +98,7 @@ const ChatScreen = () => {
           },
           message: replyMessage,
           onClear: () => setReplyMessage(null),
-          onPress: msg => scrollToMessage(msg._id),
+          onPress: msg => scrollToMessage(String(msg._id)),
         }}
       />
     </SafeAreaView>

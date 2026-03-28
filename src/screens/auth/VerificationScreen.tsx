@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, type StaticScreenProps } from '@react-navigation/native';
 import { KeyRound, ArrowLeft } from 'lucide-react-native';
 import { Button } from '../../components/foundations/Button';
 import { Input } from '../../components/foundations/Input';
@@ -18,15 +18,15 @@ import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/auth';
-import { AuthStackParamList } from '../../types/navigation';
 
-export const VerificationScreen = () => {
+type Props = StaticScreenProps<{ phoneNumber: string }>;
+
+export const VerificationScreen = ({ route }: Props) => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(30);
   const theme = useAppTheme();
-  const navigation = useNavigation<any>();
-  const route = useRoute<RouteProp<AuthStackParamList, 'Verification'>>();
+  const navigation = useNavigation();
   const { phoneNumber } = route.params;
   const setLoggedIn = useAuthStore(state => state.setLoggedIn);
   const styles = React.useMemo(() => makeStyles(theme), [theme]);

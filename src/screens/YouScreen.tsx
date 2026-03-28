@@ -64,7 +64,7 @@ const SettingsRow = ({
 );
 
 export const YouScreen = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, profilePicture } = useUserStore();

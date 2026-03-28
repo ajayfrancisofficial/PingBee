@@ -54,7 +54,7 @@ const ProfileRow = ({
 );
 
 export const ProfileScreen = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, phoneNumber } = useUserStore();

@@ -25,7 +25,7 @@ export const RegisterEmailScreen = () => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const handleRegister = async () => {
