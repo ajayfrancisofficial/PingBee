@@ -1,25 +1,17 @@
 import { database } from '../db';
 import Message from '../db/models/Message';
-
-export type MessageCallback = (data: any) => void;
+import { performOutgoingSync } from './sync/OutgoingSync';
+import type { WSIncomingPayload, WSOutgoingPayload } from '../types/websocket';
 
 let socket: WebSocket | null = null;
 const url = 'wss://echo.websocket.org';
-const listeners: Map<string, MessageCallback[]> = new Map();
 const reconnectInterval: number = 3000;
 let isConnected: boolean = false;
 
 /** Check if the WebSocket is currently connected */
 export const getIsConnected = (): boolean => isConnected;
 
-const emit = (event: string, data: any) => {
-  const eventListeners = listeners.get(event);
-  if (eventListeners) {
-    eventListeners.forEach(callback => callback(data));
-  }
-};
-
-const handleIncomingMessage = async (data: any) => {
+const handleIncomingMessage = async (data: WSIncomingPayload) => {
   const { type, payload } = data;
 
   try {
@@ -35,11 +27,14 @@ const handleIncomingMessage = async (data: any) => {
             msg.isMine = false;
             msg.createdAt = new Date(payload.createdAt).getTime();
             msg.serverTimestamp = payload.serverTimestamp;
+            if (payload.replyToId) {
+              msg.replyToId = payload.replyToId;
+            }
           });
 
           const chat = await database.get<any>('chats').find(payload.chatId);
           await chat.update((c: any) => {
-            c.lastMessageId = payload.id;
+            c.lastMessageText = payload.text;
             c.unreadCount += 1;
             c.updatedAt = Date.now();
           });
@@ -59,8 +54,6 @@ const handleIncomingMessage = async (data: any) => {
       }
 
       case 'STATUS': {
-        // Handles delivery receipts and read receipts from the backend
-        // payload: { messageId: string, status: 'delivered' | 'read' }
         const { messageId, status } = payload;
         await database.write(async () => {
           const message = await database
@@ -88,14 +81,15 @@ export const connect = () => {
   socket.onopen = () => {
     console.log('[WebSocket] Connected');
     isConnected = true;
-    emit('onConnect', null);
+
+    // Retry any messages that were queued while offline
+    performOutgoingSync();
   };
 
   socket.onmessage = event => {
     try {
-      const parsedData = JSON.parse(event.data);
+      const parsedData: WSIncomingPayload = JSON.parse(event.data);
       handleIncomingMessage(parsedData);
-      emit('onMessage', parsedData);
     } catch (e) {
       console.warn('Failed to parse WebSocket message', e);
     }
@@ -104,7 +98,6 @@ export const connect = () => {
   socket.onclose = () => {
     console.log('[WebSocket] Disconnected. Reconnecting in', reconnectInterval);
     isConnected = false;
-    emit('onDisconnect', null);
     setTimeout(() => connect(), reconnectInterval);
   };
 };
@@ -116,29 +109,8 @@ export const disconnect = () => {
   isConnected = false;
 };
 
-export const onMessage = (
-  event: 'onConnect' | 'onDisconnect' | 'onMessage',
-  callback: MessageCallback,
-) => {
-  if (!listeners.has(event)) {
-    listeners.set(event, []);
-  }
-  listeners.get(event)?.push(callback);
-  return () => offMessage(event, callback);
-};
-
-export const offMessage = (event: string, callback: MessageCallback) => {
-  const eventListeners = listeners.get(event);
-  if (eventListeners) {
-    listeners.set(
-      event,
-      eventListeners.filter(cb => cb !== callback),
-    );
-  }
-};
-
 /** Low-level WebSocket send. Use messageController.sendMessage() for sending chat messages. */
-export const sendRaw = (data: any) => {
+export const sendRaw = (data: WSOutgoingPayload) => {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(data));
   } else {

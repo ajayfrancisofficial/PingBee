@@ -1,35 +1,24 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useLayoutEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  FlatList,
-} from 'react-native';
-import { useRemoteChats, Chat } from '../hooks/queries/useRemoteChats';
+import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { useLocalChats } from '../hooks/db/useLocalChats';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
+import Chat from '../db/models/Chat';
 
 const ChatsScreen = () => {
   const navigation = useNavigation<any>();
-  const { data: chats, isPending, isError } = useRemoteChats();
+  const chats = useLocalChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () =>
-        isPending ? (
-          <ActivityIndicator size="small" color={theme.colors.brand.primary} />
-        ) : null,
       headerSearchBarOptions: {
-        // search bar options
         hideWhenScrolling: true,
       },
     });
-  }, [navigation, isPending, theme]);
+  }, [navigation]);
 
   const getInitials = (name: string) => {
     if (!name) return '?';
@@ -65,7 +54,7 @@ const ChatsScreen = () => {
           ]}
           numberOfLines={2}
         >
-          {item.lastMessage}
+          {item.lastMessageText ?? ''}
         </Text>
       </View>
 

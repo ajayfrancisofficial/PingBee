@@ -3,6 +3,7 @@ import { database } from '../db';
 import Message from '../db/models/Message';
 import { useUserStore } from '../store/userStore';
 import { sendRaw, getIsConnected } from './websocket';
+import type { WSOutgoingMsg } from '../types/websocket';
 
 /**
  * Detect media type from an IMessage's optional fields.
@@ -23,8 +24,8 @@ const getMediaInfo = (
  * Format a WatermelonDB Message record into the WebSocket MSG payload.
  * This is also used by OutgoingSync to retry pending messages.
  */
-export const formatMessagePayload = (message: Message, replyMessage?: any) => ({
-  type: 'MSG' as const,
+export const formatMessagePayload = (message: Message): WSOutgoingMsg => ({
+  type: 'MSG',
   payload: {
     tempId: message.id,
     chatId: message.chatId,
@@ -35,7 +36,7 @@ export const formatMessagePayload = (message: Message, replyMessage?: any) => ({
       mediaUrl: message.mediaUrl,
       mediaType: message.mediaType,
     }),
-    ...(replyMessage && { replyMessage }),
+    ...(message.replyToId && { replyToId: message.replyToId }),
   },
 });
 
@@ -63,6 +64,9 @@ export const sendMessage = async (
   const { userId } = useUserStore.getState();
   const { mediaUrl, mediaType } = getMediaInfo(message);
 
+  // Extract reply ID from GiftedChat's replyMessage if present
+  const replyToId = message.replyMessage?._id?.toString();
+
   // 1. Atomically save message + update chat in a single DB write
   const savedMessage = await database.write(async () => {
     const messagesCollection = database.get<Message>('messages');
@@ -83,21 +87,21 @@ export const sendMessage = async (
       if (mediaType) {
         msg.mediaType = mediaType;
       }
+      if (replyToId) {
+        msg.replyToId = replyToId;
+      }
     });
 
     // Update the parent chat's metadata
     try {
       const chat = await database.get<any>('chats').find(chatId);
       await chat.update((c: any) => {
-        c.lastMessageId = newMessage.id;
+        c.lastMessageText = message.text;
         c.updatedAt = Date.now();
       });
     } catch {
       // Chat might not exist yet (e.g. first message in a new conversation)
-      console.warn(
-        '[MessageController] Chat not found for update:',
-        chatId,
-      );
+      console.warn('[MessageController] Chat not found for update:', chatId);
     }
 
     return newMessage;
@@ -105,10 +109,7 @@ export const sendMessage = async (
 
   // 2. If online, send via WebSocket immediately
   if (getIsConnected()) {
-    const payload = formatMessagePayload(
-      savedMessage,
-      message.replyMessage,
-    );
+    const payload = formatMessagePayload(savedMessage);
     sendRaw(payload);
   }
 

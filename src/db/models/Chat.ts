@@ -7,14 +7,11 @@ export default class Chat extends Model {
     messages: { type: 'has_many' as const, foreignKey: 'chat_id' },
   }
 
-  @field('name') name?: string
+  @field('name') name!: string
   @field('type') type!: 'individual' | 'group'
   @field('unread_count') unreadCount!: number
-  @field('last_message_id') lastMessageId?: string
+  @field('last_message_text') lastMessageText?: string
   @date('updated_at') updatedAt!: number
 
   @children('messages') messages!: any
-
-  @lazy
-  lastMessage = this.collections.get('messages').find(this.lastMessageId!)
 }

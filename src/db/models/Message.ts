@@ -14,6 +14,7 @@ export default class Message extends Model {
   @field('media_type') mediaType?: 'image' | 'video' | 'file'
   @field('status') status!: 'pending' | 'sent' | 'delivered' | 'read'
   @field('is_mine') isMine!: boolean
+  @field('reply_to_id') replyToId?: string
   @date('created_at') createdAt!: number
   @field('server_timestamp') serverTimestamp?: number
 

@@ -1,4 +1,4 @@
-import { appSchema, tableSchema } from '@nozbe/watermelondb'
+import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export default appSchema({
   version: 1,
@@ -9,17 +9,17 @@ export default appSchema({
         { name: 'name', type: 'string' },
         { name: 'avatar_url', type: 'string' },
         { name: 'phone_number', type: 'string', isIndexed: true },
-      ]
+      ],
     }),
     tableSchema({
       name: 'chats',
       columns: [
-        { name: 'name', type: 'string', isOptional: true },
+        { name: 'name', type: 'string' },
         { name: 'type', type: 'string' }, // 'individual' | 'group'
-        { name: 'last_message_id', type: 'string', isOptional: true },
+        { name: 'last_message_text', type: 'string', isOptional: true },
         { name: 'unread_count', type: 'number' },
         { name: 'updated_at', type: 'number', isIndexed: true },
-      ]
+      ],
     }),
     tableSchema({
       name: 'messages',
@@ -33,14 +33,15 @@ export default appSchema({
         { name: 'created_at', type: 'number', isIndexed: true },
         { name: 'server_timestamp', type: 'number', isOptional: true },
         { name: 'is_mine', type: 'boolean' },
-      ]
+        { name: 'reply_to_id', type: 'string', isOptional: true },
+      ],
     }),
     tableSchema({
       name: 'chat_participants',
       columns: [
         { name: 'chat_id', type: 'string', isIndexed: true },
         { name: 'user_id', type: 'string', isIndexed: true },
-      ]
+      ],
     }),
-  ]
-})
+  ],
+});

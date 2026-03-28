@@ -22,13 +22,15 @@ export type BottomTabParamList = {
 
 export type AppStackParamList = {
   BottomTabs: NavigatorScreenParams<BottomTabParamList>;
-  Chat: { name: string; chatId?: string };
+  Chat: { name: string; chatId: string };
 };
 
-export type RootStackParamList = AppStackParamList & BottomTabParamList & YouStackParamList;
+export type RootStackParamList = AppStackParamList &
+  BottomTabParamList &
+  YouStackParamList;
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList { }
+    interface RootParamList extends RootStackParamList {}
   }
 }
