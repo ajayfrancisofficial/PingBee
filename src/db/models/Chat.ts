@@ -1,4 +1,5 @@
-import { Model } from '@nozbe/watermelondb'
+import { Model, Query } from '@nozbe/watermelondb'
+import type Message from './Message'
 import { field, date, children, lazy } from '@nozbe/watermelondb/decorators'
 
 export default class Chat extends Model {
@@ -13,5 +14,5 @@ export default class Chat extends Model {
   @field('last_message_text') lastMessageText?: string
   @date('updated_at') updatedAt!: number
 
-  @children('messages') messages!: any
+  @children('messages') messages!: Query<Message>
 }

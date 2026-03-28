@@ -1,6 +1,7 @@
 import { IMessage } from 'react-native-gifted-chat';
 import { database } from '../db';
 import Message from '../db/models/Message';
+import Chat from '../db/models/Chat';
 import { useUserStore } from '../store/userStore';
 import { sendRaw, getIsConnected } from './websocket';
 import type { WSOutgoingMsg } from '../types/websocket';
@@ -94,8 +95,8 @@ export const sendMessage = async (
 
     // Update the parent chat's metadata
     try {
-      const chat = await database.get<any>('chats').find(chatId);
-      await chat.update((c: any) => {
+      const chat = await database.get<Chat>('chats').find(chatId);
+      await chat.update(c => {
         c.lastMessageText = message.text;
         c.updatedAt = Date.now();
       });

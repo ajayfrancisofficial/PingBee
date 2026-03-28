@@ -32,7 +32,7 @@ export const VerificationScreen = () => {
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   useEffect(() => {
-    let interval: any;
+    let interval: number;
     if (timer > 0) {
       interval = setInterval(() => {
         setTimer(prev => prev - 1);
@@ -122,10 +122,7 @@ export const VerificationScreen = () => {
 
             <View style={styles.resendContainer}>
               <Text style={styles.resendText}>Didn't receive the code? </Text>
-              <TouchableOpacity
-                onPress={handleResend}
-                disabled={timer > 0}
-              >
+              <TouchableOpacity onPress={handleResend} disabled={timer > 0}>
                 <Text
                   style={[
                     styles.resendLink,

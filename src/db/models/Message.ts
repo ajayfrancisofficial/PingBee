@@ -1,4 +1,5 @@
-import { Model } from '@nozbe/watermelondb'
+import { Model, Relation } from '@nozbe/watermelondb'
+import type Chat from './Chat'
 import { field, date, immutableRelation } from '@nozbe/watermelondb/decorators'
 
 export default class Message extends Model {
@@ -18,5 +19,5 @@ export default class Message extends Model {
   @date('created_at') createdAt!: number
   @field('server_timestamp') serverTimestamp?: number
 
-  @immutableRelation('chats', 'chat_id') chat: any
+  @immutableRelation('chats', 'chat_id') chat!: Relation<Chat>
 }

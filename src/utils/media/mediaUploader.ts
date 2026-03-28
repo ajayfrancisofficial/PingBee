@@ -1,4 +1,7 @@
-import ReactNativeBlobUtil, { FetchBlobResponse, StatefulPromise } from 'react-native-blob-util';
+import ReactNativeBlobUtil, {
+  FetchBlobResponse,
+  StatefulPromise,
+} from 'react-native-blob-util';
 
 const activeUploads = new Map<string, StatefulPromise<FetchBlobResponse>>();
 
@@ -30,15 +33,16 @@ export const cancelUpload = (taskId: string) => {
 export const uploadMediaWithRetry = async (
   localPath: string,
   endpoint: string,
-  options: UploadOptions
+  options: UploadOptions,
 ): Promise<any> => {
   const maxRetries = options.maxRetries ?? 3;
   let attempt = 0;
 
   while (attempt < maxRetries) {
     try {
-      console.log(`[MediaUploader] Upload attempt ${attempt + 1}/${maxRetries}`);
-      
+      console.log(
+        `[MediaUploader] Upload attempt ${attempt + 1}/${maxRetries}`,
+      );
       const task = ReactNativeBlobUtil.fetch(
         options.method || 'POST',
         endpoint,
@@ -53,7 +57,7 @@ export const uploadMediaWithRetry = async (
             type: options.mimeType || 'application/octet-stream',
             data: ReactNativeBlobUtil.wrap(localPath),
           },
-        ]
+        ],
       );
 
       if (options.taskId) {
@@ -68,29 +72,42 @@ export const uploadMediaWithRetry = async (
 
       // We assume status 200-299 is success
       const status = response.info().status;
+      const text = await response.text();
       if (status >= 200 && status < 300) {
-        return JSON.parse(response.text());
+        return JSON.parse(text);
       } else {
         throw new Error(`Upload failed with status: ${status}`);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (options.taskId) {
         activeUploads.delete(options.taskId);
       }
-      
+
       // If the error is due to cancellation, do NOT retry.
-      if (error?.message?.includes('cancelled') || error?.message?.includes('canceled')) {
-        console.log(`[MediaUploader] Upload task ${options.taskId} was cancelled. Skipping retries.`);
+      const isCancelled =
+        error instanceof Error &&
+        (error.message.includes('cancelled') ||
+          error.message.includes('canceled'));
+
+      if (isCancelled) {
+        console.log(
+          `[MediaUploader] Upload task ${options.taskId} was cancelled. Skipping retries.`,
+        );
         throw error;
       }
 
       attempt++;
       if (attempt >= maxRetries) {
-        console.error('[MediaUploader] Max retries reached. Upload failed.', error);
+        console.error(
+          '[MediaUploader] Max retries reached. Upload failed.',
+          error,
+        );
         throw error;
       }
       // Exponential backoff before retrying
-      await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+      await new Promise(resolve =>
+        setTimeout(() => resolve(undefined), attempt * 1000),
+      );
     }
   }
 };

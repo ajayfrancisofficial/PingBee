@@ -44,9 +44,9 @@ export const pickDocuments = async ({
       mode: 'import',
       allowVirtualFiles: false,
     });
-    const filesToCopy: FileToCopy[] = pickerResponse.map((file: any) => ({
+    const filesToCopy: FileToCopy[] = pickerResponse.map(file => ({
       uri: file.uri,
-      fileName: file.name,
+      fileName: file.name ?? 'unnamed_file',
     }));
 
     if (filesToCopy.length === 0) {
@@ -58,12 +58,22 @@ export const pickDocuments = async ({
       files: filesToCopy as [FileToCopy, ...FileToCopy[]],
     });
     if (localCopyResponse && localCopyResponse.length > 0) {
-      return localCopyResponse.map((file: any) => file.localUri);
+      return localCopyResponse.map(file => {
+        if (file.status === 'success') {
+          return file.localUri;
+        }
+        throw new Error(`Failed to copy file: ${file.copyError}`);
+      });
     }
 
     return null;
-  } catch (err: any) {
-    if (err.code === 'OPERATION_CANCELED') {
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === 'object' &&
+      'code' in err &&
+      err.code === 'OPERATION_CANCELED'
+    ) {
       return null;
     }
     console.error('Error picking documents: ', err);

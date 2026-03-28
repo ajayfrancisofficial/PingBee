@@ -4,7 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
-import { GiftedChat, IMessage } from 'react-native-gifted-chat';
+import { GiftedChat, IMessage, ReplyMessage } from 'react-native-gifted-chat';
 import { useLocalMessages } from '../hooks/db/useLocalMessages';
 import { sendMessage } from '../services/messageController';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,7 +46,7 @@ const ChatScreen = () => {
     [rawMessages, userId],
   );
 
-  const [replyMessage, setReplyMessage] = useState<any>(null);
+  const [replyMessage, setReplyMessage] = useState<ReplyMessage | null>(null);
   const appTheme = useAppTheme();
   const styles = useMemo(() => makeStyles(appTheme), [appTheme]);
 
@@ -67,10 +67,9 @@ const ChatScreen = () => {
     [chatId],
   );
 
-  const onSwipe = (message: any) => {
-    console.log('🚀 ~ onSwipe ~ message:', message);
-    setReplyMessage(message);
-  };
+  const scrollToMessage = useCallback((messageId: string) => {
+    // TODO: Implement scroll to message
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,10 +93,11 @@ const ChatScreen = () => {
           swipe: {
             isEnabled: true,
             direction: 'left',
-            onSwipe: onSwipe,
+            onSwipe: setReplyMessage,
           },
           message: replyMessage,
           onClear: () => setReplyMessage(null),
+          onPress: msg => scrollToMessage(msg._id),
         }}
       />
     </SafeAreaView>

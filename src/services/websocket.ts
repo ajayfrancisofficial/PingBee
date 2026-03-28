@@ -1,5 +1,6 @@
 import { database } from '../db';
 import Message from '../db/models/Message';
+import Chat from '../db/models/Chat';
 import { performOutgoingSync } from './sync/OutgoingSync';
 import type { WSIncomingPayload, WSOutgoingPayload } from '../types/websocket';
 
@@ -32,8 +33,8 @@ const handleIncomingMessage = async (data: WSIncomingPayload) => {
             }
           });
 
-          const chat = await database.get<any>('chats').find(payload.chatId);
-          await chat.update((c: any) => {
+          const chat = await database.get<Chat>('chats').find(payload.chatId);
+          await chat.update(c => {
             c.lastMessageText = payload.text;
             c.unreadCount += 1;
             c.updatedAt = Date.now();
