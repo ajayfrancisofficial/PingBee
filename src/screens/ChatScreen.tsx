@@ -3,10 +3,11 @@ import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { GiftedChat, IMessage } from 'react-native-gifted-chat';
 import { useRemoteMessages } from '../hooks/queries/useRemoteMessages';
-import { sendMessage } from '../services/websocket';
+import { sendMessage } from '../services/messageController';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';
+import { useChatStore } from '../store/chatStore';
 import { AppTheme } from '../theme';
 
 const ChatScreen = () => {
@@ -15,39 +16,30 @@ const ChatScreen = () => {
   const { name, chatId } = route.params || { name: 'Chat', chatId: '1' };
   const { userId, avatar, name: userName } = useUserStore();
   const user = { _id: userId, avatar, name: userName };
+  const setActiveChatId = useChatStore(s => s.setActiveChatId);
+
   // Fetch messages for this specific chat
   const { data: messages = [], isPending } = useRemoteMessages(chatId);
-  console.log('🚀 ~ ChatScreen ~ messages:', messages);
 
   const [replyMessage, setReplyMessage] = useState<any>(null);
   const appTheme = useAppTheme();
   const styles = makeStyles(appTheme);
 
-  // Apply header title
+  // Track active chat for unread count logic
   useLayoutEffect(() => {
     navigation.setOptions({ title: name });
-  }, [navigation, name]);
+    setActiveChatId(chatId);
+    return () => setActiveChatId(null);
+  }, [navigation, name, chatId, setActiveChatId]);
+
   // Handle when user hits SEND in GiftedChat
   const onSend = useCallback(
     (newMessages: IMessage[] = []) => {
-      console.log('🚀 ~ onsend ~ newMessages:', newMessages);
       const msg = newMessages[0];
-
-      // Map GiftedChat object into our backend WebSocket payload structure
-      const socketPayload = {
-        id: msg._id,
-        chatId,
-        text: msg.text,
-        senderId: msg.user._id,
-        createdAt: msg.createdAt, // Send timestamp
-        replyMessage: replyMessage || undefined,
-      };
-
-      // Pushes the message to WebSocket. The websocket service will echo it locally causing React Query caching.
-      sendMessage(socketPayload);
+      sendMessage(msg, chatId);
       setReplyMessage(null);
     },
-    [chatId, replyMessage],
+    [chatId],
   );
 
   const onSwipe = (message: any) => {

@@ -1,24 +1,16 @@
 import { database } from '../../db';
 import Message from '../../db/models/Message';
-import { sendMessage } from '../websocket';
+import { sendRaw, getIsConnected } from '../websocket';
+import { formatMessagePayload } from '../messageController';
 
 let isSyncing = false;
 
-const broadcastMessage = (message: Message) => {
-  sendMessage({
-    type: 'MSG',
-    payload: {
-      tempId: message.id,
-      chatId: message.chatId,
-      text: message.text,
-      senderId: message.senderId,
-      createdAt: new Date(message.createdAt).toISOString(),
-    }
-  });
-};
-
+/**
+ * Retries sending all pending messages via WebSocket.
+ * Call this when the connection is restored.
+ */
 export const performOutgoingSync = async () => {
-  if (isSyncing) return;
+  if (isSyncing || !getIsConnected()) return;
   isSyncing = true;
 
   try {
@@ -30,8 +22,13 @@ export const performOutgoingSync = async () => {
     const filteredPending = pendingMessages.filter(m => m.status === 'pending');
 
     for (const message of filteredPending) {
-      sendMessage(message);
+      const payload = formatMessagePayload(message);
+      sendRaw(payload);
     }
+
+    console.log(
+      `[OutgoingSync] Sent ${filteredPending.length} pending message(s)`,
+    );
   } catch (error) {
     console.error('[OutgoingSync] Error during sync:', error);
   } finally {

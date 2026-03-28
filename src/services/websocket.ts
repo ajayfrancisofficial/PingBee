@@ -9,6 +9,9 @@ const listeners: Map<string, MessageCallback[]> = new Map();
 const reconnectInterval: number = 3000;
 let isConnected: boolean = false;
 
+/** Check if the WebSocket is currently connected */
+export const getIsConnected = (): boolean => isConnected;
+
 const emit = (event: string, data: any) => {
   const eventListeners = listeners.get(event);
   if (eventListeners) {
@@ -43,7 +46,7 @@ const handleIncomingMessage = async (data: any) => {
         });
         break;
 
-      case 'ACK':
+      case 'ACK': {
         const { tempId, serverTimestamp } = payload;
         await database.write(async () => {
           const message = await database.get<Message>('messages').find(tempId);
@@ -53,6 +56,22 @@ const handleIncomingMessage = async (data: any) => {
           });
         });
         break;
+      }
+
+      case 'STATUS': {
+        // Handles delivery receipts and read receipts from the backend
+        // payload: { messageId: string, status: 'delivered' | 'read' }
+        const { messageId, status } = payload;
+        await database.write(async () => {
+          const message = await database
+            .get<Message>('messages')
+            .find(messageId);
+          await message.update(m => {
+            m.status = status;
+          });
+        });
+        break;
+      }
 
       default:
         console.log('[WebSocket] Unknown message type:', type);
@@ -64,21 +83,20 @@ const handleIncomingMessage = async (data: any) => {
 
 export const connect = () => {
   console.log('[WebSocket] Connecting to:', url);
-  
+
   socket = new WebSocket(url);
-  
   socket.onopen = () => {
     console.log('[WebSocket] Connected');
     isConnected = true;
     emit('onConnect', null);
   };
 
-  socket.onmessage = (event) => {
+  socket.onmessage = event => {
     try {
       const parsedData = JSON.parse(event.data);
       handleIncomingMessage(parsedData);
       emit('onMessage', parsedData);
-    } catch(e) {
+    } catch (e) {
       console.warn('Failed to parse WebSocket message', e);
     }
   };
@@ -98,7 +116,10 @@ export const disconnect = () => {
   isConnected = false;
 };
 
-export const onMessage = (event: 'onConnect' | 'onDisconnect' | 'onMessage', callback: MessageCallback) => {
+export const onMessage = (
+  event: 'onConnect' | 'onDisconnect' | 'onMessage',
+  callback: MessageCallback,
+) => {
   if (!listeners.has(event)) {
     listeners.set(event, []);
   }
@@ -109,11 +130,15 @@ export const onMessage = (event: 'onConnect' | 'onDisconnect' | 'onMessage', cal
 export const offMessage = (event: string, callback: MessageCallback) => {
   const eventListeners = listeners.get(event);
   if (eventListeners) {
-    listeners.set(event, eventListeners.filter(cb => cb !== callback));
+    listeners.set(
+      event,
+      eventListeners.filter(cb => cb !== callback),
+    );
   }
 };
 
-export const sendMessage = (data: any) => {
+/** Low-level WebSocket send. Use messageController.sendMessage() for sending chat messages. */
+export const sendRaw = (data: any) => {
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify(data));
   } else {
