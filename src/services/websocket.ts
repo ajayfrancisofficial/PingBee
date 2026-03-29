@@ -2,17 +2,19 @@ import { database } from '../db';
 import Message from '../db/models/Message';
 import Chat from '../db/models/Chat';
 import { performOutgoingSync } from './sync/OutgoingSync';
-import type { 
-  WSIncomingPayload, 
+import { useChatStore } from '../store/chatStore';
+import type {
+  WSIncomingPayload,
   WSOutgoingPayload,
   WSReceivedMsg,
-  WSEditMsg,
+  WSAckSendMsg,
   WSAckEditMsg,
-  WSDeleteMsg,
   WSAckDeleteMsg,
-  WSTypingMsg,
-  WSAckMsg,
-  WSMsgStatus
+  WSReceiveTyping,
+  WSReceiveMsgStatus,
+  WSReceiveEditMsg,
+  WSReceiveDeleteMsg,
+  WSReceivePresence,
 } from '../types/websocket';
 
 let socket: WebSocket | null = null;
@@ -28,7 +30,7 @@ const handleIncomingMessage = async (data: WSIncomingPayload) => {
 
   try {
     switch (type) {
-      case 'SEND_MSG': {
+      case 'RECEIVE_MSG': {
         const p = payload as WSReceivedMsg['payload'];
         await database.write(async () => {
           const messagesCollection = database.get<Message>('messages');
@@ -55,22 +57,33 @@ const handleIncomingMessage = async (data: WSIncomingPayload) => {
         break;
       }
 
-      case 'EDIT_MSG': {
-        const p = payload as WSEditMsg['payload'];
+      case 'RECEIVE_EDIT_MSG': {
+        const p = payload as WSReceiveEditMsg['payload'];
         await database.write(async () => {
-          const message = await database.get<Message>('messages').find(p.id);
-          await message.update(m => {
-            m.text = p.text;
-            m.isEdited = true;
-            m.editedAt = new Date(p.editedAt).getTime();
-            m.editStatus = 'synced'; // If we receive an edit from others, it's synced
-          });
+          try {
+            const message = await database.get<Message>('messages').find(p.id);
+            const oldText = message.text;
 
-          const chat = await database.get<Chat>('chats').find(message.chatId);
-          if (chat.lastMessageText === message.text) {
-             await chat.update(c => {
-               c.lastMessageText = p.text;
-             });
+            await message.update(m => {
+              m.text = p.text;
+              m.isEdited = true;
+              m.editedAt = new Date(p.editedAt).getTime();
+              m.editStatus = 'synced'; // If we receive an edit from others, it's synced
+            });
+
+            const chat = await database.get<Chat>('chats').find(message.chatId);
+            if (chat.lastMessageText === oldText) {
+              await chat.update(c => {
+                c.lastMessageText = p.text;
+              });
+            }
+          } catch (e) {
+            // Message or Chat not found locally, can be safely ignored
+            // as background sync will fetch the updated state later.
+            console.warn(
+              '[WebSocket] Cannot process incoming EDIT_MSG, message not found:',
+              p.id,
+            );
           }
         });
         break;
@@ -87,21 +100,39 @@ const handleIncomingMessage = async (data: WSIncomingPayload) => {
         break;
       }
 
-      case 'DELETE_MSG': {
-        const p = payload as WSDeleteMsg['payload'];
-        await database.write(async () => {
-          const message = await database.get<Message>('messages').find(p.id);
-          await message.update(m => {
-            m.isDeleted = true;
-            m.deletedAt = new Date(p.deletedAt).getTime();
-            m.deleteType = p.deleteType;
-            m.deleteStatus = 'synced';
-          });
+      case 'RECEIVE_DELETE_MSG': {
+        const p = payload as WSReceiveDeleteMsg['payload'];
 
-          const chat = await database.get<Chat>('chats').find(message.chatId);
-          await chat.update(c => {
-            c.lastMessageText = 'This message was deleted';
-          });
+        // If the other user deleted it "only for me", we shouldn't delete it for us.
+        // Usually the server shouldn't broadcast 'deleteForMe', but just in case:
+        if (p.deleteType === 'deleteForMe') {
+          break;
+        }
+
+        await database.write(async () => {
+          try {
+            const message = await database.get<Message>('messages').find(p.id);
+            const oldText = message.text;
+
+            await message.update(m => {
+              m.isDeleted = true;
+              m.deletedAt = new Date(p.deletedAt).getTime();
+              m.deleteType = p.deleteType;
+              m.deleteStatus = 'synced';
+            });
+
+            const chat = await database.get<Chat>('chats').find(message.chatId);
+            if (chat.lastMessageText === oldText) {
+              await chat.update(c => {
+                c.lastMessageText = 'This message was deleted';
+              });
+            }
+          } catch (e) {
+            console.warn(
+              '[WebSocket] Cannot process incoming DELETE_MSG, message not found:',
+              p.id,
+            );
+          }
         });
         break;
       }
@@ -118,14 +149,21 @@ const handleIncomingMessage = async (data: WSIncomingPayload) => {
       }
 
       case 'TYPING': {
-        const p = payload as WSTypingMsg['payload'];
-        const { setTyping } = require('../store/chatStore').useChatStore.getState();
+        const p = payload as WSReceiveTyping['payload'];
+        const { setTyping } = useChatStore.getState();
         setTyping(p.chatId, p.userId, p.isTyping);
         break;
       }
 
-      case 'ACK_MSG': {
-        const p = payload as WSAckMsg['payload'];
+      case 'PRESENCE': {
+        const p = payload as WSReceivePresence['payload'];
+        const { setPresence } = useChatStore.getState();
+        setPresence(p.userId, p.status);
+        break;
+      }
+
+      case 'ACK_SEND_MSG': {
+        const p = payload as WSAckSendMsg['payload'];
         await database.write(async () => {
           const message = await database.get<Message>('messages').find(p.id);
           await message.update(m => {
@@ -137,7 +175,7 @@ const handleIncomingMessage = async (data: WSIncomingPayload) => {
       }
 
       case 'MSG_STATUS': {
-        const p = payload as WSMsgStatus['payload'];
+        const p = payload as WSReceiveMsgStatus['payload'];
         await database.write(async () => {
           const message = await database
             .get<Message>('messages')

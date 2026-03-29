@@ -40,12 +40,26 @@ export interface WSDeleteMsg {
   };
 }
 
-export interface WSTypingMsg {
+export interface WSSendTyping {
   type: 'TYPING';
   payload: {
     chatId: string;
-    userId: string; // Server adds this, client omits it in outgoing
     isTyping: boolean;
+  };
+}
+
+export interface WSSendMsgStatus {
+  type: 'MSG_STATUS';
+  payload: {
+    messageId: string;
+    status: 'delivered' | 'read';
+  };
+}
+
+export interface WSSendPresence {
+  type: 'PRESENCE';
+  payload: {
+    status: 'online' | 'offline';
   };
 }
 
@@ -54,12 +68,30 @@ export interface WSTypingMsg {
    —————————————————————————————————————————————————————————————————————————————————————— */
 
 export interface WSReceivedMsg {
-  type: 'SEND_MSG';
+  type: 'RECEIVE_MSG';
   payload: WSMsgPayload & { serverTimestamp: number };
 }
 
-export interface WSAckMsg {
-  type: 'ACK_MSG';
+export interface WSReceiveEditMsg {
+  type: 'RECEIVE_EDIT_MSG';
+  payload: {
+    id: string;
+    text: string;
+    editedAt: string;
+  };
+}
+
+export interface WSReceiveDeleteMsg {
+  type: 'RECEIVE_DELETE_MSG';
+  payload: {
+    id: string;
+    deleteType: 'deleteForEveryone' | 'deleteForMe';
+    deletedAt: string;
+  };
+}
+
+export interface WSAckSendMsg {
+  type: 'ACK_SEND_MSG';
   payload: {
     id: string; // The original ID acknowledging
     serverTimestamp: number;
@@ -82,7 +114,16 @@ export interface WSAckDeleteMsg {
   };
 }
 
-export interface WSMsgStatus {
+export interface WSReceiveTyping {
+  type: 'TYPING';
+  payload: {
+    chatId: string;
+    userId: string;
+    isTyping: boolean;
+  };
+}
+
+export interface WSReceiveMsgStatus {
   type: 'MSG_STATUS';
   payload: {
     messageId: string;
@@ -90,22 +131,33 @@ export interface WSMsgStatus {
   };
 }
 
+export interface WSReceivePresence {
+  type: 'PRESENCE';
+  payload: {
+    userId: string;
+    status: 'online' | 'offline';
+  };
+}
+
 /* ——————————————————————————————————————————————————————————————————————————————————————
    UNIFIED PAYLOAD TYPES
    —————————————————————————————————————————————————————————————————————————————————————— */
 
-export type WSIncomingPayload = 
-  | WSReceivedMsg 
-  | WSAckMsg 
-  | WSMsgStatus 
-  | WSEditMsg 
-  | WSAckEditMsg 
-  | WSDeleteMsg 
-  | WSAckDeleteMsg 
-  | WSTypingMsg;
+export type WSIncomingPayload =
+  | WSReceivedMsg
+  | WSReceiveEditMsg
+  | WSReceiveDeleteMsg
+  | WSAckSendMsg
+  | WSAckEditMsg
+  | WSAckDeleteMsg
+  | WSReceiveMsgStatus
+  | WSReceiveTyping
+  | WSReceivePresence;
 
-export type WSOutgoingPayload = 
-  | WSSendMsg 
-  | WSEditMsg 
-  | WSDeleteMsg 
-  | (Omit<WSTypingMsg, 'payload'> & { payload: Omit<WSTypingMsg['payload'], 'userId'> });
+export type WSOutgoingPayload =
+  | WSSendMsg
+  | WSEditMsg
+  | WSDeleteMsg
+  | WSSendTyping
+  | WSSendMsgStatus
+  | WSSendPresence;
