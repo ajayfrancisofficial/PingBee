@@ -8,7 +8,18 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { Edges, SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Edges,
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { LogoutButton } from '../components/common/LogoutButton';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -71,28 +82,99 @@ export const YouScreen = () => {
   const iconColor = theme.colors.text.secondary;
   const iconSize = sizing.iconSizes.base;
 
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerTitleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [80, 120],
+      [0, 1],
+      Extrapolation.CLAMP
+    );
+    const translateY = interpolate(
+      scrollY.value,
+      [80, 120],
+      [10, 0],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
+
+  const bodyNameStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [60, 100],
+      [1, 0],
+      Extrapolation.CLAMP
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [60, 100],
+      [1, 0.9],
+      Extrapolation.CLAMP
+    );
+
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
+
+  const aboutBubbleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, 50],
+      [1, 0],
+      Extrapolation.CLAMP
+    );
+    return { opacity };
+  });
+
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: name ?? 'You',
+      headerTitle: () => (
+        <Animated.View style={headerTitleStyle}>
+          <Text style={styles.headerTitleText}>{name}</Text>
+        </Animated.View>
+      ),
     });
-  }, [navigation]);
+  }, [navigation, name, headerTitleStyle, styles.headerTitleText]);
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
-      <FlatList
+      <Animated.FlatList
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         data={[]}
         keyExtractor={(_, index) => index.toString()}
         renderItem={() => null}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: Platform.OS === 'ios' ? 0 : insets.top },
+        ]}
         ListHeaderComponent={
           <>
+            {/* Top Spacing for header */}
+            <View style={{ height: Platform.OS === 'ios' ? 44 : 56 }} />
+
             {/* Profile Section */}
             <View style={styles.profileSection}>
               {/* About tooltip */}
-              <View style={styles.aboutBubble}>
+              <Animated.View style={[styles.aboutBubble, aboutBubbleStyle]}>
                 <Text style={styles.aboutText}>{about}</Text>
                 <View style={styles.aboutBubbleArrow} />
-              </View>
+              </Animated.View>
 
               {/* Profile Image */}
               <TouchableOpacity
@@ -106,12 +188,12 @@ export const YouScreen = () => {
               </TouchableOpacity>
 
               {/* Name */}
-              <View style={styles.nameRow}>
+              <Animated.View style={[styles.nameRow, bodyNameStyle]}>
                 <Text style={styles.nameText}>{name}</Text>
                 <View style={styles.plusBadge}>
                   <Text style={styles.plusText}>+</Text>
                 </View>
-              </View>
+              </Animated.View>
             </View>
 
             {/* Settings Label */}
@@ -248,6 +330,11 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       ...typography.variants.heading1,
       fontSize: 28, // slight override
       color: colors.text.primary,
+    },
+    headerTitleText: {
+      ...typography.variants.heading3,
+      color: colors.text.primary,
+      fontWeight: typography.weights.bold,
     },
     plusBadge: {
       width: 22,
