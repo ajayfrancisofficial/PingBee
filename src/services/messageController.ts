@@ -4,7 +4,7 @@ import Message from '../db/models/Message';
 import Chat from '../db/models/Chat';
 import { useUserStore } from '../store/userStore';
 import { sendRaw, getIsConnected } from './websocket';
-import type { WSOutgoingMsg } from '../types/websocket';
+import type { WSSendMsg } from '../types/websocket';
 
 /**
  * Detect media type from an IMessage's optional fields.
@@ -25,10 +25,10 @@ const getMediaInfo = (
  * Format a WatermelonDB Message record into the WebSocket MSG payload.
  * This is also used by OutgoingSync to retry pending messages.
  */
-export const formatMessagePayload = (message: Message): WSOutgoingMsg => ({
-  type: 'MSG',
+export const formatMessagePayload = (message: Message): WSSendMsg => ({
+  type: 'SEND_MSG',
   payload: {
-    tempId: message.id,
+    id: message.id,
     chatId: message.chatId,
     text: message.text,
     senderId: message.senderId,
@@ -115,4 +115,123 @@ export const sendMessage = async (
   }
 
   return savedMessage.id;
+};
+
+/**
+ * Edit an existing message.
+ * @param messageId - The ID of the message to edit
+ * @param newText - The new content of the message
+ */
+export const editMessage = async (
+  messageId: string,
+  newText: string,
+): Promise<void> => {
+  const editedAt = new Date().toISOString();
+
+  await database.write(async () => {
+    const message = await database.get<Message>('messages').find(messageId);
+
+    // Can only edit if it's our own message and within time limit
+    if (!message.isEditable) {
+      throw new Error('Message is not editable');
+    }
+
+    await message.update(m => {
+      m.text = newText;
+      m.isEdited = true;
+      m.editedAt = new Date(editedAt).getTime();
+      m.editStatus = 'pending'; // Mark for sync
+    });
+
+    // Update parent chat's last message text if this was the last message
+    try {
+      const chat = await database.get<Chat>('chats').find(message.chatId);
+      if (chat.lastMessageText === message.text) {
+        await chat.update(c => {
+          c.lastMessageText = newText;
+        });
+      }
+    } catch {
+      // Chat update optional
+    }
+  });
+
+  if (getIsConnected()) {
+    sendRaw({
+      type: 'EDIT_MSG',
+      payload: {
+        id: messageId,
+        text: newText,
+        editedAt,
+      },
+    });
+  }
+};
+
+/**
+ * Delete a message.
+ * @param messageId - ID of message to delete
+ * @param type - 'deleteForEveryone' (syncs to everyone) or 'deleteForMe' (syncs to your other devices only)
+ */
+export const deleteMessage = async (
+  messageId: string,
+  type: 'deleteForEveryone' | 'deleteForMe',
+): Promise<void> => {
+  const deletedAt = new Date().toISOString();
+
+  await database.write(async () => {
+    const message = await database.get<Message>('messages').find(messageId);
+
+    if (type === 'deleteForEveryone' && !message.isDeletable) {
+      throw new Error('Message is no longer deletable for everyone');
+    }
+
+    await message.update(m => {
+      m.isDeleted = true;
+      m.deletedAt = new Date(deletedAt).getTime();
+      m.deleteType = type;
+      m.deleteStatus = 'pending'; // Always sync delete preference
+      if (type === 'deleteForMe') {
+        m.isDeletedForMe = true;
+      }
+    });
+
+    // For "delete for everyone", update chat's last message text
+    if (type === 'deleteForEveryone') {
+      try {
+        const chat = await database.get<Chat>('chats').find(message.chatId);
+        await chat.update(c => {
+          c.lastMessageText = 'This message was deleted';
+        });
+      } catch {
+        // Chat update optional
+      }
+    }
+  });
+
+  if (getIsConnected()) {
+    sendRaw({
+      type: 'DELETE_MSG',
+      payload: {
+        id: messageId,
+        deleteType: type,
+        deletedAt,
+      },
+    });
+  }
+};
+
+/**
+ * Send typing indicator status to the chat.
+ */
+export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
+  if (getIsConnected()) {
+    sendRaw({
+      type: 'TYPING',
+      payload: {
+        chatId,
+        isTyping,
+      },
+    });
+  }
 };

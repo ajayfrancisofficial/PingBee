@@ -16,8 +16,30 @@ export default class Message extends Model {
   @field('status') status!: 'pending' | 'sent' | 'delivered' | 'read'
   @field('is_mine') isMine!: boolean
   @field('reply_to_id') replyToId?: string
+  @field('is_edited') isEdited!: boolean
+  @field('edited_at') editedAt?: number
+  @field('edit_status') editStatus?: 'pending' | 'synced'
+  @field('is_deleted') isDeleted!: boolean
+  @field('deleted_at') deletedAt?: number
+  @field('delete_type') deleteType?: 'deleteForEveryone' | 'deleteForMe'
+  @field('delete_status') deleteStatus?: 'pending' | 'synced'
+  @field('is_deleted_for_me') isDeletedForMe!: boolean
   @date('created_at') createdAt!: number
   @field('server_timestamp') serverTimestamp?: number
 
   @immutableRelation('chats', 'chat_id') chat!: Relation<Chat>
+
+  /** Whether the message can still be edited (within 15 mins and not deleted) */
+  get isEditable(): boolean {
+    const fifteenMins = 15 * 60 * 1000;
+    const now = Date.now();
+    return this.isMine && !this.isDeleted && (now - this.createdAt < fifteenMins);
+  }
+
+  /** Whether the message can still be deleted (within 1 hour) */
+  get isDeletable(): boolean {
+    const oneHour = 60 * 60 * 1000;
+    const now = Date.now();
+    return this.isMine && (now - this.createdAt < oneHour);
+  }
 }
