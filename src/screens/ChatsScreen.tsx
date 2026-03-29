@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useLayoutEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Image } from 'react-native';
 import { useLocalChats } from '../hooks/db/useLocalChats';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
@@ -8,7 +8,7 @@ import Chat from '../db/models/Chat';
 
 const ChatsScreen = () => {
   const navigation = useNavigation();
-  const chats = useLocalChats();
+  const { chats, loadMore, isLoadingMore, hasMore } = useLocalChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
@@ -40,7 +40,11 @@ const ChatsScreen = () => {
       }}
     >
       <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
+        {item.avatarUrl ? (
+          <Image source={{ uri: item.avatarUrl }} style={styles.avatarImage} />
+        ) : (
+          <Text style={styles.avatarText}>{getInitials(item.name)}</Text>
+        )}
       </View>
 
       <View style={styles.chatContent}>
@@ -68,6 +72,15 @@ const ChatsScreen = () => {
     </Pressable>
   );
 
+  const renderFooter = () => {
+    if (!isLoadingMore || !hasMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator color={theme.colors.brand.primary} />
+      </View>
+    );
+  };
+
   return (
     <FlatList
       style={styles.container}
@@ -77,6 +90,9 @@ const ChatsScreen = () => {
       renderItem={renderItem}
       contentContainerStyle={styles.list}
       showsVerticalScrollIndicator={false}
+      onEndReached={loadMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={renderFooter}
     />
   );
 };
@@ -112,6 +128,11 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
       marginRight: spacing.md,
       borderWidth: 1,
       borderColor: colors.borders.light,
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
     },
     avatarText: {
       ...typography.variants.heading1,
@@ -134,9 +155,7 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
     lastMessageUnread: {
       ...typography.variants.description,
       fontWeight: typography.weights.medium,
-      color: typography.variants.bodyMedium.fontWeight
-        ? colors.brand.primary
-        : colors.brand.primary,
+      color: colors.brand.primary,
     },
     badge: {
       backgroundColor: colors.brand.primary,
@@ -152,6 +171,10 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
       color: colors.absolute.white,
       ...typography.variants.caption,
       fontWeight: '700', // keeping bold
+    },
+    footerLoader: {
+      paddingVertical: spacing.md,
+      alignItems: 'center',
     },
     errorText: {
       textAlign: 'center',

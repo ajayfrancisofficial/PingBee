@@ -2,6 +2,8 @@ import { database } from '../db';
 import Message from '../db/models/Message';
 import Chat from '../db/models/Chat';
 import { performOutgoingSync } from './sync/OutgoingSync';
+import { performIncomingSync } from './sync/IncomingSync';
+import { setWsDisconnectedAt } from '../utils/syncStorage';
 import { useChatStore } from '../store/chatStore';
 import type {
   WSIncomingPayload,
@@ -203,7 +205,10 @@ export const connect = () => {
     console.log('[WebSocket] Connected');
     isConnected = true;
 
-    // Retry any messages that were queued while offline
+    // 1. Fetch events we missed while offline (incoming first so state is fresh)
+    performIncomingSync();
+
+    // 2. Retry pending outgoing messages
     performOutgoingSync();
   };
 
@@ -219,6 +224,8 @@ export const connect = () => {
   socket.onclose = () => {
     console.log('[WebSocket] Disconnected. Reconnecting in', reconnectInterval);
     isConnected = false;
+    // Record the disconnect time so IncomingSync can skip if reconnect was brief
+    setWsDisconnectedAt(Date.now());
     setTimeout(() => connect(), reconnectInterval);
   };
 };

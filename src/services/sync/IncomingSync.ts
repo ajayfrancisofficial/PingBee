@@ -1,47 +1,69 @@
-import { database } from '../../db';
-import Message from '../../db/models/Message';
+/**
+ * IncomingSync.ts
+ *
+ * Fetches all server events the device missed while it was offline/killed.
+ * Called on WebSocket reconnection (after InitialLoad has populated the DB).
+ *
+ * Skip conditions (to avoid unnecessary REST calls):
+ *  - Data was synced very recently (< 60 seconds) → skip
+ *  - WS was only disconnected briefly (< 15 second gap) → skip (quick network blip)
+ */
 
-let lastSyncTimestamp: number = 0;
+import { fetchMissedSync } from '../../api/chatApi';
+import { applyMissedSyncEvents } from '../../db/upsert';
+import {
+  getLastSyncedAt,
+  setLastSyncedAt,
+  isSyncFresh,
+  wasShortDisconnect,
+} from '../../utils/syncStorage';
 
-export const performIncomingSync = async () => {
+let isSyncing = false;
+
+/**
+ * Fetch and apply all missed events since the last successful sync.
+ * Safe to call multiple times — will not run concurrently.
+ */
+export const performIncomingSync = async (): Promise<void> => {
+  if (isSyncing) {
+    console.log('[IncomingSync] Already syncing, skipping.');
+    return;
+  }
+
+  // ── Skip guards ────────────────────────────────────────────────────────────
+
+  if (wasShortDisconnect()) {
+    console.log('[IncomingSync] WS dropped briefly — skipping missed sync.');
+    return;
+  }
+
+  if (isSyncFresh()) {
+    console.log('[IncomingSync] Data is fresh — skipping missed sync.');
+    return;
+  }
+
+  isSyncing = true;
+
   try {
-    console.log('[IncomingSync] Starting sync since:', lastSyncTimestamp);
-    
-    // Simulating API call
-    const mockNewMessages = [
-      {
-        id: 'remote-1',
-        chatId: '1',
-        senderId: '2',
-        text: 'Hey! I sent this while you were offline.',
-        createdAt: new Date().toISOString(),
-        serverTimestamp: Date.now(),
-      }
-    ];
+    const since = getLastSyncedAt();
+    console.log('[IncomingSync] Fetching missed events since:', new Date(since).toISOString());
 
-    if (mockNewMessages.length > 0) {
-      await database.write(async () => {
-        const messagesCollection = database.get<Message>('messages');
-        const messageCreations = mockNewMessages.map(msg => 
-          messagesCollection.prepareCreate(m => {
-            m.chatId = msg.chatId;
-            m.senderId = msg.senderId;
-            m.text = msg.text;
-            m.status = 'sent';
-            m.isMine = false;
-            m.createdAt = new Date(msg.createdAt).getTime();
-            m.serverTimestamp = msg.serverTimestamp;
-          })
-        );
-        
-        await database.batch(...messageCreations);
-      });
-      
-      lastSyncTimestamp = Date.now();
+    const response = await fetchMissedSync(since);
+
+    if (response.events.length === 0) {
+      console.log('[IncomingSync] No missed events.');
+    } else {
+      console.log(`[IncomingSync] Applying ${response.events.length} missed event(s)...`);
+      await applyMissedSyncEvents(response.events);
+      console.log('[IncomingSync] Done.');
     }
-    
-    console.log('[IncomingSync] Sync complete');
+
+    // Always update the timestamp to the server's clock on success
+    setLastSyncedAt(response.synced_at);
   } catch (error) {
-    console.error('[IncomingSync] Sync failed:', error);
+    console.error('[IncomingSync] Failed:', error);
+    // Do not update lastSyncedAt — will retry on next reconnection
+  } finally {
+    isSyncing = false;
   }
 };

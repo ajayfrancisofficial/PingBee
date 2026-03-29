@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useCallback, useState, useMemo } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import {
   useNavigation,
   type StaticScreenProps,
@@ -41,7 +41,14 @@ const ChatScreen = ({ route }: Props) => {
   const setActiveChatId = useChatStore(s => s.setActiveChatId);
 
   // Observe messages from WatermelonDB (auto-updates on any DB change)
-  const rawMessages = useLocalMessages(chatId);
+  const {
+    messages: rawMessages,
+    loadMore,
+    isLoadingMore,
+    isInitialLoading,
+    hasMore,
+  } = useLocalMessages(chatId);
+
   const messages = useMemo(
     () => rawMessages.map(msg => mapToGiftedChat(msg, userId)),
     [rawMessages, userId],
@@ -51,12 +58,27 @@ const ChatScreen = ({ route }: Props) => {
   const appTheme = useAppTheme();
   const styles = useMemo(() => makeStyles(appTheme), [appTheme]);
 
-  // Track active chat for unread count logic
+  // Track active chat and handle header spinner
   useLayoutEffect(() => {
-    navigation.setOptions({ title: name });
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitleText} numberOfLines={1}>
+            {name}
+          </Text>
+          {isInitialLoading && (
+            <ActivityIndicator
+              size="small"
+              color={appTheme.colors.brand.primary}
+              style={styles.headerSpinner}
+            />
+          )}
+        </View>
+      ),
+    });
     setActiveChatId(chatId);
     return () => setActiveChatId(null);
-  }, [navigation, name, chatId, setActiveChatId]);
+  }, [navigation, name, chatId, setActiveChatId, isInitialLoading, appTheme, styles]);
 
   // Handle when user hits SEND in GiftedChat
   const onSend = useCallback(
@@ -75,7 +97,6 @@ const ChatScreen = ({ route }: Props) => {
   return (
     <SafeAreaView style={styles.container}>
       <GiftedChat
-        messagesContainerStyle={{ borderWidth: 1 }}
         messages={messages}
         onSend={msgs => onSend(msgs)}
         user={user}
@@ -89,6 +110,12 @@ const ChatScreen = ({ route }: Props) => {
         timeFormat="LT"
         dateFormat="LL"
         isTyping={false}
+        // @ts-ignore - loadEarlier props exist in GiftedChat but may have typing conflicts with the custom reply prop
+        loadEarlier={hasMore}
+        // @ts-ignore
+        onLoadEarlier={loadMore}
+        // @ts-ignore
+        isLoadingEarlier={isLoadingMore}
         listProps={{ keyboardShouldPersistTaps: 'handled' }}
         reply={{
           swipe: {
@@ -105,10 +132,21 @@ const ChatScreen = ({ route }: Props) => {
   );
 };
 
-const makeStyles = ({ colors }: AppTheme) =>
+const makeStyles = ({ colors, typography, spacing }: AppTheme) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.backgrounds.default },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    headerTitleContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    headerTitleText: {
+      ...typography.variants.bodyMedium,
+      fontWeight: 'bold',
+      color: colors.text.primary,
+    },
+    headerSpinner: {
+      marginLeft: spacing.sm,
+    },
   });
 
 export default ChatScreen;

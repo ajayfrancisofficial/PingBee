@@ -13,6 +13,7 @@ export default class Chat extends Model {
   @field('unread_count') unreadCount!: number
   @field('last_message_text') lastMessageText?: string
   @date('updated_at') updatedAt!: number
+  @field('avatar_url') avatarUrl?: string
 
   @children('messages') messages!: Query<Message>
 }

@@ -9,4 +9,11 @@ export const ENDPOINTS = {
   USER: {
     PROFILE: '/user/profile',
   },
+  CHATS: {
+    LIST: '/chats',
+    MESSAGES: (chatId: string) => `/chats/${chatId}/messages`,
+  },
+  SYNC: {
+    MISSED: '/sync/missed',
+  },
 };
