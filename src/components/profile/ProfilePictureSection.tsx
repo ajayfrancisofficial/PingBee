@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { useUserStore } from '../../store/userStore';
@@ -7,6 +8,7 @@ import { ConfirmationModal } from '../common/ConfirmationModal';
 import { ProfilePictureOptionsModal } from './ProfilePictureOptionsModal';
 import { MediaUtils } from '../../utils/media';
 import { updateProfilePictureApi } from '../../services/userService';
+import { TransitionTags } from '../../constants/transitions';
 
 export const ProfilePictureSection = () => {
   const theme = useAppTheme();
@@ -101,7 +103,11 @@ export const ProfilePictureSection = () => {
   return (
     <>
       <View style={styles.imageSection}>
-        <Image source={{ uri: profilePicture }} style={styles.profileImage} />
+        <Animated.Image
+          source={{ uri: profilePicture }}
+          style={styles.profileImage}
+          sharedTransitionTag={TransitionTags.profileImage}
+        />
         <TouchableOpacity
           activeOpacity={0.6}
           onPress={() => setIsOptionsVisible(true)}

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Platform,
   FlatList,
-  Image,
   TouchableOpacity,
 } from 'react-native';
 import {
@@ -35,6 +34,7 @@ import {
   MessageCircle,
   ChevronRight,
 } from 'lucide-react-native';
+import { TransitionTags } from '../constants/transitions';
 
 const edges: Edges = Platform.select({
   ios: ['bottom'],
@@ -86,7 +86,7 @@ export const YouScreen = () => {
   const scrollY = useSharedValue(0);
 
   const scrollHandler = useAnimatedScrollHandler({
-    onScroll: (event) => {
+    onScroll: event => {
       scrollY.value = event.contentOffset.y;
     },
   });
@@ -96,13 +96,13 @@ export const YouScreen = () => {
       scrollY.value,
       [80, 120],
       [0, 1],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const translateY = interpolate(
       scrollY.value,
       [80, 120],
       [10, 0],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
 
     return {
@@ -116,13 +116,13 @@ export const YouScreen = () => {
       scrollY.value,
       [60, 100],
       [1, 0],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     const scale = interpolate(
       scrollY.value,
       [60, 100],
       [1, 0.9],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
 
     return {
@@ -136,7 +136,7 @@ export const YouScreen = () => {
       scrollY.value,
       [0, 50],
       [1, 0],
-      Extrapolation.CLAMP
+      Extrapolation.CLAMP,
     );
     return { opacity };
   });
@@ -181,9 +181,10 @@ export const YouScreen = () => {
                 onPress={() => navigation.navigate('Profile')}
                 activeOpacity={0.8}
               >
-                <Image
+                <Animated.Image
                   source={{ uri: profilePicture }}
                   style={styles.profileImage}
+                  sharedTransitionTag={TransitionTags.profileImage}
                 />
               </TouchableOpacity>
 
