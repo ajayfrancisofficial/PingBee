@@ -1,4 +1,4 @@
-import { axiosClient } from '../../api/RESTApi/axiosClient';
+import { apiClient } from '../../api/RESTApi/apiClient';
 import { ENDPOINTS } from '../../api/RESTApi/endpoints';
 
 export type UpdateProfilePictureType = 'removed' | 'gallery' | 'camera';
@@ -57,12 +57,12 @@ export const userService = {
 
   getAllUsers: async () => {
     // Note: Swagger documentation indicates this is a POST request
-    const response = await axiosClient.post(ENDPOINTS.USERS.LIST);
+    const response = await apiClient.post(ENDPOINTS.USERS.LIST);
     return response.data;
   },
 
   getOrCreateConversation: async (userId: string) => {
-    const response = await axiosClient.post(ENDPOINTS.USERS.GET_CONVERSATION(userId));
+    const response = await apiClient.post(ENDPOINTS.USERS.GET_CONVERSATION(userId));
     return response.data;
   },
 };

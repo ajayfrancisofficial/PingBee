@@ -3,7 +3,7 @@ import * as Keychain from 'react-native-keychain';
 import { API_BASE_URL, ENDPOINTS } from './endpoints';
 import { useAuthStore } from '../../store/authStore';
 
-export const axiosInstance = axios.create({
+export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
@@ -12,7 +12,7 @@ export const axiosInstance = axios.create({
 });
 
 // Request interceptor: attach access token seamlessly
-axiosInstance.interceptors.request.use(
+apiClient.interceptors.request.use(
   async config => {
     const credentials = await Keychain.getGenericPassword({
       service: 'accessToken',
@@ -26,7 +26,7 @@ axiosInstance.interceptors.request.use(
 );
 
 // Response interceptor: auto-refresh token if 401 triggers
-axiosInstance.interceptors.response.use(
+apiClient.interceptors.response.use(
   response => response,
   async error => {
     const originalRequest = error.config;
@@ -49,17 +49,20 @@ axiosInstance.interceptors.response.use(
           },
         );
 
-        // Save new tokens (backend returns snake_case: access_token, refresh_token)
-        await Keychain.setGenericPassword('token', data.access_token, {
+        // Save new tokens (backend returns snake_case inside data wrapper)
+        const tokenData = data.data;
+        if (!tokenData) throw new Error('Token data missing in refresh response');
+
+        await Keychain.setGenericPassword('token', tokenData.access_token, {
           service: 'accessToken',
         });
-        await Keychain.setGenericPassword('token', data.refresh_token, {
+        await Keychain.setGenericPassword('token', tokenData.refresh_token, {
           service: 'refreshToken',
         });
 
         // Update header and retry previous request
-        originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
-        return axiosInstance(originalRequest);
+        originalRequest.headers.Authorization = `Bearer ${tokenData.access_token}`;
+        return apiClient(originalRequest);
       } catch (refreshError) {
         // If the refresh token also fails, explicitly flush secure tokens and logout
         useAuthStore.getState().logout();

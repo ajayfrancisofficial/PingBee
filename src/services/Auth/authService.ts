@@ -1,18 +1,23 @@
 import * as Keychain from 'react-native-keychain';
-import { authApi } from '../../api/RESTApi/auth';
+import { authApi } from '../../api/RESTApi/authApi';
 import { useAuthStore } from '../../store/authStore';
-import { LoginRequest, RegisterRequest } from '../../types/auth';
+import type {
+  UserLoginBody,
+  UserRegisterBody,
+} from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const authService = {
-  login: async (request: LoginRequest) => {
+  login: async (request: UserLoginBody) => {
     try {
       const data = await authApi.login(request);
+      // 1. Store tokens securely (backend returns snake_case inside data wrapper)
+      const tokenData = data.data;
+      if (!tokenData) throw new Error('Auth data missing in response');
 
-      // 1. Store tokens securely
-      await Keychain.setGenericPassword('token', data.accessToken, {
+      await Keychain.setGenericPassword('token', tokenData.access_token, {
         service: 'accessToken',
       });
-      await Keychain.setGenericPassword('token', data.refreshToken, {
+      await Keychain.setGenericPassword('token', tokenData.refresh_token, {
         service: 'refreshToken',
       });
 
@@ -26,7 +31,7 @@ export const authService = {
     }
   },
 
-  register: async (request: RegisterRequest) => {
+  register: async (request: UserRegisterBody) => {
     console.log('🚀 ~ request:', request);
     try {
       const data = await authApi.register(request);
@@ -40,7 +45,7 @@ export const authService = {
 
   getProfile: async () => {
     try {
-      return await authApi.getProfile();
+      return await authApi.getMe();
     } catch (error) {
       console.error('[AuthService] Get profile failed:', error);
       throw error;

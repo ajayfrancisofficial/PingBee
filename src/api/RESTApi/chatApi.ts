@@ -5,7 +5,7 @@
  * All functions return typed responses derived from src/types/api.ts.
  */
 
-import { axiosInstance } from './axiosInstance';
+import { apiClient } from './apiClient';
 import { ENDPOINTS } from './endpoints';
 import type {
   ApiChatListResponse,
@@ -36,7 +36,7 @@ export const fetchChats = async (
     params.cursor = cursor;
   }
 
-  const { data } = await axiosInstance.get<ApiChatListResponse>(
+  const { data } = await apiClient.get<ApiChatListResponse>(
     ENDPOINTS.CHATS.LIST,
     { params },
   );
@@ -55,7 +55,7 @@ export const fetchChats = async (
 export const fetchMessages = async (
   chatId: string,
   cursor?: string,
-): Promise<ApiMessageListResponse> => {
+ ): Promise<ApiMessageListResponse> => {
   const params: Record<string, string | number> = {
     limit: MESSAGES_PAGE_SIZE,
   };
@@ -63,7 +63,7 @@ export const fetchMessages = async (
     params.cursor = cursor;
   }
 
-  const { data } = await axiosInstance.get<ApiMessageListResponse>(
+  const { data } = await apiClient.get<ApiMessageListResponse>(
     ENDPOINTS.CHATS.MESSAGES(chatId),
     { params },
   );
@@ -80,7 +80,7 @@ export const fetchMessages = async (
 export const fetchMissedSync = async (
   since: number,
 ): Promise<MissedSyncResponse> => {
-  const { data } = await axiosInstance.get<MissedSyncResponse>(
+  const { data } = await apiClient.get<MissedSyncResponse>(
     ENDPOINTS.SYNC.MISSED,
     { params: { since } },
   );
