@@ -1,39 +1,59 @@
 import * as Keychain from 'react-native-keychain';
-import { axiosClient } from '../../api/RESTApi/axiosClient';
-import { ENDPOINTS } from '../../api/RESTApi/endpoints';
+import { authApi } from '../../api/RESTApi/auth';
 import { useAuthStore } from '../../store/authStore';
+import { LoginRequest, RegisterRequest } from '../../types/auth';
 
 export const authService = {
-  login: async (username: string, password: string) => {
+  login: async (request: LoginRequest) => {
     try {
-      const response = await axiosClient.post(ENDPOINTS.AUTH.LOGIN, { username, password });
-      const { access_token } = response.data;
+      const data = await authApi.login(request);
 
-      // Store the token securely
-      await Keychain.setGenericPassword('token', access_token, { service: 'accessToken' });
-      
-      // Update store
+      // 1. Store tokens securely
+      await Keychain.setGenericPassword('token', data.accessToken, {
+        service: 'accessToken',
+      });
+      await Keychain.setGenericPassword('token', data.refreshToken, {
+        service: 'refreshToken',
+      });
+
+      // 2. Update global auth state
       useAuthStore.getState().setLoggedIn(true);
-      
-      return response.data;
+
+      return data;
     } catch (error) {
-      console.error('Login failed', error);
+      console.error('[AuthService] Login failed:', error);
       throw error;
     }
   },
 
-  register: async (data: any) => {
+  register: async (request: RegisterRequest) => {
+    console.log('🚀 ~ request:', request);
     try {
-      const response = await axiosClient.post(ENDPOINTS.AUTH.REGISTER, data);
-      return response.data;
+      const data = await authApi.register(request);
+      console.log('🚀 ~ data:', data);
+      return data;
     } catch (error) {
-      console.error('Registration failed', error);
+      console.error('[AuthService] Registration failed:', error);
       throw error;
     }
   },
 
   getProfile: async () => {
-    const response = await axiosClient.get(ENDPOINTS.AUTH.ME);
-    return response.data;
+    try {
+      return await authApi.getProfile();
+    } catch (error) {
+      console.error('[AuthService] Get profile failed:', error);
+      throw error;
+    }
+  },
+
+  logout: async () => {
+    try {
+      await Keychain.resetGenericPassword({ service: 'accessToken' });
+      await Keychain.resetGenericPassword({ service: 'refreshToken' });
+      useAuthStore.getState().setLoggedIn(false);
+    } catch (error) {
+      console.error('[AuthService] Logout failed:', error);
+    }
   },
 };

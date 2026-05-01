@@ -26,6 +26,8 @@ import { ThemeSwitch } from '../../components/common/ThemeSwitch';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { AuthStackParamList } from '../../navigation/AuthStack';
+import { authService } from '../../services/Auth/authService';
+import { Alert } from 'react-native';
 
 export const RegisterScreen = () => {
   const [firstName, setFirstName] = useState('');
@@ -45,15 +47,33 @@ export const RegisterScreen = () => {
 
   const handleRegister = async () => {
     if (!email || !password || !firstName || !lastName || !username) return;
-    if (password !== confirmPassword) return;
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
 
     setLoading(true);
-    // Functionality will be implemented later
-    setTimeout(() => {
+    try {
+      const response = await authService.register({
+        firstname: firstName,
+        lastname: lastName,
+        username,
+        email,
+        password,
+      });
+
+      if (response.success) {
+        Alert.alert('Success', 'Account created successfully!', [
+          { text: 'OK', onPress: () => navigation.navigate('Login') },
+        ]);
+      } else {
+        Alert.alert('Error', response.message || 'Registration failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
       setLoading(false);
-      console.log('Registration submitted');
-      navigation.navigate('Login');
-    }, 1500);
+    }
   };
 
   return (
