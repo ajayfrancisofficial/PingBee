@@ -1,19 +1,19 @@
-export const API_BASE_URL = 'https://api.pingbee.com';
+export const API_BASE_URL = 'https://chat-app-81bx.onrender.com';
 
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN: '/auth/login',
-    REGISTER: '/auth/register',
-    REFRESH_TOKEN: '/auth/refresh',
+    LOGIN: '/login',
+    REGISTER: '/register',
+    ME: '/me',
   },
-  USER: {
-    PROFILE: '/user/profile',
+  USERS: {
+    LIST: '/users', // Note: This is a POST request in the API
+    GET_CONVERSATION: (userId: string) => `/conversation/${userId}`,
   },
   CHATS: {
     LIST: '/chats',
-    MESSAGES: (chatId: string) => `/chats/${chatId}/messages`,
-  },
-  SYNC: {
-    MISSED: '/sync/missed',
+    MESSAGES: (chatId: string) => `/messages/${chatId}`,
+    SEND_MESSAGE: (chatId: string) => `/send-message/${chatId}`, // Requires ?message= query param
+    MARK_READ: (chatId: string) => `/messages/read/${chatId}`,
   },
 };

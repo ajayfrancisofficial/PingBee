@@ -1,31 +1,40 @@
 import axios from 'axios';
-
-const BASE_URL = 'https://jsonplaceholder.typicode.com'; // Dummy URL until backend is ready
+import * as Keychain from 'react-native-keychain';
+import { API_BASE_URL } from './endpoints';
 
 export const axiosClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Mock interceptors for auth if needed
 axiosClient.interceptors.request.use(
-  async config => {
-    // Add auth token here when real auth is implemented
+  async (config) => {
+    try {
+      const credentials = await Keychain.getGenericPassword({ service: 'accessToken' });
+      if (credentials) {
+        config.headers.Authorization = `Bearer ${credentials.password}`;
+      }
+    } catch (error) {
+      console.warn('Failed to retrieve auth token', error);
+    }
     return config;
   },
-  error => {
+  (error) => {
     return Promise.reject(error);
-  },
+  }
 );
 
 axiosClient.interceptors.response.use(
-  response => {
-    return response;
-  },
-  error => {
+  (response) => response,
+  (error) => {
+    // Handle 401 errors (unauthorized) - e.g., trigger logout
+    if (error.response?.status === 401) {
+      // In a real app, you might want to redirect to login or refresh token
+      console.warn('Unauthorized request, check auth state.');
+    }
     return Promise.reject(error);
-  },
+  }
 );
