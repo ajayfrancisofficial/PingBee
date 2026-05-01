@@ -69,7 +69,7 @@ export const LoginScreen = () => {
         >
           <View style={styles.header}>
             <Image
-              source={require('../../assets/images/pingbee_logo.png')}
+              source={require('../../assets/images/appLogos/pingbee_logo.png')}
               style={styles.logo}
               resizeMode="contain"
             />

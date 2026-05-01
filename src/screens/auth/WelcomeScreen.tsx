@@ -37,7 +37,7 @@ export const WelcomeScreen = () => {
       <View style={styles.content}>
         <View style={styles.logoContainer}>
           <Image
-            source={require('../../assets/images/pingbee_logo.png')}
+            source={require('../../assets/images/appLogos/pingbee_logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
