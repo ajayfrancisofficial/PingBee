@@ -2,7 +2,7 @@ import { axiosInstance } from './axiosInstance';
 import { ENDPOINTS } from './endpoints';
 import * as Keychain from 'react-native-keychain';
 
-import { LoginRequest, LoginResponse } from '../types/auth';
+import { LoginRequest, LoginResponse } from '../../types/auth';
 
 export const authApi = {
   login: async (request: LoginRequest): Promise<LoginResponse> => {

@@ -11,7 +11,7 @@ import type {
   ApiChatListResponse,
   ApiMessageListResponse,
   MissedSyncResponse,
-} from '../types/api';
+} from '../../types/api';
 
 /** How many chats to fetch per page */
 export const CHATS_PAGE_SIZE = 20;

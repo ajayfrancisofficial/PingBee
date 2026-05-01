@@ -1,10 +1,10 @@
-import { database } from '../db';
-import Message from '../db/models/Message';
-import Chat from '../db/models/Chat';
-import { performOutgoingSync } from './sync/OutgoingSync';
-import { performIncomingSync } from './sync/IncomingSync';
-import { setWsDisconnectedAt } from '../utils/syncStorage';
-import { useChatStore } from '../store/chatStore';
+import { database } from '../../db';
+import Message from '../../db/models/Message';
+import Chat from '../../db/models/Chat';
+import { performOutgoingSync } from '../../services/Sync/OutgoingSync';
+import { performIncomingSync } from '../../services/Sync/IncomingSync';
+import { setWsDisconnectedAt } from '../../utils/syncStorage';
+import { useChatStore } from '../../store/chatStore';
 import type {
   WSIncomingPayload,
   WSOutgoingPayload,
@@ -17,7 +17,7 @@ import type {
   WSReceiveEditMsg,
   WSReceiveDeleteMsg,
   WSReceivePresence,
-} from '../types/websocket';
+} from '../../types/websocket';
 
 let socket: WebSocket | null = null;
 const url = 'wss://echo.websocket.org';

@@ -16,4 +16,7 @@ export const ENDPOINTS = {
     SEND_MESSAGE: (chatId: string) => `/send-message/${chatId}`, // Requires ?message= query param
     MARK_READ: (chatId: string) => `/messages/read/${chatId}`,
   },
+  SYNC: {
+    MISSED: '/sync/missed',
+  },
 };

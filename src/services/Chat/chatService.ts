@@ -1,5 +1,5 @@
-import { axiosClient } from '../api/axiosClient';
-import { ENDPOINTS } from '../api/endpoints';
+import { axiosClient } from '../../api/RESTApi/axiosClient';
+import { ENDPOINTS } from '../../api/RESTApi/endpoints';
 
 export const chatService = {
   getChats: async () => {

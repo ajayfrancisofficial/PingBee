@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
 import { API_BASE_URL, ENDPOINTS } from './endpoints';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from '../../store/authStore';
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,

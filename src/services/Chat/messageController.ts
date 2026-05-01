@@ -1,10 +1,10 @@
 import { IMessage } from 'react-native-gifted-chat';
-import { database } from '../db';
-import Message from '../db/models/Message';
-import Chat from '../db/models/Chat';
-import { useUserStore } from '../store/userStore';
-import { sendRaw, getIsConnected } from './websocket';
-import type { WSSendMsg } from '../types/websocket';
+import { database } from '../../db';
+import Message from '../../db/models/Message';
+import Chat from '../../db/models/Chat';
+import { useUserStore } from '../../store/userStore';
+import { sendRaw, getIsConnected } from '../../api/WebsocketApi/websocket';
+import type { WSSendMsg } from '../../types/websocket';
 
 /**
  * Detect media type from an IMessage's optional fields.
@@ -46,7 +46,7 @@ export const formatMessagePayload = (message: Message): WSSendMsg => ({
  *
  * This is the ONLY function you should call to send messages. Import it anywhere:
  * ```
- * import { sendMessage } from '../services/messageController';
+ * import { sendMessage } from '../services/Chat/messageController';
  *
  * // In GiftedChat's onSend:
  * const onSend = (messages: IMessage[]) => {

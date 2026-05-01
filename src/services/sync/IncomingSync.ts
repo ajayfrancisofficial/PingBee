@@ -9,7 +9,7 @@
  *  - WS was only disconnected briefly (< 15 second gap) → skip (quick network blip)
  */
 
-import { fetchMissedSync } from '../../api/chatApi';
+import { fetchMissedSync } from '../../api/RESTApi/chatApi';
 import { applyMissedSyncEvents } from '../../db/upsert';
 import {
   getLastSyncedAt,

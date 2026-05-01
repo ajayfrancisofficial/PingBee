@@ -16,7 +16,7 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
 import { upsertChats } from '../../db/upsert';
-import { fetchChats } from '../../api/chatApi';
+import { fetchChats } from '../../api/RESTApi/chatApi';
 import {
   getChatsCursor,
   setChatsCursor,

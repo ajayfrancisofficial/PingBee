@@ -3,7 +3,7 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import { upsertMessages } from '../../db/upsert';
-import { fetchMessages } from '../../api/chatApi';
+import { fetchMessages } from '../../api/RESTApi/chatApi';
 import {
   getMessagesCursor,
   setMessagesCursor,

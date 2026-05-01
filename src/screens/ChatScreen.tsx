@@ -6,7 +6,7 @@ import {
 } from '@react-navigation/native';
 import { GiftedChat, IMessage, ReplyMessage } from 'react-native-gifted-chat';
 import { useLocalMessages } from '../hooks/db/useLocalMessages';
-import { sendMessage } from '../services/messageController';
+import { sendMessage } from '../services/Chat/messageController';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';

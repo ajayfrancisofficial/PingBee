@@ -1,7 +1,7 @@
 import * as Keychain from 'react-native-keychain';
-import { axiosClient } from '../api/axiosClient';
-import { ENDPOINTS } from '../api/endpoints';
-import { useAuthStore } from '../store/authStore';
+import { axiosClient } from '../../api/RESTApi/axiosClient';
+import { ENDPOINTS } from '../../api/RESTApi/endpoints';
+import { useAuthStore } from '../../store/authStore';
 
 export const authService = {
   login: async (username: string, password: string) => {

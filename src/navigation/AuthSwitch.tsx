@@ -7,8 +7,8 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { getNavigationTheme } from '../theme/navigationTheme';
 import { StyleSheet, View } from 'react-native';
 import { AppTheme } from '../theme';
-import { runInitialLoad } from '../services/sync/InitialLoadService';
-import { connect, disconnect } from '../services/websocket';
+import { runInitialLoad } from '../services/Sync/InitialLoadService';
+import { connect, disconnect } from '../api/WebsocketApi/websocket';
 
 const AppNavigation = createStaticNavigation(AppStack);
 const AuthNavigation = createStaticNavigation(AuthStack);

@@ -1,7 +1,7 @@
 import { database } from '../../db';
 import Message from '../../db/models/Message';
-import { sendRaw, getIsConnected } from '../websocket';
-import { formatMessagePayload } from '../messageController';
+import { sendRaw, getIsConnected } from '../../api/WebsocketApi/websocket';
+import { formatMessagePayload } from '../Chat/messageController';
 
 let isSyncing = false;
 

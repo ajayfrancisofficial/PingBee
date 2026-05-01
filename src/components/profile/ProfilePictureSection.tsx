@@ -7,7 +7,7 @@ import { useUserStore } from '../../store/userStore';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { ProfilePictureOptionsModal } from './ProfilePictureOptionsModal';
 import { MediaUtils } from '../../utils/media';
-import { updateProfilePictureApi } from '../../services/userService';
+import { userService } from '../../services/User/userService';
 import { TransitionTags } from '../../constants/transitions';
 
 export const ProfilePictureSection = () => {
@@ -34,7 +34,7 @@ export const ProfilePictureSection = () => {
             const oldAvatarUri = avatar;
 
             await updateProfilePicture(uri);
-            await updateProfilePictureApi(uri, 'gallery');
+            await userService.updateProfilePicture(uri, 'gallery');
 
             // Delete old profile picture and avatar ONLY after successful update
             if (oldProfileUri) {
@@ -66,7 +66,7 @@ export const ProfilePictureSection = () => {
             const oldAvatarUri = avatar;
 
             await updateProfilePicture(uri);
-            await updateProfilePictureApi(uri, 'camera');
+            await userService.updateProfilePicture(uri, 'camera');
 
             // Delete old profile picture and avatar ONLY after successful update
             if (oldProfileUri) {
@@ -97,7 +97,7 @@ export const ProfilePictureSection = () => {
       await MediaUtils.deleteMedia(avatar);
     }
     deleteProfilePicture();
-    updateProfilePictureApi('', 'removed').catch(console.error);
+    userService.updateProfilePicture('', 'removed').catch(console.error);
   };
 
   return (
