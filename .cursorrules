@@ -1,0 +1,38 @@
+# PingBee Project Rules for AI Agents
+
+## Tech Stack
+- **Framework**: React Native (0.84+)
+- **Language**: TypeScript (Strict Mode)
+- **State Management**: 
+    - **Global**: Zustand (v5)
+    - **Server State**: TanStack Query (v5)
+    - **Local DB**: WatermelonDB (v0.28)
+- **Navigation**: React Navigation (v7)
+- **Styling**: Vanilla `StyleSheet` with a custom `useAppTheme` hook and `makeStyles` pattern.
+- **Icons**: Lucide React Native
+
+## Coding Standards
+- **Components**: Use functional components with hooks. Prefer `useMemo` for styles and heavy computations.
+- **Types**: Always define interfaces/types for props and data models. Avoid `any` at all costs.
+- **API**: Follow the pattern in `src/api/endpoints.ts` and use `axiosClient` for requests.
+- **Hooks**: Place reusable logic in `src/hooks/`.
+- **Database**: Use WatermelonDB models in `src/db/models/` and handle queries through dedicated hooks (e.g., `src/hooks/db/`).
+
+## Operational Guidelines
+- **Development**: Use `yarn android` or `yarn ios` to run the app.
+- **State Persistence**: Sensitive data should be handled via `react-native-keychain` or `react-native-mmkv`.
+- **Animations**: Use `react-native-reanimated` (v4) for complex UI transitions.
+
+## Project Structure
+- `src/api`: API endpoints and axios client.
+- `src/components`: Reusable UI components.
+- `src/db`: WatermelonDB models, schema, and migrations.
+- `src/hooks`: Custom React hooks (logic, db queries, theme).
+- `src/screens`: Main application screens.
+- `src/theme`: Theme configuration and color palettes.
+
+## Agent Instructions
+- When adding new features, check for existing patterns in `src/screens/ChatsScreen.tsx`.
+- When creating API calls, update `src/api/endpoints.ts` first.
+- Always prefer local DB (WatermelonDB) for offline-first capabilities where applicable.
+- If you need to run the app, the terminal command is `yarn android`.
