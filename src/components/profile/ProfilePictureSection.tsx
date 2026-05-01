@@ -117,15 +117,13 @@ export const ProfilePictureSection = () => {
       </View>
 
       {/* Picture Options Sheet */}
-      {isOptionsVisible && (
-        <ProfilePictureOptionsModal
-          visible={isOptionsVisible}
-          onClose={() => setIsOptionsVisible(false)}
-          onTakePhoto={handleTakePhoto}
-          onChoosePhoto={handleChoosePhoto}
-          onDeletePhoto={handleDeletePhoto}
-        />
-      )}
+      <ProfilePictureOptionsModal
+        visible={isOptionsVisible}
+        onClose={() => setIsOptionsVisible(false)}
+        onTakePhoto={handleTakePhoto}
+        onChoosePhoto={handleChoosePhoto}
+        onDeletePhoto={handleDeletePhoto}
+      />
 
       {/* Confirmation Dialog */}
       {isConfirmVisible && (
