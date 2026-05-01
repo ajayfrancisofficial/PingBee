@@ -13,12 +13,14 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
   leftIcon,
+  rightIcon,
   style,
   ...props
 }) => {
@@ -35,6 +37,7 @@ export const Input: React.FC<InputProps> = ({
           placeholderTextColor={theme.colors.text.secondary}
           {...props}
         />
+        {rightIcon && <View style={styles.rightIcon}>{rightIcon}</View>}
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
@@ -70,6 +73,9 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
     },
     leftIcon: {
       marginRight: spacing.sm,
+    },
+    rightIcon: {
+      marginLeft: spacing.sm,
     },
     inputError: {
       borderColor: colors.semantic.error,

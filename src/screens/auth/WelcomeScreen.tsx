@@ -8,15 +8,16 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Button } from '../../components/foundations/Button';
 import { ThemeSwitch } from '../../components/common/ThemeSwitch';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
+import { AuthStackParamList } from '../../navigation/AuthStack';
 
 export const WelcomeScreen = () => {
   const theme = useAppTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const handleAgreeAndContinue = () => {
@@ -62,7 +63,13 @@ export const WelcomeScreen = () => {
   );
 };
 
-const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
+const makeStyles = ({
+  colors,
+  spacing,
+  typography,
+  borderRadius,
+  sizing,
+}: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -74,11 +81,7 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       alignItems: 'center',
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
-      minHeight: 48,
-    },
-    backButton: {
-      padding: spacing.xs,
-      marginLeft: -spacing.xs,
+      minHeight: sizing.xxxl,
     },
     content: {
       flex: 1,
@@ -120,7 +123,7 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
     },
     button: {
       width: '100%',
-      height: 56,
+      height: sizing.buttonHeights.lg,
       borderRadius: borderRadius.lg,
     },
   });

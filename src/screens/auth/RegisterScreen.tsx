@@ -11,51 +11,63 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { User, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
+import {
+  Mail,
+  Lock,
+  User,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  AtSign,
+} from 'lucide-react-native';
 import { Button } from '../../components/foundations/Button';
 import { Input } from '../../components/foundations/Input';
 import { ThemeSwitch } from '../../components/common/ThemeSwitch';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
-import { useAuthStore } from '../../store/authStore';
 import { AuthStackParamList } from '../../navigation/AuthStack';
 
-export const LoginScreen = () => {
-  const [identifier, setIdentifier] = useState('');
+export const RegisterScreen = () => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const theme = useAppTheme();
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
-  const setLoggedIn = useAuthStore(state => state.setLoggedIn);
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
-  const handleLogin = async () => {
-    if (!identifier || !password) return;
+  const handleRegister = async () => {
+    if (!email || !password || !firstName || !lastName || !username) return;
+    if (password !== confirmPassword) return;
+
     setLoading(true);
     // Functionality will be implemented later
     setTimeout(() => {
       setLoading(false);
-      setLoggedIn(true);
+      console.log('Registration submitted');
+      navigation.navigate('Login');
     }, 1500);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        {navigation.canGoBack() ? (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <ArrowLeft
-              size={theme.sizing.iconSizes.base}
-              color={theme.colors.text.primary}
-            />
-          </TouchableOpacity>
-        ) : (
-          <View />
-        )}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ArrowLeft
+            size={theme.sizing.iconSizes.base}
+            color={theme.colors.text.primary}
+          />
+        </TouchableOpacity>
         <ThemeSwitch />
       </View>
 
@@ -73,20 +85,57 @@ export const LoginScreen = () => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Login</Text>
+            <Text style={styles.title}>Create Account</Text>
             <Text style={styles.description}>
-              Welcome back! Please enter your details.
+              Enter your details to get started
             </Text>
           </View>
 
           <View style={styles.form}>
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: theme.spacing.sm }}>
+                <Input
+                  label="First Name"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  leftIcon={
+                    <User
+                      size={theme.sizing.iconSizes.md}
+                      color={theme.colors.text.secondary}
+                    />
+                  }
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Input
+                  label="Last Name"
+                  value={lastName}
+                  onChangeText={setLastName}
+                />
+              </View>
+            </View>
+
             <Input
-              label="Email or Username"
-              value={identifier}
-              onChangeText={setIdentifier}
+              label="Username"
+              value={username}
+              onChangeText={setUsername}
               autoCapitalize="none"
               leftIcon={
-                <User
+                <AtSign
+                  size={theme.sizing.iconSizes.md}
+                  color={theme.colors.text.secondary}
+                />
+              }
+            />
+
+            <Input
+              label="Email Address"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon={
+                <Mail
                   size={theme.sizing.iconSizes.md}
                   color={theme.colors.text.secondary}
                 />
@@ -123,22 +172,59 @@ export const LoginScreen = () => {
               }
             />
 
+            <Input
+              label="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              leftIcon={
+                <Lock
+                  size={theme.sizing.iconSizes.md}
+                  color={theme.colors.text.secondary}
+                />
+              }
+              rightIcon={
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <Eye
+                      size={theme.sizing.iconSizes.md}
+                      color={theme.colors.text.secondary}
+                    />
+                  ) : (
+                    <EyeOff
+                      size={theme.sizing.iconSizes.md}
+                      color={theme.colors.text.secondary}
+                    />
+                  )}
+                </TouchableOpacity>
+              }
+            />
+
             <Button
-              title="Login"
-              onPress={handleLogin}
+              title="Sign Up"
+              onPress={handleRegister}
               isLoading={loading}
-              disabled={!identifier || password.length < 6}
-              style={styles.loginButton}
+              disabled={
+                !email ||
+                password.length < 6 ||
+                !firstName ||
+                !lastName ||
+                !username ||
+                password !== confirmPassword
+              }
+              style={styles.registerButton}
             />
           </View>
 
           <TouchableOpacity
-            onPress={() => navigation.navigate('Register')}
+            onPress={() => navigation.goBack()}
             style={styles.footer}
           >
             <Text style={styles.footerText}>
-              Don't have an account?{' '}
-              <Text style={styles.signUpText}>Sign up</Text>
+              Already have an account?{' '}
+              <Text style={styles.loginText}>Login</Text>
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -198,13 +284,16 @@ const makeStyles = ({
     form: {
       flex: 1,
     },
-    loginButton: {
+    row: {
+      flexDirection: 'row',
+    },
+    registerButton: {
       marginTop: spacing.xl,
       height: sizing.buttonHeights.lg,
       borderRadius: borderRadius.lg,
     },
     footer: {
-      marginTop: 'auto',
+      marginTop: spacing.xl,
       paddingVertical: spacing.xl,
       alignItems: 'center',
     },
@@ -212,7 +301,7 @@ const makeStyles = ({
       ...typography.variants.body,
       color: colors.text.secondary,
     },
-    signUpText: {
+    loginText: {
       color: colors.brand.primary,
       fontWeight: '600',
     },

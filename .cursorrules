@@ -14,6 +14,8 @@
 ## Coding Standards
 - **Components**: Use functional components with hooks. Prefer `useMemo` for styles and heavy computations.
 - **Types**: Always define interfaces/types for props and data models. Avoid `any` at all costs.
+- **Navigation**: **NEVER** use `any` type for `useNavigation()`. Always use proper types (e.g., `StaticParamList` from your stack) or rely on inference if possible.
+- **Styling**: **ALWAYS** use values from the theme (`colors`, `spacing`, `typography`, `borderRadius`, `iconSizes`). Never use hardcoded pixel values for spacing or colors. Even icon sizes should come from `theme.iconSizes` (if available) or `theme.spacing`.
 - **API**: Follow the pattern in `src/api/endpoints.ts` and use `axiosClient` for requests.
 - **Hooks**: Place reusable logic in `src/hooks/`.
 - **Database**: Use WatermelonDB models in `src/db/models/` and handle queries through dedicated hooks (e.g., `src/hooks/db/`).
