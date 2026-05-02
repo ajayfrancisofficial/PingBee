@@ -44,6 +44,18 @@ export type ResendOTPBody = components['schemas']['ResendOTP'];
 /** POST /verify-email — request body */
 export type EmailVerificationBody = components['schemas']['EmailVerification'];
 
+/** POST /users/search — request body */
+export type UserSearchBody = components['schemas']['UserSearchRequest'];
+
+/** POST /conversation — request body */
+export type ConversationCreateBody = components['schemas']['ConversationCreateRequest'];
+
+/** POST /messages — request body */
+export type MessageFetchBody = components['schemas']['MessageFetchRequest'];
+
+/** POST /mark-as-read — request body */
+export type MarkAsReadBody = components['schemas']['MarkAsReadRequest'];
+
 /**
  * Successful token response from POST /login and POST /refresh.
  * Note: fields are snake_case — `access_token`, `refresh_token`, `token_type`.
@@ -106,17 +118,17 @@ export type GetMeResponse = SuccessBody<'get_me_me_get'>;
 /** POST /users → 200 response */
 export type GetAllUsersResponse = SuccessBody<'get_all_users_users_post'>;
 
-/** GET /users/search → 200 response */
-export type SearchUsersResponse = SuccessBody<'search_users_users_search_get'>;
+/** POST /users/search → 200 response */
+export type SearchUsersResponse = SuccessBody<'search_users_users_search_post'>;
 
-/** POST /conversation/{user_id} → 200 response */
-export type ConversationResponse = SuccessBody<'create_or_get_conversation_conversation__user_id__post'>;
+/** POST /conversation → 200 response */
+export type ConversationResponse = SuccessBody<'create_or_get_conversation_conversation_post'>;
 
-/** GET /messages/{conversation_id} → 200 response */
-export type GetMessagesResponse = SuccessBody<'get_messages_messages__conversation_id__get'>;
+/** POST /messages → 200 response */
+export type GetMessagesResponse = SuccessBody<'get_messages_messages_post'>;
 
-/** POST /mark-as-read/{conversation_id} → 200 response */
-export type MarkAsReadResponse = SuccessBody<'mark_as_read_mark_as_read__conversation_id__post'>;
+/** POST /mark-as-read → 200 response */
+export type MarkAsReadResponse = SuccessBody<'mark_as_read_mark_as_read_post'>;
 
 /** GET /chats → 200 response */
 export type GetChatsResponse = SuccessBody<'get_user_chats_chats_get'>;
@@ -132,19 +144,9 @@ export type RootResponse = SuccessBody<'root__get'>;
 
 // ── Path parameter types ──────────────────────────────────────────────────────
 
-/** Path params for POST /conversation/{user_id} → `{ user_id: number }` */
-export type ConversationPathParams = PathParams<'create_or_get_conversation_conversation__user_id__post'>;
-
-/** Path params for GET /messages/{conversation_id} → `{ conversation_id: number }` */
-export type MessagesPathParams = PathParams<'get_messages_messages__conversation_id__get'>;
-
-/** Path params for POST /mark-as-read/{conversation_id} → `{ conversation_id: number }` */
-export type MarkAsReadPathParams = PathParams<'mark_as_read_mark_as_read__conversation_id__post'>;
+// No active path parameters in current spec.
 
 // ── Query parameter types ─────────────────────────────────────────────────────
 
-/** Query params for GET /users/search → `{ query: string }` */
-export type SearchUsersQueryParams = QueryParams<'search_users_users_search_get'>;
+// No active query parameters in current spec.
 
-/** Query params for GET /messages/{conversation_id} → `{ skip?: number; limit?: number }` */
-export type GetMessagesQueryParams = QueryParams<'get_messages_messages__conversation_id__get'>;

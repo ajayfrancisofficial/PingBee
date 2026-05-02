@@ -130,17 +130,17 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Search Users */
-    get: operations['search_users_users_search_get'];
+    get?: never;
     put?: never;
-    post?: never;
+    /** Search Users */
+    post: operations['search_users_users_search_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/conversation/{user_id}': {
+  '/conversation': {
     parameters: {
       query?: never;
       header?: never;
@@ -150,31 +150,31 @@ export interface paths {
     get?: never;
     put?: never;
     /** Create Or Get Conversation */
-    post: operations['create_or_get_conversation_conversation__user_id__post'];
+    post: operations['create_or_get_conversation_conversation_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/messages/{conversation_id}': {
+  '/messages': {
     parameters: {
       query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    /** Get Messages */
-    get: operations['get_messages_messages__conversation_id__get'];
+    get?: never;
     put?: never;
-    post?: never;
+    /** Get Messages */
+    post: operations['get_messages_messages_post'];
     delete?: never;
     options?: never;
     head?: never;
     patch?: never;
     trace?: never;
   };
-  '/mark-as-read/{conversation_id}': {
+  '/mark-as-read': {
     parameters: {
       query?: never;
       header?: never;
@@ -184,7 +184,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Mark As Read */
-    post: operations['mark_as_read_mark_as_read__conversation_id__post'];
+    post: operations['mark_as_read_mark_as_read_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -260,6 +260,11 @@ export interface components {
       /** Chats */
       chats: components['schemas']['ChatItem'][];
     };
+    /** ConversationCreateRequest */
+    ConversationCreateRequest: {
+      /** User Id */
+      user_id: number;
+    };
     /** ConversationID */
     ConversationID: {
       /** Conversation Id */
@@ -299,6 +304,26 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components['schemas']['ValidationError'][];
+    };
+    /** MarkAsReadRequest */
+    MarkAsReadRequest: {
+      /** Conversation Id */
+      conversation_id: number;
+    };
+    /** MessageFetchRequest */
+    MessageFetchRequest: {
+      /** Conversation Id */
+      conversation_id: number;
+      /**
+       * Skip
+       * @default 0
+       */
+      skip: number | null;
+      /**
+       * Limit
+       * @default 50
+       */
+      limit: number | null;
     };
     /** MessageItem */
     MessageItem: {
@@ -459,6 +484,11 @@ export interface components {
       email: string;
       /** Password */
       password: string;
+    };
+    /** UserSearchRequest */
+    UserSearchRequest: {
+      /** Query */
+      query: string;
     };
     /** UserSearchResponse */
     UserSearchResponse: {
@@ -864,16 +894,18 @@ export interface operations {
       };
     };
   };
-  search_users_users_search_get: {
+  search_users_users_search_post: {
     parameters: {
-      query: {
-        query: string;
-      };
+      query?: never;
       header?: never;
       path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['UserSearchRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -895,16 +927,18 @@ export interface operations {
       };
     };
   };
-  create_or_get_conversation_conversation__user_id__post: {
+  create_or_get_conversation_conversation_post: {
     parameters: {
       query?: never;
       header?: never;
-      path: {
-        user_id: number;
-      };
+      path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ConversationCreateRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -962,19 +996,18 @@ export interface operations {
       };
     };
   };
-  get_messages_messages__conversation_id__get: {
+  get_messages_messages_post: {
     parameters: {
-      query?: {
-        skip?: number;
-        limit?: number;
-      };
+      query?: never;
       header?: never;
-      path: {
-        conversation_id: number;
-      };
+      path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MessageFetchRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
@@ -1032,16 +1065,18 @@ export interface operations {
       };
     };
   };
-  mark_as_read_mark_as_read__conversation_id__post: {
+  mark_as_read_mark_as_read_post: {
     parameters: {
       query?: never;
       header?: never;
-      path: {
-        conversation_id: number;
-      };
+      path?: never;
       cookie?: never;
     };
-    requestBody?: never;
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['MarkAsReadRequest'];
+      };
+    };
     responses: {
       /** @description Successful Response */
       200: {
