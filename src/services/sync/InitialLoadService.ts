@@ -16,7 +16,7 @@
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
 import { upsertChats } from '../../db/upsert';
-import { fetchChats } from '../../api/RESTApi/chatApi';
+import { chatApi } from '../../api/RESTApi/chatApi';
 import {
   isChatsFresh,
   setChatsCursor,
@@ -54,20 +54,15 @@ export const runInitialLoad = async (force = false): Promise<void> => {
 
     console.log('[InitialLoad] Fetching chats from server...');
 
-    const response = await fetchChats(); // No cursor → first page
+    const response = await chatApi.fetchChats(); // No cursor → first page
+    const chats = response.data?.chats || [];
 
-    await upsertChats(response.chats);
-
-    // Store pagination state for "load more" in ChatsScreen
-    setChatsCursor(response.next_cursor);
-    setHasMoreChats(response.has_more);
+    await upsertChats(chats);
 
     // Mark sync as fresh so the next launch can skip this call
     setLastSyncedAt(Date.now());
 
-    console.log(
-      `[InitialLoad] Done. Loaded ${response.chats.length} chats. hasMore=${response.has_more}`,
-    );
+    console.log(`[InitialLoad] Done. Loaded ${chats.length} chats.`);
   } catch (error) {
     console.error('[InitialLoad] Failed to load chats:', error);
     // Don't update lastSyncedAt on failure — next launch will retry

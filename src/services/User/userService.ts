@@ -1,4 +1,5 @@
 import { userApi } from '../../api/RESTApi/userApi';
+import { chatApi } from '../../api/RESTApi/chatApi';
 import { useUserStore } from '../../store/userStore';
 import type {
   GetMeResponse,
@@ -53,6 +54,6 @@ export const userService = {
   },
 
   getOrCreateConversation: async (userId: string): Promise<ConversationResponse> => {
-    return await userApi.getOrCreateConversation(userId);
+    return await chatApi.getOrCreateConversation(userId);
   },
 };

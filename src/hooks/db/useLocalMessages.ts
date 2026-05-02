@@ -3,10 +3,8 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import { upsertMessages } from '../../db/upsert';
-import { fetchMessages } from '../../api/RESTApi/chatApi';
+import { chatApi } from '../../api/RESTApi/chatApi';
 import {
-  getMessagesCursor,
-  setMessagesCursor,
   getHasMoreMessages,
   setHasMoreMessages,
   getMessagesLoaded,
@@ -39,12 +37,13 @@ export function useLocalMessages(chatId: string) {
       if (!getMessagesLoaded(chatId)) {
         setIsInitialLoading(true);
         try {
-          const response = await fetchMessages(chatId);
-          await upsertMessages(response.messages);
+          const response = await chatApi.fetchMessages(chatId, 0);
+          const fetchedMessages = response.data?.messages || [];
+          await upsertMessages(fetchedMessages, chatId);
           
-          setMessagesCursor(chatId, response.next_cursor);
-          setHasMoreMessages(chatId, response.has_more);
-          setHasMore(response.has_more);
+          const hasMoreMsgs = fetchedMessages.length >= 30; // Matches MESSAGES_PAGE_SIZE
+          setHasMoreMessages(chatId, hasMoreMsgs);
+          setHasMore(hasMoreMsgs);
           setMessagesLoaded(chatId, true);
         } catch (error) {
           console.error('[useLocalMessages] Initial load failed:', error);
@@ -63,21 +62,20 @@ export function useLocalMessages(chatId: string) {
 
     setIsLoadingMore(true);
     try {
-      const cursor = getMessagesCursor(chatId);
-      if (!cursor) return;
+      const skip = messages.length;
+      const response = await chatApi.fetchMessages(chatId, skip);
+      const fetchedMessages = response.data?.messages || [];
+      await upsertMessages(fetchedMessages, chatId);
 
-      const response = await fetchMessages(chatId, cursor);
-      await upsertMessages(response.messages);
-
-      setMessagesCursor(chatId, response.next_cursor);
-      setHasMoreMessages(chatId, response.has_more);
-      setHasMore(response.has_more);
+      const hasMoreMsgs = fetchedMessages.length >= 30; // Matches MESSAGES_PAGE_SIZE
+      setHasMoreMessages(chatId, hasMoreMsgs);
+      setHasMore(hasMoreMsgs);
     } catch (error) {
       console.error('[useLocalMessages] loadMore failed:', error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [chatId, isLoadingMore]);
+  }, [chatId, isLoadingMore, messages.length]);
 
   return {
     messages,

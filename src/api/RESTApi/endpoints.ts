@@ -11,16 +11,13 @@ export const ENDPOINTS = {
   },
   USERS: {
     ME: '/me',
-    LIST: '/users', // Note: This is a POST request in the API
-    GET_CONVERSATION: (userId: string) => `/conversation/${userId}`,
+    LIST: '/users',
+    SEARCH: '/user-search',
   },
   CHATS: {
     LIST: '/chats',
-    MESSAGES: (chatId: string) => `/messages/${chatId}`,
-    SEND_MESSAGE: (chatId: string) => `/send-message/${chatId}`, // Requires ?message= query param
-    MARK_READ: (chatId: string) => `/messages/read/${chatId}`,
-  },
-  SYNC: {
-    MISSED: '/sync/missed',
+    MESSAGES: '/messages',
+    MARK_READ: '/mark-as-read',
+    GET_CONVERSATION: '/conversation',
   },
 };

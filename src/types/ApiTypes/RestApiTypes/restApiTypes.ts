@@ -44,11 +44,12 @@ export type ResendOTPBody = components['schemas']['ResendOTP'];
 /** POST /verify-email — request body */
 export type EmailVerificationBody = components['schemas']['EmailVerification'];
 
-/** POST /users/search — request body */
+/** POST /user-search — request body */
 export type UserSearchBody = components['schemas']['UserSearchRequest'];
 
 /** POST /conversation — request body */
-export type ConversationCreateBody = components['schemas']['ConversationCreateRequest'];
+export type ConversationCreateBody =
+  components['schemas']['ConversationCreateRequest'];
 
 /** POST /messages — request body */
 export type MessageFetchBody = components['schemas']['MessageFetchRequest'];
@@ -107,7 +108,8 @@ export type ConversationID = components['schemas']['ConversationID'];
 export type LoginSuccessResponse = SuccessBody<'user_login_login_post'>;
 
 /** POST /register → 200 response (wrapped in StandardResponse) */
-export type RegisterSuccessResponse = SuccessBody<'user_register_register_post'>;
+export type RegisterSuccessResponse =
+  SuccessBody<'user_register_register_post'>;
 
 /** POST /refresh → 200 response (wrapped in StandardResponse) */
 export type RefreshSuccessResponse = SuccessBody<'refresh_token_refresh_post'>;
@@ -118,11 +120,12 @@ export type GetMeResponse = SuccessBody<'get_me_me_get'>;
 /** POST /users → 200 response */
 export type GetAllUsersResponse = SuccessBody<'get_all_users_users_post'>;
 
-/** POST /users/search → 200 response */
-export type SearchUsersResponse = SuccessBody<'search_users_users_search_post'>;
+/** POST /user-search → 200 response */
+export type SearchUsersResponse = SuccessBody<'search_users_user_search_post'>;
 
 /** POST /conversation → 200 response */
-export type ConversationResponse = SuccessBody<'create_or_get_conversation_conversation_post'>;
+export type ConversationResponse =
+  SuccessBody<'create_or_get_conversation_conversation_post'>;
 
 /** POST /messages → 200 response */
 export type GetMessagesResponse = SuccessBody<'get_messages_messages_post'>;
@@ -134,7 +137,8 @@ export type MarkAsReadResponse = SuccessBody<'mark_as_read_mark_as_read_post'>;
 export type GetChatsResponse = SuccessBody<'get_user_chats_chats_get'>;
 
 /** POST /send-verification → 200 response */
-export type SendVerificationResponse = SuccessBody<'send_verification_send_verification_post'>;
+export type SendVerificationResponse =
+  SuccessBody<'send_verification_send_verification_post'>;
 
 /** POST /verify-email → 200 response */
 export type VerifyEmailResponse = SuccessBody<'verify_email_verify_email_post'>;
@@ -149,4 +153,3 @@ export type RootResponse = SuccessBody<'root__get'>;
 // ── Query parameter types ─────────────────────────────────────────────────────
 
 // No active query parameters in current spec.
-

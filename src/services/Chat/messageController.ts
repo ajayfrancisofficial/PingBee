@@ -74,7 +74,7 @@ export const sendMessage = async (
 
     const newMessage = await messagesCollection.create(msg => {
       msg.chatId = chatId;
-      msg.senderId = userId;
+      msg.senderId = String(userId);
       msg.text = message.text;
       msg.status = 'pending';
       msg.isMine = true;

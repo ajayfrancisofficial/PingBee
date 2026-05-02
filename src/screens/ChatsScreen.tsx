@@ -1,24 +1,44 @@
-import { useNavigation } from '@react-navigation/native';
+import { Plus } from 'lucide-react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { AppStackParamList } from '../navigation/AppStack';
 import React, { useLayoutEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, FlatList, ActivityIndicator, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  Image,
+} from 'react-native';
 import { useLocalChats } from '../hooks/db/useLocalChats';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
 import Chat from '../db/models/Chat';
 
 const ChatsScreen = () => {
-  const navigation = useNavigation();
-  const { chats, loadMore, isLoadingMore, hasMore } = useLocalChats();
+  const navigation = useNavigation<NavigationProp<AppStackParamList>>();
+  const { chats } = useLocalChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerSearchBarOptions: {
-        hideWhenScrolling: true,
-      },
+      headerRight: () => (
+        <Pressable
+          onPress={() => navigation.navigate('NewChat')}
+          style={({ pressed }) => ({
+            opacity: pressed ? 0.5 : 1,
+            marginRight: theme.spacing.sm,
+          })}
+        >
+          <Plus
+            color={theme.colors.brand.primary}
+            size={theme.sizing.iconSizes.lg}
+          />
+        </Pressable>
+      ),
     });
-  }, [navigation]);
+  }, [navigation, theme]);
 
   const getInitials = (name: string) => {
     if (!name) return '?';
@@ -72,15 +92,6 @@ const ChatsScreen = () => {
     </Pressable>
   );
 
-  const renderFooter = () => {
-    if (!isLoadingMore || !hasMore) return null;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator color={theme.colors.brand.primary} />
-      </View>
-    );
-  };
-
   return (
     <FlatList
       style={styles.container}
@@ -90,14 +101,17 @@ const ChatsScreen = () => {
       renderItem={renderItem}
       contentContainerStyle={styles.list}
       showsVerticalScrollIndicator={false}
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.5}
-      ListFooterComponent={renderFooter}
     />
   );
 };
 
-const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
+const makeStyles = ({
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  sizing,
+}: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -119,9 +133,9 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
       backgroundColor: colors.surfaces.default, // subtle honey tint on press
     },
     avatar: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
+      width: sizing.xxxl + sizing.xs,
+      height: sizing.xxxl + sizing.xs,
+      borderRadius: (sizing.xxxl + sizing.xs) / 2,
       backgroundColor: colors.surfaces.secondary,
       justifyContent: 'center',
       alignItems: 'center',
@@ -146,7 +160,7 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
     chatName: {
       ...typography.variants.bodyMedium,
       color: colors.text.primary,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     lastMessage: {
       ...typography.variants.description,
@@ -160,8 +174,8 @@ const makeStyles = ({ colors, typography, spacing, borderRadius }: AppTheme) =>
     badge: {
       backgroundColor: colors.brand.primary,
       borderRadius: borderRadius.pill,
-      minWidth: 24,
-      height: 24,
+      minWidth: sizing.lg,
+      height: sizing.lg,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: 8,

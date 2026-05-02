@@ -3,7 +3,6 @@ import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
 import { useChatStore } from '../../store/chatStore';
 import { performOutgoingSync } from '../Sync/OutgoingSync';
-import { performIncomingSync } from '../Sync/IncomingSync';
 import type {
   WSIncomingPayload,
   WSReceivedMsg,
@@ -204,7 +203,7 @@ export const websocketService = {
    */
   handleConnectionSuccess: () => {
     // 1. Fetch events we missed while offline (incoming first so state is fresh)
-    performIncomingSync();
+    // performIncomingSync();
 
     // 2. Retry pending outgoing messages
     performOutgoingSync();

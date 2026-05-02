@@ -123,7 +123,7 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
-  '/users/search': {
+  '/user-search': {
     parameters: {
       query?: never;
       header?: never;
@@ -133,7 +133,7 @@ export interface paths {
     get?: never;
     put?: never;
     /** Search Users */
-    post: operations['search_users_users_search_post'];
+    post: operations['search_users_user_search_post'];
     delete?: never;
     options?: never;
     head?: never;
@@ -894,7 +894,7 @@ export interface operations {
       };
     };
   };
-  search_users_users_search_post: {
+  search_users_user_search_post: {
     parameters: {
       query?: never;
       header?: never;

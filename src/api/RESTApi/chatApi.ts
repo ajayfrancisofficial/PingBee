@@ -1,88 +1,81 @@
-/**
- * chatApi.ts
- *
- * REST API client for chat and sync operations.
- * All functions return typed responses derived from src/types/api.ts.
- */
-
 import { apiClient } from './apiClient';
 import { ENDPOINTS } from './endpoints';
 import type {
-  ApiChatListResponse,
-  ApiMessageListResponse,
-  MissedSyncResponse,
-} from '../../types/api';
-
-/** How many chats to fetch per page */
-export const CHATS_PAGE_SIZE = 20;
+  GetChatsResponse,
+  GetMessagesResponse,
+  ConversationResponse,
+  MessageFetchBody,
+  MarkAsReadBody,
+  ConversationCreateBody,
+  MarkAsReadResponse,
+} from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 /** How many messages to fetch per page */
 export const MESSAGES_PAGE_SIZE = 30;
 
 // ─── Chats ───────────────────────────────────────────────────────────────────
 
-/**
- * Fetch a page of chats, sorted by updated_at descending.
- * @param cursor - Pass the `next_cursor` from the previous response to get the next page.
- *                 Omit (or pass undefined) for the first page.
- */
-export const fetchChats = async (
-  cursor?: string,
-): Promise<ApiChatListResponse> => {
-  const params: Record<string, string | number> = {
-    limit: CHATS_PAGE_SIZE,
-  };
-  if (cursor) {
-    params.cursor = cursor;
-  }
+export const chatApi = {
+  /**
+   * Fetch all chats for the authenticated user.
+   */
+  fetchChats: async (): Promise<GetChatsResponse> => {
+    const { data } = await apiClient.get<GetChatsResponse>(ENDPOINTS.CHATS.LIST);
+    return data;
+  },
 
-  const { data } = await apiClient.get<ApiChatListResponse>(
-    ENDPOINTS.CHATS.LIST,
-    { params },
-  );
-  return data;
-};
+  /**
+   * POST /conversation
+   * Creates or retrieves a conversation with a specific user.
+   */
+  getOrCreateConversation: async (
+    userId: number | string,
+  ): Promise<ConversationResponse> => {
+    const body: ConversationCreateBody = {
+      user_id: Number(userId),
+    };
+    const { data } = await apiClient.post<ConversationResponse>(
+      ENDPOINTS.CHATS.GET_CONVERSATION,
+      body,
+    );
+    return data;
+  },
 
-// ─── Messages ────────────────────────────────────────────────────────────────
+  /**
+   * POST /messages
+   * Fetch a page of messages for a conversation.
+   * @param chatId - The conversation ID.
+   * @param cursor - Pagination cursor for older messages.
+   */
+  fetchMessages: async (
+    chatId: string,
+    skip: number = 0,
+  ): Promise<GetMessagesResponse> => {
+    const body: MessageFetchBody = {
+      conversation_id: Number(chatId),
+      skip: skip,
+      limit: MESSAGES_PAGE_SIZE,
+    };
 
-/**
- * Fetch a page of messages for a chat, sorted by created_at descending
- * (newest first, same as GiftedChat expectation).
- * @param chatId - The chat to load messages for.
- * @param cursor - Pass the `next_cursor` from the previous response to fetch older messages.
- *                 Omit for the most-recent page.
- */
-export const fetchMessages = async (
-  chatId: string,
-  cursor?: string,
- ): Promise<ApiMessageListResponse> => {
-  const params: Record<string, string | number> = {
-    limit: MESSAGES_PAGE_SIZE,
-  };
-  if (cursor) {
-    params.cursor = cursor;
-  }
+    const { data } = await apiClient.post<GetMessagesResponse>(
+      ENDPOINTS.CHATS.MESSAGES,
+      body,
+    );
+    return data;
+  },
 
-  const { data } = await apiClient.get<ApiMessageListResponse>(
-    ENDPOINTS.CHATS.MESSAGES(chatId),
-    { params },
-  );
-  return data;
-};
-
-// ─── Missed Sync ─────────────────────────────────────────────────────────────
-
-/**
- * Fetch all events that arrived on the server after `since` (Unix ms timestamp).
- * The server returns a flat ordered event stream.
- * @param since - The Unix ms timestamp of the last successful sync.
- */
-export const fetchMissedSync = async (
-  since: number,
-): Promise<MissedSyncResponse> => {
-  const { data } = await apiClient.get<MissedSyncResponse>(
-    ENDPOINTS.SYNC.MISSED,
-    { params: { since } },
-  );
-  return data;
+  /**
+   * POST /mark-as-read
+   * Marks all messages in a conversation as read.
+   */
+  markAsRead: async (chatId: string): Promise<MarkAsReadResponse> => {
+    const body: MarkAsReadBody = {
+      conversation_id: Number(chatId),
+    };
+    const { data } = await apiClient.post<MarkAsReadResponse>(
+      ENDPOINTS.CHATS.MARK_READ,
+      body,
+    );
+    return data;
+  },
 };

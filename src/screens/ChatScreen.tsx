@@ -50,7 +50,7 @@ const ChatScreen = ({ route }: Props) => {
   } = useLocalMessages(chatId);
 
   const messages = useMemo(
-    () => rawMessages.map(msg => mapToGiftedChat(msg, userId)),
+    () => rawMessages.map(msg => mapToGiftedChat(msg, String(userId))),
     [rawMessages, userId],
   );
 
@@ -78,7 +78,15 @@ const ChatScreen = ({ route }: Props) => {
     });
     setActiveChatId(chatId);
     return () => setActiveChatId(null);
-  }, [navigation, name, chatId, setActiveChatId, isInitialLoading, appTheme, styles]);
+  }, [
+    navigation,
+    name,
+    chatId,
+    setActiveChatId,
+    isInitialLoading,
+    appTheme,
+    styles,
+  ]);
 
   // Handle when user hits SEND in GiftedChat
   const onSend = useCallback(

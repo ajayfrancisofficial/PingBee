@@ -3,7 +3,8 @@ import { ENDPOINTS } from './endpoints';
 import type {
   GetMeResponse,
   GetAllUsersResponse,
-  ConversationResponse,
+  SearchUsersResponse,
+  UserSearchBody,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const userApi = {
@@ -20,16 +21,22 @@ export const userApi = {
    * POST /users
    */
   getAllUsers: async (): Promise<GetAllUsersResponse> => {
-    const { data } = await apiClient.post<GetAllUsersResponse>(ENDPOINTS.USERS.LIST);
+    const { data } = await apiClient.post<GetAllUsersResponse>(
+      ENDPOINTS.USERS.LIST,
+    );
     return data;
   },
 
   /**
-   * POST /conversation/{user_id}
+   * POST /user-search
    */
-  getOrCreateConversation: async (userId: string): Promise<ConversationResponse> => {
-    const { data } = await apiClient.post<ConversationResponse>(
-      ENDPOINTS.USERS.GET_CONVERSATION(userId)
+  searchUsers: async (query: string): Promise<SearchUsersResponse> => {
+    const body: UserSearchBody = {
+      query,
+    };
+    const { data } = await apiClient.post<SearchUsersResponse>(
+      ENDPOINTS.USERS.SEARCH,
+      body,
     );
     return data;
   },
