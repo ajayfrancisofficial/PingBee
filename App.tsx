@@ -19,6 +19,7 @@ function App() {
           <QueryClientProvider client={queryClient}>
             <StatusBar
               barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+              translucent={true}
             />
             <AuthSwitch />
             <Snackbar />

@@ -19,6 +19,13 @@ export const AppStack = createNativeStackNavigator({
       screen: NewChatScreen,
     },
   },
+  screenOptions: ({ theme }) => ({
+    headerStyle: {
+      backgroundColor: theme.colors.background,
+    },
+    headerShadowVisible: false,
+    headerTintColor: theme.colors.primary,
+  }),
 });
 
 export type AppStackParamList = StaticParamList<typeof AppStack>;

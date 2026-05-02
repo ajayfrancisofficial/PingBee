@@ -94,7 +94,10 @@ export const BottomTabNavigator = createNativeBottomTabNavigator({
     tabBarRippleColor: theme.colors.primary,
     headerLargeTitleEnabled: true,
     headerTransparent: false,
-    headerLargeTitleShadowVisible: true,
+    headerShadowVisible: false,
+    headerStyle: {
+      backgroundColor: theme.colors.background,
+    },
     headerTintColor: theme.colors.primary,
   }),
 });
