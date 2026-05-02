@@ -15,6 +15,15 @@ interface SnackbarAction {
   onPress: () => void;
 }
 
+export interface SnackbarItem {
+  id: string;
+  message: string;
+  type: SnackbarType;
+  duration: number;
+  action?: SnackbarAction;
+  isSwipeDismissable: boolean;
+}
+
 interface SnackbarShowParams {
   message: string;
   type?: SnackbarType;
@@ -24,23 +33,13 @@ interface SnackbarShowParams {
 }
 
 interface SnackbarState {
-  visible: boolean;
-  message: string;
-  type: SnackbarType;
-  duration: number; // Stored as milliseconds
-  action?: SnackbarAction;
-  isSwipeDismissable: boolean;
+  queue: SnackbarItem[];
   show: (params: SnackbarShowParams) => void;
-  hide: () => void;
+  dismiss: (id: string) => void;
 }
 
 export const useSnackbarStore = create<SnackbarState>((set) => ({
-  visible: false,
-  message: '',
-  type: 'info',
-  duration: DURATION_MAP.short,
-  action: undefined,
-  isSwipeDismissable: true,
+  queue: [],
   show: ({
     message,
     type = 'info',
@@ -48,16 +47,21 @@ export const useSnackbarStore = create<SnackbarState>((set) => ({
     action,
     isSwipeDismissable = true,
   }) => {
-    set({
-      visible: true,
+    const id = Date.now().toString() + Math.random().toString(36).substring(2, 9);
+    const newItem: SnackbarItem = {
+      id,
       message,
       type,
       duration: DURATION_MAP[duration],
       action,
       isSwipeDismissable,
-    });
+    };
+    set((state) => ({ queue: [...state.queue, newItem] }));
   },
-  hide: () => set({ visible: false }),
+  dismiss: (id) =>
+    set((state) => ({
+      queue: state.queue.filter((item) => item.id !== id),
+    })),
 }));
 
 /**
@@ -67,7 +71,7 @@ export const snackbar = {
   show: (params: SnackbarShowParams) => {
     useSnackbarStore.getState().show(params);
   },
-  hide: () => {
-    useSnackbarStore.getState().hide();
+  dismiss: (id: string) => {
+    useSnackbarStore.getState().dismiss(id);
   },
 };

@@ -1,17 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 import {
   StyleSheet,
   Text,
   View,
-  Platform,
   TouchableOpacity,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  runOnJS,
 } from 'react-native-reanimated';
-import { runOnJS } from 'react-native-worklets';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -19,75 +18,98 @@ import {
   CheckCircle,
   AlertCircle,
   AlertTriangle,
-  X,
 } from 'lucide-react-native';
-import { useSnackbarStore, SnackbarType } from './snackbarStore';
+import { useSnackbarStore, SnackbarType, SnackbarItem as SnackbarItemType } from './snackbarStore';
 import { useAppTheme } from '../../../hooks/useAppTheme';
 
+const MAX_STACK = 3; // Maximum visible snackbars in the stack
+
 export const Snackbar = () => {
-  const { visible, message, type, duration, action, isSwipeDismissable, hide } =
-    useSnackbarStore();
+  const queue = useSnackbarStore(state => state.queue);
+
+  // We only show the last MAX_STACK items, but we need to reverse them 
+  // so the newest one is visually "at the back" or "at the top" depending on UX.
+  // The user said "waiting behind the current one", so index 0 is active.
+  const visibleItems = queue.slice(0, MAX_STACK);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      {visibleItems.map((item, index) => (
+        <SnackbarItem key={item.id} item={item} index={index} />
+      ))}
+    </View>
+  );
+};
+
+interface SnackbarItemProps {
+  item: SnackbarItemType;
+  index: number;
+}
+
+const SnackbarItem = memo(({ item, index }: SnackbarItemProps) => {
+  const { dismiss } = useSnackbarStore();
   const theme = useAppTheme();
   const insets = useSafeAreaInsets();
 
-  // Use insets.top for both platforms to avoid notch/punch-hole.
-  // On Android, insets.top is 0 unless the status bar is translucent or hidden.
-  // We add a minimum of 10 for better visuals.
   const targetY = Math.max(insets.top, 10) + 10;
+  
+  // Stacking offsets: each item behind is moved down and scaled
+  const stackOffset = index * 8;
+  const stackScale = 1 - index * 0.05;
 
   const translateY = useSharedValue(-150);
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
 
   useEffect(() => {
-    if (visible) {
-      translateX.value = 0;
-      translateY.value = withTiming(targetY, { duration: 300 });
-      opacity.value = withTiming(1, { duration: 200 });
+    // Entrance / Update stacking position
+    translateY.value = withTiming(targetY + stackOffset, { duration: 400 });
+    opacity.value = withTiming(1 - index * 0.2, { duration: 300 });
 
-      let timer: ReturnType<typeof setTimeout>;
-      if (duration > 0) {
-        timer = setTimeout(() => {
-          hide();
-        }, duration);
-      }
-
-      return () => {
-        if (timer) clearTimeout(timer);
-      };
-    } else {
-      translateY.value = withTiming(-150, { duration: 300 });
-      opacity.value = withTiming(0, { duration: 300 });
+    let timer: ReturnType<typeof setTimeout>;
+    // Only start the duration timer if this snackbar is at the top of the stack (index 0)
+    if (index === 0 && item.duration > 0) {
+      timer = setTimeout(() => {
+        handleDismiss();
+      }, item.duration);
     }
-  }, [visible, duration, hide, targetY, translateY, opacity, translateX]);
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [index, stackOffset, targetY, item.duration]);
+
+  const handleDismiss = () => {
+    translateY.value = withTiming(-150, { duration: 300 });
+    opacity.value = withTiming(0, { duration: 200 }, () => {
+      runOnJS(dismiss)(item.id);
+    });
+  };
 
   const panGesture = Gesture.Pan()
-    .enabled(isSwipeDismissable)
+    .enabled(item.isSwipeDismissable && index === 0) // Only top one is swipeable
     .onChange(event => {
       translateX.value = event.translationX;
       if (event.translationY < 0) {
-        translateY.value = targetY + event.translationY;
+        translateY.value = targetY + stackOffset + event.translationY;
       } else {
-        translateY.value = targetY + event.translationY * 0.1;
+        translateY.value = targetY + stackOffset + event.translationY * 0.1;
       }
     })
     .onEnd(event => {
-      const shouldDismissX =
-        Math.abs(event.translationX) > 80 || Math.abs(event.velocityX) > 600;
+      const shouldDismissX = Math.abs(event.translationX) > 80 || Math.abs(event.velocityX) > 600;
       const shouldDismissY = event.translationY < -30 || event.velocityY < -500;
 
       if (shouldDismissX || shouldDismissY) {
         if (shouldDismissX) {
-          translateX.value = withTiming(event.translationX > 0 ? 500 : -500, {
-            duration: 200,
-          });
+          translateX.value = withTiming(event.translationX > 0 ? 500 : -500, { duration: 200 });
         } else {
           translateY.value = withTiming(-150, { duration: 200 });
         }
-        runOnJS(hide)();
+        runOnJS(dismiss)(item.id);
       } else {
         translateX.value = withTiming(0, { duration: 200 });
-        translateY.value = withTiming(targetY, { duration: 200 });
+        translateY.value = withTiming(targetY + stackOffset, { duration: 200 });
       }
     });
 
@@ -96,15 +118,14 @@ export const Snackbar = () => {
       transform: [
         { translateY: translateY.value },
         { translateX: translateX.value },
+        { scale: withTiming(stackScale, { duration: 300 }) },
       ],
       opacity: opacity.value,
+      zIndex: 9999 - index,
     };
   });
 
-  if (!visible && opacity.value === 0) return null;
-
   const getThemeColors = (t: SnackbarType) => {
-    // Subtle background colors with colored icons/text for a premium, less "loud" look
     switch (t) {
       case 'success':
         return {
@@ -153,7 +174,7 @@ export const Snackbar = () => {
     }
   };
 
-  const colors = getThemeColors(type);
+  const colors = getThemeColors(item.type);
 
   return (
     <GestureDetector gesture={panGesture}>
@@ -168,7 +189,7 @@ export const Snackbar = () => {
         ]}
       >
         <View style={styles.content}>
-          <View style={styles.iconContainer}>{getIcon(type, colors.icon)}</View>
+          <View style={styles.iconContainer}>{getIcon(item.type, colors.icon)}</View>
 
           <View style={styles.textContainer}>
             <Text
@@ -178,21 +199,21 @@ export const Snackbar = () => {
               ]}
               numberOfLines={3}
             >
-              {message}
+              {item.message}
             </Text>
           </View>
 
-          {action && (
+          {item.action && (
             <TouchableOpacity
               activeOpacity={0.7}
               onPress={() => {
-                action.onPress();
-                hide();
+                item.action?.onPress();
+                handleDismiss();
               }}
               style={styles.actionButton}
             >
               <Text style={[styles.actionText, { color: colors.action }]}>
-                {action.label}
+                {item.action.label}
               </Text>
             </TouchableOpacity>
           )}
@@ -200,16 +221,14 @@ export const Snackbar = () => {
       </Animated.View>
     </GestureDetector>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     left: 20,
     right: 20,
-    borderWidth: 0, // Removed border
     borderRadius: 12,
-    zIndex: 9999,
     elevation: 6,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
