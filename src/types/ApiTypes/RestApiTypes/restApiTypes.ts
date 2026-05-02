@@ -68,6 +68,27 @@ export type UserProfile = components['schemas']['UserMeResponse'];
 /** Data returned on login/register */
 export type AuthData = components['schemas']['AuthResponseData'];
 
+/** Individual chat item in the list */
+export type ChatItem = components['schemas']['ChatItem'];
+
+/** List of chats */
+export type ChatList = components['schemas']['ChatList'];
+
+/** Individual message item */
+export type MessageItem = components['schemas']['MessageItem'];
+
+/** List of messages */
+export type MessageList = components['schemas']['MessageList'];
+
+/** User search result item */
+export type UserSearchResponse = components['schemas']['UserSearchResponse'];
+
+/** List of users */
+export type UserList = components['schemas']['UserList'];
+
+/** Conversation ID container */
+export type ConversationID = components['schemas']['ConversationID'];
+
 // ── Operation response types ──────────────────────────────────────────────────
 
 /** POST /login → 200 response (wrapped in StandardResponse) */
@@ -105,6 +126,9 @@ export type SendVerificationResponse = SuccessBody<'send_verification_send_verif
 
 /** POST /verify-email → 200 response */
 export type VerifyEmailResponse = SuccessBody<'verify_email_verify_email_post'>;
+
+/** GET / → 200 response */
+export type RootResponse = SuccessBody<'root__get'>;
 
 // ── Path parameter types ──────────────────────────────────────────────────────
 
