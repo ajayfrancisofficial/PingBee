@@ -159,14 +159,10 @@ export const YouScreen = () => {
         data={[]}
         keyExtractor={(_, index) => index.toString()}
         renderItem={() => null}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: Platform.OS === 'ios' ? 0 : insets.top },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <>
-            {/* Top Spacing for header */}
-            <View style={{ height: Platform.OS === 'ios' ? 44 : 56 }} />
+
 
             {/* Profile Section */}
             <View style={styles.profileSection}>

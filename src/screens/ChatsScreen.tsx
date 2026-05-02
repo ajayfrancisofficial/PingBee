@@ -23,6 +23,7 @@ const ChatsScreen = () => {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      title: 'Chats',
       headerRight: () => (
         <Pressable
           onPress={() => navigation.navigate('NewChat')}

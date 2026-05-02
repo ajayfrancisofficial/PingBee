@@ -93,7 +93,7 @@ export const BottomTabNavigator = createNativeBottomTabNavigator({
     tabBarActiveIndicatorColor: theme.colors.primary,
     tabBarRippleColor: theme.colors.primary,
     headerLargeTitleEnabled: true,
-    headerTransparent: true,
+    headerTransparent: false,
     headerLargeTitleShadowVisible: true,
     headerTintColor: theme.colors.primary,
   }),

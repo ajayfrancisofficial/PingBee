@@ -33,7 +33,7 @@ export const YouStack = createNativeStackNavigator({
   },
   screenOptions: {
     headerShown: true,
-    headerTransparent: true,
+    headerTransparent: false,
     headerLargeTitleEnabled: false,
   },
 });
