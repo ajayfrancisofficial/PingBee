@@ -71,6 +71,7 @@ export const websocketApi = {
     socket.onmessage = event => {
       try {
         const parsedData: WSIncomingPayload = JSON.parse(event.data);
+        console.log('[websocketApi] Received message:', parsedData);
         // Delegate message handling to the service
         websocketService.handleIncomingMessage(parsedData);
       } catch (e) {
@@ -130,6 +131,7 @@ export const websocketApi = {
 
   sendRaw: (data: WSOutgoingPayload) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
+      console.log('[websocketApi] Sending raw data:', data);
       socket.send(JSON.stringify(data));
     } else {
       console.warn('[websocketApi] Cannot send, socket not connected');
