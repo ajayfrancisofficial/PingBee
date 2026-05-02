@@ -17,7 +17,7 @@
 - **Navigation**: **NEVER** use `any` type for `useNavigation()`. Always use proper types (e.g., `StaticParamList` from your stack) or rely on inference if possible.
 - **Styling**: **ALWAYS** use values from the theme (`colors`, `spacing`, `typography`, `borderRadius`, `iconSizes`). Never use hardcoded pixel values for spacing or colors. Even icon sizes should come from `theme.iconSizes` (if available) or `theme.spacing`.
 - **API**: Follow the pattern in `src/api/endpoints.ts` and use `axiosClient` for requests. All API modules (e.g., `authApi.ts`, `chatApi.ts`) MUST export a single constant object containing all methods (e.g., `export const chatApi = { ... }`). Individual named exports for API functions are forbidden.
-- **Hooks**: Place reusable logic in `src/hooks/`.
+- **Hooks**: Place reusable logic in `src/hooks/`. **ALWAYS** extract complex state and side-effect logic (e.g., search, pagination, form handling) from screens into dedicated custom hooks in `src/hooks/` to keep screen components simple and focused on layout/UI.
 - **Database**: Use WatermelonDB models in `src/db/models/` and handle queries through dedicated hooks (e.g., `src/hooks/db/`).
 
 ## Operational Guidelines

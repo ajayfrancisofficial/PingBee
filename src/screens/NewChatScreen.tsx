@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useMemo, useCallback } from 'react';
+import React, { useLayoutEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,55 +8,28 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { Search } from 'lucide-react-native';
 import { AppStackParamList } from '../navigation/AppStack';
 import { useAppTheme } from '../hooks/useAppTheme';
-import { userApi } from '../api/RESTApi/userApi';
+import { useUserSearch } from '../hooks/useUserSearch';
 import { chatApi } from '../api/RESTApi/chatApi';
 import type { UserSearchResponse } from '../types/ApiTypes/RestApiTypes/restApiTypes';
 import { AppTheme } from '../theme';
+import { Input } from '../components/foundations/Input';
 
 const NewChatScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [users, setUsers] = useState<UserSearchResponse[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setUsers([]);
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const response = await userApi.searchUsers(query);
-      if (response.success && response.data) {
-        setUsers(response.data.users);
-      }
-    } catch (error) {
-      console.error('[NewChatScreen] Search failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const { searchQuery, users, isLoading, handleSearch } = useUserSearch();
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: 'New Chat',
       headerLargeTitle: true,
-      headerSearchBarOptions: {
-        placeholder: 'Search for users...',
-        onChangeText: (event: any) => {
-          const text = event.nativeEvent.text;
-          setSearchQuery(text);
-          handleSearch(text);
-        },
-      },
     });
-  }, [navigation, handleSearch]);
+  }, [navigation]);
 
   const onUserPress = async (user: UserSearchResponse) => {
     try {
@@ -100,6 +73,22 @@ const NewChatScreen = () => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <Input
+          placeholder="Search for users..."
+          value={searchQuery}
+          onChangeText={handleSearch}
+          leftIcon={
+            <Search
+              size={theme.sizing.iconSizes.md}
+              color={theme.colors.text.secondary}
+            />
+          }
+          autoFocus
+          clearButtonMode="while-editing"
+        />
+      </View>
+
       {isLoading && users.length === 0 ? (
         <ActivityIndicator
           style={styles.loader}
@@ -139,12 +128,17 @@ const makeStyles = ({
       flex: 1,
       backgroundColor: colors.backgrounds.default,
     },
+    searchContainer: {
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.sm,
+      backgroundColor: colors.backgrounds.default,
+    },
     loader: {
       marginTop: spacing.xl,
     },
     listContent: {
       paddingHorizontal: spacing.md,
-      paddingTop: spacing.sm,
+      paddingTop: spacing.xs,
       paddingBottom: spacing.xl,
     },
     userCard: {
