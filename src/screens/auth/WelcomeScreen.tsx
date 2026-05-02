@@ -1,12 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Linking,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Button } from '../../components/foundations/Button';
