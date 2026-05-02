@@ -337,6 +337,8 @@ export interface components {
       created_at: string;
       /** Is Read */
       is_read: boolean;
+      /** Is Deleted For Everyone */
+      is_deleted_for_everyone: boolean;
     };
     /** MessageList */
     MessageList: {
