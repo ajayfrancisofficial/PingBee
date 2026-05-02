@@ -1,9 +1,31 @@
-import { apiClient } from '../../api/RESTApi/apiClient';
-import { ENDPOINTS } from '../../api/RESTApi/endpoints';
+import { userApi } from '../../api/RESTApi/userApi';
+import { useUserStore } from '../../store/userStore';
+import type {
+  GetMeResponse,
+  GetAllUsersResponse,
+  ConversationResponse,
+} from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export type UpdateProfilePictureType = 'removed' | 'gallery' | 'camera';
 
 export const userService = {
+  getProfile: async (): Promise<GetMeResponse> => {
+    try {
+      const response = await userApi.getMe();
+      if (response.data) {
+        useUserStore.getState().setUser({
+          userId: response.data.user_id,
+          username: response.data.username,
+          email: response.data.email,
+          isVerified: response.data.is_verified,
+        });
+      }
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   /**
    * Mock API service for updating the user profile picture.
    * Shows how a multipart/form-data request would be structured.
@@ -17,35 +39,6 @@ export const userService = {
     // Simulate network delay
     await new Promise(resolve => setTimeout(() => resolve(undefined), 800));
 
-    // If this was a real API call using fetch or axios:
-    /*
-    const formData = new FormData();
-    formData.append('type', updateType);
-    
-    if (updateType !== 'removed' && localUri) {
-      // Get filename from path or default to profile.jpg
-      const filename = localUri.split('/').pop() || 'profile.jpg';
-      
-      // In React Native, file must have uri, type, and name for FormData
-      formData.append('profilePicture', {
-        uri: localUri,
-        name: filename,
-        type: 'image/jpeg',
-      } as any);
-    }
-
-    const response = await fetch('YOUR_API_URL/updateProfilePicture', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        // 'Authorization': `Bearer ${token}`
-      },
-    });
-    const data = await response.json();
-    return data;
-    */
-
     // Mock response
     if (updateType === 'removed') {
       return { success: true, url: '' };
@@ -55,14 +48,11 @@ export const userService = {
     }
   },
 
-  getAllUsers: async () => {
-    // Note: Swagger documentation indicates this is a POST request
-    const response = await apiClient.post(ENDPOINTS.USERS.LIST);
-    return response.data;
+  getAllUsers: async (): Promise<GetAllUsersResponse> => {
+    return await userApi.getAllUsers();
   },
 
-  getOrCreateConversation: async (userId: string) => {
-    const response = await apiClient.post(ENDPOINTS.USERS.GET_CONVERSATION(userId));
-    return response.data;
+  getOrCreateConversation: async (userId: string): Promise<ConversationResponse> => {
+    return await userApi.getOrCreateConversation(userId);
   },
 };

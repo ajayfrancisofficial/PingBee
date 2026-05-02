@@ -54,23 +54,14 @@ export const RegisterScreen = () => {
 
     setLoading(true);
     try {
-      const response = await authService.register({
+      await authService.register({
         firstname: firstName,
         lastname: lastName,
         username,
         email,
         password,
       });
-
-      if (response.success) {
-        Alert.alert('Success', 'Account created successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('Login') },
-        ]);
-      } else {
-        Alert.alert('Error', response.message || 'Registration failed');
-      }
     } catch (error) {
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

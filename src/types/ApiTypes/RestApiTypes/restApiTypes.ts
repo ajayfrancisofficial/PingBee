@@ -62,6 +62,12 @@ export type ErrorResponse = components['schemas']['ErrorResponse'];
 /** Detail object inside an ErrorResponse */
 export type ErrorDetail = components['schemas']['ErrorDetail'];
 
+/** User profile data from /me */
+export type UserProfile = components['schemas']['UserMeResponse'];
+
+/** Data returned on login/register */
+export type AuthData = components['schemas']['AuthResponseData'];
+
 // ── Operation response types ──────────────────────────────────────────────────
 
 /** POST /login → 200 response (wrapped in StandardResponse) */
@@ -93,6 +99,12 @@ export type MarkAsReadResponse = SuccessBody<'mark_as_read_mark_as_read__convers
 
 /** GET /chats → 200 response */
 export type GetChatsResponse = SuccessBody<'get_user_chats_chats_get'>;
+
+/** POST /send-verification → 200 response */
+export type SendVerificationResponse = SuccessBody<'send_verification_send_verification_post'>;
+
+/** POST /verify-email → 200 response */
+export type VerifyEmailResponse = SuccessBody<'verify_email_verify_email_post'>;
 
 // ── Path parameter types ──────────────────────────────────────────────────────
 

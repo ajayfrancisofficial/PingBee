@@ -17,8 +17,8 @@ import { Input } from '../../components/foundations/Input';
 import { ThemeSwitch } from '../../components/common/ThemeSwitch';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
-import { useAuthStore } from '../../store/authStore';
-import { AuthStackParamList } from '../../navigation/AuthStack';
+import { authService } from '../../services/Auth/authService';
+import { AuthStackParamList } from '../../types/navigation';
 
 export const LoginScreen = () => {
   const [identifier, setIdentifier] = useState('');
@@ -27,17 +27,23 @@ export const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
-  const setLoggedIn = useAuthStore(state => state.setLoggedIn);
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const handleLogin = async () => {
     if (!identifier || !password) return;
     setLoading(true);
-    // Functionality will be implemented later
-    setTimeout(() => {
+
+    try {
+      await authService.login({
+        identifier,
+        password,
+      });
+      // On success, the store's setLoggedIn will trigger the AuthSwitch
+      // and redirect automatically to the App stack.
+    } catch (error) {
+    } finally {
       setLoading(false);
-      setLoggedIn(true);
-    }, 1500);
+    }
   };
 
   return (

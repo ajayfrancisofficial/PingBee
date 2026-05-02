@@ -5,13 +5,16 @@ import type {
   UserRegisterBody,
   RegisterSuccessResponse,
   LoginSuccessResponse,
-  GetMeResponse,
+  ResendOTPBody,
+  EmailVerificationBody,
+  SendVerificationResponse,
+  VerifyEmailResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const authApi = {
   /**
    * POST /login
-   * Sends `identifier` + `password`. Returns raw token response (snake_case keys).
+   * Sends `identifier` + `password`.
    */
   login: async (request: UserLoginBody): Promise<LoginSuccessResponse> => {
     const { data } = await apiClient.post<LoginSuccessResponse>(
@@ -22,8 +25,8 @@ export const authApi = {
   },
 
   /**
-   * POST /registers
-   * Sends user registration data. Response shape is unknown until backend adds response_model.
+   * POST /register
+   * Sends user registration data.
    */
   register: async (
     request: UserRegisterBody,
@@ -34,12 +37,30 @@ export const authApi = {
     );
     return data;
   },
+
   /**
-   * GET /me
-   * Returns the current authenticated user's profile.
+   * POST /send-verification
    */
-  getMe: async (): Promise<GetMeResponse> => {
-    const { data } = await apiClient.get<GetMeResponse>(ENDPOINTS.AUTH.ME);
+  sendVerification: async (
+    request: ResendOTPBody,
+  ): Promise<SendVerificationResponse> => {
+    const { data } = await apiClient.post<SendVerificationResponse>(
+      ENDPOINTS.AUTH.SEND_VERIFICATION,
+      request,
+    );
+    return data;
+  },
+
+  /**
+   * POST /verify-email
+   */
+  verifyEmail: async (
+    request: EmailVerificationBody,
+  ): Promise<VerifyEmailResponse> => {
+    const { data } = await apiClient.post<VerifyEmailResponse>(
+      ENDPOINTS.AUTH.VERIFY_EMAIL,
+      request,
+    );
     return data;
   },
 };
