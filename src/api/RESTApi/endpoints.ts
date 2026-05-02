@@ -1,4 +1,5 @@
 export const API_BASE_URL = 'https://chat-app-81bx.onrender.com';
+export const WS_BASE_URL = 'wss://chat-app-81bx.onrender.com/ws';
 
 export const ENDPOINTS = {
   AUTH: {

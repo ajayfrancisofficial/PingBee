@@ -1,6 +1,6 @@
 import { database } from '../../db';
 import Message from '../../db/models/Message';
-import { sendRaw, getIsConnected } from '../../api/WebsocketApi/websocket';
+import { websocketApi } from '../../api/WebsocketApi/websocketApi';
 import { formatMessagePayload } from '../Chat/messageController';
 
 let isSyncing = false;
@@ -10,7 +10,7 @@ let isSyncing = false;
  * Call this when the connection is restored.
  */
 export const performOutgoingSync = async () => {
-  if (isSyncing || !getIsConnected()) return;
+  if (isSyncing || !websocketApi.getIsConnected()) return;
   isSyncing = true;
 
   try {
@@ -22,12 +22,12 @@ export const performOutgoingSync = async () => {
 
     // 1. Sync New Messages
     for (const message of pendingNew) {
-      sendRaw(formatMessagePayload(message));
+      websocketApi.sendRaw(formatMessagePayload(message));
     }
 
     // 2. Sync Edits
     for (const message of pendingEdits) {
-      sendRaw({
+      websocketApi.sendRaw({
         type: 'EDIT_MSG',
         payload: {
           id: message.id,
@@ -39,7 +39,7 @@ export const performOutgoingSync = async () => {
 
     // 3. Sync Deletions
     for (const message of pendingDeletes) {
-      sendRaw({
+      websocketApi.sendRaw({
         type: 'DELETE_MSG',
         payload: {
           id: message.id,

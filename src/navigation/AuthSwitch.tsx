@@ -8,7 +8,7 @@ import { getNavigationTheme } from '../theme/navigationTheme';
 import { StyleSheet, View } from 'react-native';
 import { AppTheme } from '../theme';
 import { runInitialLoad } from '../services/Sync/InitialLoadService';
-import { connect, disconnect } from '../api/WebsocketApi/websocket';
+import { useWebsocket } from '../hooks/useWebsocket';
 
 const AppNavigation = createStaticNavigation(AppStack);
 const AuthNavigation = createStaticNavigation(AuthStack);
@@ -17,20 +17,19 @@ export const AuthSwitch = () => {
   const { isLoggedIn, isLoading, checkAuth } = useAuthStore();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+
+  // Handle WebSocket lifecycle
+  useWebsocket();
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // Initial Load + WebSocket connection logic
+  // Initial Load logic
   useEffect(() => {
     if (isLoggedIn && !isLoading) {
-      // 1. Baseline sync (rest api)
+      // Baseline sync (rest api)
       runInitialLoad();
-      // 2. Real-time engine (websocket)
-      connect();
-    } else if (!isLoggedIn && !isLoading) {
-      // Cleanup on logout
-      disconnect();
     }
   }, [isLoggedIn, isLoading]);
 

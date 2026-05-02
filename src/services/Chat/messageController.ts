@@ -3,7 +3,7 @@ import { database } from '../../db';
 import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
 import { useUserStore } from '../../store/userStore';
-import { sendRaw, getIsConnected } from '../../api/WebsocketApi/websocket';
+import { websocketApi } from '../../api/WebsocketApi/websocketApi';
 import type { WSSendMsg } from '../../types/websocket';
 
 /**
@@ -109,9 +109,9 @@ export const sendMessage = async (
   });
 
   // 2. If online, send via WebSocket immediately
-  if (getIsConnected()) {
+  if (websocketApi.getIsConnected()) {
     const payload = formatMessagePayload(savedMessage);
-    sendRaw(payload);
+    websocketApi.sendRaw(payload);
   }
 
   return savedMessage.id;
@@ -156,8 +156,8 @@ export const editMessage = async (
     }
   });
 
-  if (getIsConnected()) {
-    sendRaw({
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
       type: 'EDIT_MSG',
       payload: {
         id: messageId,
@@ -209,8 +209,8 @@ export const deleteMessage = async (
     }
   });
 
-  if (getIsConnected()) {
-    sendRaw({
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
       type: 'DELETE_MSG',
       payload: {
         id: messageId,
@@ -225,8 +225,8 @@ export const deleteMessage = async (
  * Send typing indicator status to the chat.
  */
 export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
-  if (getIsConnected()) {
-    sendRaw({
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
       type: 'TYPING',
       payload: {
         chatId,
@@ -240,8 +240,8 @@ export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
  * Send presence status (online/offline) to the server.
  */
 export const sendPresenceStatus = (status: 'online' | 'offline') => {
-  if (getIsConnected()) {
-    sendRaw({
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
       type: 'PRESENCE',
       payload: {
         status,
