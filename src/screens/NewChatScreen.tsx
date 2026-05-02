@@ -12,7 +12,7 @@ import { Search } from 'lucide-react-native';
 import { AppStackParamList } from '../navigation/AppStack';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserSearch } from '../hooks/useUserSearch';
-import { chatApi } from '../api/RESTApi/chatApi';
+import { useConversationActions } from '../hooks/useConversationActions';
 import type { UserSearchResponse } from '../types/ApiTypes/RestApiTypes/restApiTypes';
 import { AppTheme } from '../theme';
 import { Input } from '../components/foundations/Input';
@@ -23,6 +23,8 @@ const NewChatScreen = () => {
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const { searchQuery, users, isLoading, handleSearch } = useUserSearch();
+  const { isStarting, selectedUserId, startConversation } =
+    useConversationActions();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -33,7 +35,7 @@ const NewChatScreen = () => {
 
   const onUserPress = async (user: UserSearchResponse) => {
     try {
-      const response = await chatApi.getOrCreateConversation(user.user_id);
+      const response = await startConversation(user.user_id);
       if (response.success && response.data) {
         navigation.navigate('Chat', {
           name: `${user.firstname} ${user.lastname}`,
@@ -41,7 +43,7 @@ const NewChatScreen = () => {
         });
       }
     } catch (error) {
-      console.error('[NewChatScreen] Failed to start conversation:', error);
+      // Error is already logged in the hook
     }
   };
 
@@ -51,25 +53,37 @@ const NewChatScreen = () => {
     return (f + l).toUpperCase() || '?';
   };
 
-  const renderItem = ({ item }: { item: UserSearchResponse }) => (
-    <Pressable
-      style={({ pressed }) => [
-        styles.userCard,
-        pressed && styles.userCardPressed,
-      ]}
-      onPress={() => onUserPress(item)}
-    >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{getInitials(item)}</Text>
-      </View>
-      <View style={styles.userInfo}>
-        <Text style={styles.userName}>
-          {item.firstname} {item.lastname}
-        </Text>
-        <Text style={styles.userUsername}>@{item.username}</Text>
-      </View>
-    </Pressable>
-  );
+  const renderItem = ({ item }: { item: UserSearchResponse }) => {
+    const isThisUserStarting = selectedUserId === item.user_id;
+
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          styles.userCard,
+          pressed && styles.userCardPressed,
+        ]}
+        onPress={() => onUserPress(item)}
+        disabled={isStarting}
+      >
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{getInitials(item)}</Text>
+        </View>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>
+            {item.firstname} {item.lastname}
+          </Text>
+          <Text style={styles.userUsername}>@{item.username}</Text>
+        </View>
+        {isThisUserStarting && (
+          <ActivityIndicator
+            size="small"
+            color={theme.colors.brand.primary}
+            style={styles.cardLoader}
+          />
+        )}
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -86,6 +100,7 @@ const NewChatScreen = () => {
           }
           autoFocus
           clearButtonMode="while-editing"
+          editable={!isStarting}
         />
       </View>
 
@@ -186,6 +201,9 @@ const makeStyles = ({
       ...typography.variants.bodyMedium,
       color: colors.text.secondary,
       textAlign: 'center',
+    },
+    cardLoader: {
+      marginLeft: spacing.sm,
     },
   });
 
