@@ -4,29 +4,21 @@ import Chat from '../../db/models/Chat';
 import { useChatStore } from '../../store/chatStore';
 import { performOutgoingSync } from '../Sync/OutgoingSync';
 import type {
-  WSIncomingPayload,
-  WSReceivedMsg,
-  WSAckSendMsg,
-  WSAckEditMsg,
-  WSAckDeleteMsg,
-  WSReceiveTyping,
-  WSReceiveMsgStatus,
-  WSReceiveEditMsg,
-  WSReceiveDeleteMsg,
-  WSReceivePresence,
-} from '../../types/websocket';
+  WsServerMessage,
+  ServerEventPayloads,
+} from '../../types/ApiTypes/WsApiTypes/wsApitypes';
 
 export const websocketService = {
   /**
    * Called by the transport layer (websocketApi) when a raw message is received.
    */
-  handleIncomingMessage: async (data: WSIncomingPayload) => {
-    const { type, payload } = data;
+  handleIncomingMessage: async (data: WsServerMessage) => {
+    const { event, payload } = data;
 
     try {
-      switch (type) {
+      switch (event) {
         case 'RECEIVE_MSG': {
-          const p = payload as WSReceivedMsg['payload'];
+          const p = payload as ServerEventPayloads['RECEIVE_MSG'];
           await database.write(async () => {
             const messagesCollection = database.get<Message>('messages');
             await messagesCollection.create(msg => {
@@ -36,9 +28,9 @@ export const websocketService = {
               msg.status = 'sent';
               msg.isMine = false;
               msg.createdAt = new Date(p.createdAt).getTime();
-              msg.serverTimestamp = p.serverTimestamp;
+              msg.serverTimestamp = new Date(p.serverTimestamp).getTime();
               if (p.replyToId) {
-                msg.replyToId = p.replyToId;
+                msg.replyToId = p.replyToId as string;
               }
             });
 
@@ -53,7 +45,7 @@ export const websocketService = {
         }
 
         case 'RECEIVE_EDIT_MSG': {
-          const p = payload as WSReceiveEditMsg['payload'];
+          const p = payload as ServerEventPayloads['RECEIVE_EDIT_MSG'];
           await database.write(async () => {
             try {
               const message = await database
@@ -64,7 +56,9 @@ export const websocketService = {
               await message.update(m => {
                 m.text = p.text;
                 m.isEdited = true;
-                m.editedAt = new Date(p.editedAt).getTime();
+                if (p.editedAt) {
+                  m.editedAt = new Date(p.editedAt).getTime();
+                }
                 m.editStatus = 'synced';
               });
 
@@ -78,7 +72,7 @@ export const websocketService = {
               }
             } catch (e) {
               console.warn(
-                '[websocketService] Cannot process incoming EDIT_MSG, message not found:',
+                '[websocketService] Cannot process incoming RECEIVE_EDIT_MSG, message not found:',
                 p.id,
               );
             }
@@ -87,18 +81,19 @@ export const websocketService = {
         }
 
         case 'ACK_EDIT_MSG': {
-          const p = payload as WSAckEditMsg['payload'];
+          const p = payload as ServerEventPayloads['ACK_EDIT_MSG'];
           await database.write(async () => {
             const message = await database.get<Message>('messages').find(p.id);
             await message.update(m => {
               m.editStatus = 'synced';
+              m.editedAt = new Date(p.editedAt).getTime();
             });
           });
           break;
         }
 
         case 'RECEIVE_DELETE_MSG': {
-          const p = payload as WSReceiveDeleteMsg['payload'];
+          const p = payload as ServerEventPayloads['RECEIVE_DELETE_MSG'];
 
           if (p.deleteType === 'deleteForMe') {
             break;
@@ -113,8 +108,10 @@ export const websocketService = {
 
               await message.update(m => {
                 m.isDeleted = true;
-                m.deletedAt = new Date(p.deletedAt).getTime();
-                m.deleteType = p.deleteType;
+                if (p.deletedAt) {
+                  m.deletedAt = new Date(p.deletedAt).getTime();
+                }
+                m.deleteType = p.deleteType as any;
                 m.deleteStatus = 'synced';
               });
 
@@ -128,7 +125,7 @@ export const websocketService = {
               }
             } catch (e) {
               console.warn(
-                '[websocketService] Cannot process incoming DELETE_MSG, message not found:',
+                '[websocketService] Cannot process incoming RECEIVE_DELETE_MSG, message not found:',
                 p.id,
               );
             }
@@ -137,57 +134,64 @@ export const websocketService = {
         }
 
         case 'ACK_DELETE_MSG': {
-          const p = payload as WSAckDeleteMsg['payload'];
+          const p = payload as ServerEventPayloads['ACK_DELETE_MSG'];
           await database.write(async () => {
             const message = await database.get<Message>('messages').find(p.id);
             await message.update(m => {
               m.deleteStatus = 'synced';
+              m.deletedAt = new Date(p.deletedAt).getTime();
             });
           });
           break;
         }
 
         case 'TYPING': {
-          const p = payload as WSReceiveTyping['payload'];
+          const p = payload as ServerEventPayloads['TYPING'];
           const { setTyping } = useChatStore.getState();
           setTyping(p.chatId, p.userId, p.isTyping);
           break;
         }
 
         case 'PRESENCE': {
-          const p = payload as WSReceivePresence['payload'];
+          const p = payload as ServerEventPayloads['PRESENCE'];
           const { setPresence } = useChatStore.getState();
-          setPresence(p.userId, p.status);
+          setPresence(p.userId, p.status as any);
           break;
         }
 
         case 'ACK_SEND_MSG': {
-          const p = payload as WSAckSendMsg['payload'];
+          const p = payload as ServerEventPayloads['ACK_SEND_MSG'];
           await database.write(async () => {
             const message = await database.get<Message>('messages').find(p.id);
             await message.update(m => {
               m.status = 'sent';
-              m.serverTimestamp = p.serverTimestamp;
+              m.serverTimestamp = new Date(p.serverTimestamp).getTime();
             });
           });
           break;
         }
 
         case 'MSG_STATUS': {
-          const p = payload as WSReceiveMsgStatus['payload'];
+          const p = payload as ServerEventPayloads['MSG_STATUS'];
           await database.write(async () => {
             const message = await database
               .get<Message>('messages')
               .find(p.messageId);
             await message.update(m => {
-              m.status = p.status;
+              m.status = p.status as any;
             });
           });
           break;
         }
 
+        case 'ERROR': {
+          const p = payload as ServerEventPayloads['ERROR'];
+          console.error('[websocketService] Server Error:', p.message);
+          break;
+        }
+
         default:
-          console.log('[websocketService] Unknown message type:', type);
+          console.log('[websocketService] Unknown event:', event);
       }
     } catch (error) {
       console.error(

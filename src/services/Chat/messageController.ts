@@ -4,7 +4,7 @@ import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
 import { useUserStore } from '../../store/userStore';
 import { websocketApi } from '../../api/WebsocketApi/websocketApi';
-import type { WSSendMsg } from '../../types/websocket';
+import type { WsClientMessage } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
 
 /**
  * Detect media type from an IMessage's optional fields.
@@ -25,7 +25,7 @@ const getMediaInfo = (
  * Format a WatermelonDB Message record into the WebSocket MSG payload.
  * This is also used by OutgoingSync to retry pending messages.
  */
-export const formatMessagePayload = (message: Message): WSSendMsg => ({
+export const formatMessagePayload = (message: Message): WsClientMessage => ({
   type: 'SEND_MSG',
   payload: {
     id: message.id,
@@ -38,7 +38,8 @@ export const formatMessagePayload = (message: Message): WSSendMsg => ({
       mediaType: message.mediaType,
     }),
     ...(message.replyToId && { replyToId: message.replyToId }),
-  },
+  } as any,
+  timestamp: new Date().toISOString(),
 });
 
 /**
@@ -164,6 +165,7 @@ export const editMessage = async (
         text: newText,
         editedAt,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -217,6 +219,7 @@ export const deleteMessage = async (
         deleteType: type,
         deletedAt,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -232,6 +235,7 @@ export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
         chatId,
         isTyping,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -246,6 +250,7 @@ export const sendPresenceStatus = (status: 'online' | 'offline') => {
       payload: {
         status,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };

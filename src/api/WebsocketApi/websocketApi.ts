@@ -3,9 +3,9 @@ import { websocketService } from '../../services/Websocket/websocketService';
 import { authService } from '../../services/Auth/authService';
 import { snackbar } from '../../components/foundations/Snackbar';
 import type {
-  WSIncomingPayload,
-  WSOutgoingPayload,
-} from '../../types/websocket';
+  WsServerMessage,
+  WsClientMessage,
+} from '../../types/ApiTypes/WsApiTypes/wsApitypes';
 import { WS_BASE_URL } from '../RESTApi/endpoints';
 
 let socket: WebSocket | null = null;
@@ -70,7 +70,7 @@ export const websocketApi = {
 
     socket.onmessage = event => {
       try {
-        const parsedData: WSIncomingPayload = JSON.parse(event.data);
+        const parsedData: WsServerMessage = JSON.parse(event.data);
         console.log('[websocketApi] Received message:', parsedData);
         // Delegate message handling to the service
         websocketService.handleIncomingMessage(parsedData);
@@ -129,7 +129,7 @@ export const websocketApi = {
     isConnected = false;
   },
 
-  sendRaw: (data: WSOutgoingPayload) => {
+  sendRaw: (data: WsClientMessage) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       console.log('[websocketApi] Sending raw data:', data);
       socket.send(JSON.stringify(data));

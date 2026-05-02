@@ -18,7 +18,9 @@ export const performOutgoingSync = async () => {
 
     const pendingNew = allMessages.filter(m => m.status === 'pending');
     const pendingEdits = allMessages.filter(m => m.editStatus === 'pending');
-    const pendingDeletes = allMessages.filter(m => m.deleteStatus === 'pending');
+    const pendingDeletes = allMessages.filter(
+      m => m.deleteStatus === 'pending',
+    );
 
     // 1. Sync New Messages
     for (const message of pendingNew) {
@@ -34,6 +36,7 @@ export const performOutgoingSync = async () => {
           text: message.text,
           editedAt: new Date(message.editedAt || Date.now()).toISOString(),
         },
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -46,10 +49,12 @@ export const performOutgoingSync = async () => {
           deleteType: message.deleteType || 'deleteForEveryone',
           deletedAt: new Date(message.deletedAt || Date.now()).toISOString(),
         },
+        timestamp: new Date().toISOString(),
       });
     }
 
-    const total = pendingNew.length + pendingEdits.length + pendingDeletes.length;
+    const total =
+      pendingNew.length + pendingEdits.length + pendingDeletes.length;
     if (total > 0) {
       console.log(`[OutgoingSync] Synced ${total} pending action(s)`);
     }
