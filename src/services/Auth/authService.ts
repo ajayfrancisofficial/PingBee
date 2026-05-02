@@ -12,6 +12,7 @@ import type {
   SendVerificationResponse,
   VerifyEmailResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
+import { snackbar } from '../../components/foundations/Snackbar';
 
 export const authService = {
   login: async (request: UserLoginBody): Promise<LoginSuccessResponse> => {
@@ -63,7 +64,10 @@ export const authService = {
         isVerified: tokenData.is_verified,
       });
       useAuthStore.getState().setLoggedIn(true);
-
+      snackbar.show({
+        message: data?.message || 'Registration Successfull',
+        type: 'success',
+      });
       return data;
     } catch (error) {
       throw error;
