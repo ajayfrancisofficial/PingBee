@@ -86,10 +86,16 @@ apiClient.interceptors.response.use(
           message: data?.message || 'Invalid Request',
           type: 'warning',
         });
-      } else if (status === 422 || status >= 500) {
+      } else if (status >= 500) {
         snackbar.show({
           message: 'Something went wrong! Please try again later',
           type: 'error',
+        });
+      } else if (status === 422) {
+        //validation errors
+        snackbar.show({
+          message: data?.message || 'Invalid data. Please try again.',
+          type: 'warning',
         });
       } else if (status !== 401) {
         // Fallback for 403, 404, etc. (excluding 401 since it's handled above)
