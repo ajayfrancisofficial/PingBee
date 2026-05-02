@@ -1,5 +1,6 @@
+import axios from 'axios';
 import { apiClient } from './apiClient';
-import { ENDPOINTS } from './endpoints';
+import { API_BASE_URL, ENDPOINTS } from './endpoints';
 import type {
   UserLoginBody,
   UserRegisterBody,
@@ -9,6 +10,8 @@ import type {
   EmailVerificationBody,
   SendVerificationResponse,
   VerifyEmailResponse,
+  RefreshTokenBody,
+  RefreshSuccessResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const authApi = {
@@ -59,6 +62,21 @@ export const authApi = {
   ): Promise<VerifyEmailResponse> => {
     const { data } = await apiClient.post<VerifyEmailResponse>(
       ENDPOINTS.AUTH.VERIFY_EMAIL,
+      request,
+    );
+    return data;
+  },
+
+  /**
+   * POST /refresh
+   * Refreshes the access token using a refresh token.
+   * Note: Uses axios directly to avoid apiClient interceptors (prevent infinite loop).
+   */
+  refreshToken: async (
+    request: RefreshTokenBody,
+  ): Promise<RefreshSuccessResponse> => {
+    const { data } = await axios.post<RefreshSuccessResponse>(
+      `${API_BASE_URL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
       request,
     );
     return data;

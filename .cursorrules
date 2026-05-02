@@ -37,4 +37,5 @@
 - When adding new features, check for existing patterns in `src/screens/ChatsScreen.tsx`.
 - When creating API calls, update `src/api/endpoints.ts` first.
 - Always prefer local DB (WatermelonDB) for offline-first capabilities where applicable.
+- **NEVER** write direct `axios` or `apiClient` calls in services (`src/services/`). All API call logic MUST be implemented in the API layer (`src/api/RESTApi/`) and then called from services.
 - If you need to run the app, the terminal command is `yarn android`.

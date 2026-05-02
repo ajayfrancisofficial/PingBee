@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import * as Keychain from 'react-native-keychain';
 import { websocketApi } from '../api/WebsocketApi/websocketApi';
 import { useAuthStore } from '../store/authStore';
 
@@ -15,20 +14,8 @@ export const useWebsocket = () => {
 
     const startWebsocket = async () => {
       if (!isLoggedIn) return;
-
-      try {
-        console.log('[useWebsocket] Fetching token for connection...');
-        const credentials = await Keychain.getGenericPassword({
-          service: 'accessToken',
-        });
-
-        if (credentials && isMounted) {
-          websocketApi.connect(credentials.password);
-        } else if (!credentials) {
-          console.warn('[useWebsocket] No access token found in keychain');
-        }
-      } catch (error) {
-        console.error('[useWebsocket] Error fetching token:', error);
+      if (isMounted) {
+        websocketApi.connect();
       }
     };
 

@@ -1,5 +1,7 @@
 import { setWsDisconnectedAt } from '../../utils/syncStorage';
 import { websocketService } from '../../services/Websocket/websocketService';
+import { authService } from '../../services/Auth/authService';
+import { snackbar } from '../../components/foundations/Snackbar';
 import type {
   WSIncomingPayload,
   WSOutgoingPayload,
@@ -12,20 +14,37 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let shouldReconnect: boolean = true;
 const reconnectInterval: number = 3000;
 let currentToken: string | null = null;
+let retryCount: number = 0;
+const MAX_RETRIES: number = 5;
 
 export const websocketApi = {
   /** Check if the WebSocket is currently connected */
   getIsConnected: (): boolean => isConnected,
 
-  connect: (token: string) => {
-    if (!token) {
-      console.error('[websocketApi] Cannot connect: No token provided');
+  connect: async () => {
+    // If it's the initial connection attempt, refresh the token first
+    if (retryCount === 0) {
+      try {
+        console.log('[websocketApi] Initial load: Refreshing token...');
+        const newToken = await authService.refreshToken();
+        currentToken = newToken;
+      } catch (error) {
+        console.error(
+          '[websocketApi] Token refresh failed on initial load:',
+          error,
+        );
+        // Error already handled (snackbar + logout) inside authService.refreshToken
+        return;
+      }
+    }
+
+    if (!currentToken) {
+      console.error('[websocketApi] Cannot connect: No token available');
       return;
     }
 
-    currentToken = token;
     shouldReconnect = true;
-    const url = `${WS_BASE_URL}?token=${token}`;
+    const url = `${WS_BASE_URL}?token=${currentToken}`;
 
     console.log('[websocketApi] Connecting...');
 
@@ -39,6 +58,7 @@ export const websocketApi = {
     socket.onopen = () => {
       console.log('[websocketApi] ✅ Connected');
       isConnected = true;
+      retryCount = 0; // Reset retry count upon successful connection
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;
@@ -66,11 +86,24 @@ export const websocketApi = {
       setWsDisconnectedAt(Date.now());
 
       if (shouldReconnect) {
-        console.log(`[websocketApi] Reconnecting in ${reconnectInterval}ms...`);
-        if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(() => {
-          if (currentToken) websocketApi.connect(currentToken);
-        }, reconnectInterval);
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.log(
+            `[websocketApi] Reconnecting (Attempt ${retryCount}/${MAX_RETRIES}) in ${reconnectInterval}ms...`,
+          );
+          if (reconnectTimer) clearTimeout(reconnectTimer);
+          reconnectTimer = setTimeout(() => {
+            websocketApi.connect();
+          }, reconnectInterval);
+        } else {
+          console.error(
+            '[websocketApi] Max retries reached. Stopping reconnection.',
+          );
+          snackbar.show({
+            message: 'Unable to connect to server. Please Try again later',
+            type: 'error',
+          });
+        }
       }
     };
 
@@ -87,6 +120,7 @@ export const websocketApi = {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
     }
+    retryCount = 0;
     if (socket) {
       socket.close();
       socket = null;

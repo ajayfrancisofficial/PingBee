@@ -100,4 +100,40 @@ export const authService = {
       useUserStore.getState().clearUser();
     } catch (error) {}
   },
+
+  refreshToken: async (): Promise<string> => {
+    try {
+      const refreshCredentials = await Keychain.getGenericPassword({
+        service: 'refreshToken',
+      });
+      if (!refreshCredentials) throw new Error('No refresh token available');
+
+      // Execute refresh
+      const refreshData = await authApi.refreshToken({
+        refresh_token: refreshCredentials.password,
+      });
+
+      // Save new tokens
+      const tokenData = refreshData.data;
+      if (!tokenData) throw new Error('Token data missing in refresh response');
+
+      await Keychain.setGenericPassword('token', tokenData.access_token, {
+        service: 'accessToken',
+      });
+      await Keychain.setGenericPassword('token', tokenData.refresh_token, {
+        service: 'refreshToken',
+      });
+
+      return tokenData.access_token;
+    } catch (error) {
+      // If refresh fails, we should probably logout
+      snackbar.show({
+        message: 'Session expired. Please log in again.',
+        type: 'warning',
+      });
+      await useAuthStore.getState().logout();
+      useUserStore.getState().clearUser();
+      throw error;
+    }
+  },
 };

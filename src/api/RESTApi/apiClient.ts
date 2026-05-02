@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
-import { API_BASE_URL, ENDPOINTS } from './endpoints';
-import { useAuthStore } from '../../store/authStore';
+import { API_BASE_URL } from './endpoints';
+import { authService } from '../../services/Auth/authService';
 import { snackbar } from '../../components/foundations/Snackbar';
 
 export const apiClient = axios.create({
@@ -39,41 +39,13 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshCredentials = await Keychain.getGenericPassword({
-          service: 'refreshToken',
-        });
-        if (!refreshCredentials) throw new Error('No refresh token available');
-
-        // Execute refresh (backend expects { refresh_token: string })
-        const { data: refreshData } = await axios.post(
-          `${API_BASE_URL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
-          {
-            refresh_token: refreshCredentials.password,
-          },
-        );
-
-        // Save new tokens (backend returns snake_case inside data wrapper)
-        const tokenData = refreshData.data;
-        if (!tokenData)
-          throw new Error('Token data missing in refresh response');
-
-        await Keychain.setGenericPassword('token', tokenData.access_token, {
-          service: 'accessToken',
-        });
-        await Keychain.setGenericPassword('token', tokenData.refresh_token, {
-          service: 'refreshToken',
-        });
+        const newToken = await authService.refreshToken();
 
         // Update header and retry previous request
-        originalRequest.headers.Authorization = `Bearer ${tokenData.access_token}`;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // If the refresh token also fails, explicitly flush secure tokens and logout
-        snackbar.show({
-          message: 'Session expired. Please log in again.',
-          type: 'warning',
-        });
-        useAuthStore.getState().logout();
+        // Errors are already handled (snackbar + logout) inside authService.refreshToken
         return Promise.reject(refreshError);
       }
     }
