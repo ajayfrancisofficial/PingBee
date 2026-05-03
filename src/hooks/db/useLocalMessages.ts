@@ -22,7 +22,7 @@ export function useLocalMessages(chatId: string) {
     const subscription = database
       .get<Message>('messages')
       .query(Q.where('chat_id', chatId), Q.sortBy('created_at', Q.desc))
-      .observe()
+      .observeWithColumns(['status', 'text', 'is_edited', 'is_deleted'])
       .subscribe(newMessages => {
         setMessages(newMessages);
       });

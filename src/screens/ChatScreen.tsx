@@ -37,7 +37,10 @@ const ChatScreen = ({ route }: Props) => {
   const navigation = useNavigation();
   const { name, chatId } = route.params;
   const { userId, avatar, name: userName } = useUserStore();
-  const user = { _id: userId, avatar, name: userName };
+  const user = useMemo(
+    () => ({ _id: String(userId), avatar, name: userName }),
+    [userId, avatar, userName],
+  );
   const setActiveChatId = useChatStore(s => s.setActiveChatId);
 
   // Observe messages from WatermelonDB (auto-updates on any DB change)
