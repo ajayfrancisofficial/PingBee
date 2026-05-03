@@ -16,6 +16,7 @@ import { useConversationActions } from '../hooks/useConversationActions';
 import type { UserSearchResponse } from '../types/ApiTypes/RestApiTypes/restApiTypes';
 import { AppTheme } from '../theme';
 import { Input } from '../components/foundations/Input';
+import { ensureChatExists } from '../services/Chat/chatController';
 
 const NewChatScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -37,9 +38,15 @@ const NewChatScreen = () => {
     try {
       const response = await startConversation(user.user_id);
       if (response.success && response.data) {
+        const chatId = String(response.data.conversation_id);
+        const name = `${user.firstname} ${user.lastname}`;
+
+        // Ensure the chat record exists locally before navigating
+        await ensureChatExists(chatId, name);
+
         navigation.navigate('Chat', {
-          name: `${user.firstname} ${user.lastname}`,
-          chatId: String(response.data.conversation_id),
+          name,
+          chatId,
         });
       }
     } catch (error) {
