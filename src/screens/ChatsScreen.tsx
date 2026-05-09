@@ -17,7 +17,7 @@ import Chat from '../db/models/Chat';
 
 const ChatsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const { chats } = useLocalChats();
+  const { chats, refreshChats, isRefreshing } = useLocalChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
@@ -102,6 +102,8 @@ const ChatsScreen = () => {
       renderItem={renderItem}
       contentContainerStyle={styles.list}
       showsVerticalScrollIndicator={false}
+      onRefresh={refreshChats}
+      refreshing={isRefreshing}
     />
   );
 };

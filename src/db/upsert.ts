@@ -72,22 +72,20 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
     await database.batch(...operations);
   });
 
-  // Handle participants sync
-  for (const api of apiChats) {
-    if (api.participants?.userIDs) {
-      await upsertChatParticipants(String(api.id), api.participants.userIDs);
-    }
-  }
+  // Handle participants sync — batch all chats' participants in a single write
+  await batchUpsertAllParticipants(apiChats);
 };
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 
 /**
  * Upsert an array of MessageItem objects into the local `messages` table.
+ * @param currentUserId - The authenticated user's ID, used to correctly set `isMine`.
  */
 export const upsertMessages = async (
   apiMessages: MessageItem[],
   chatId: string,
+  currentUserId: string,
 ): Promise<void> => {
   if (apiMessages.length === 0) return;
 
@@ -102,22 +100,25 @@ export const upsertMessages = async (
 
     const operations = apiMessages.map(api => {
       const id = String(api.message_id);
+      const senderId = String(api.sender_id);
+      const isMine = senderId === currentUserId;
       const existingRecord = existingMap.get(id);
 
       if (existingRecord) {
         return existingRecord.prepareUpdate(m => {
           m.text = api.message;
           m.status = api.is_read ? 'read' : 'sent';
+          m.isMine = isMine;
         });
       } else {
         return messagesCollection.prepareCreate(m => {
           // @ts-ignore
           m._raw.id = id;
           m.chatId = chatId;
-          m.senderId = String(api.sender_id);
+          m.senderId = senderId;
           m.text = api.message;
           m.status = api.is_read ? 'read' : 'sent';
-          m.isMine = false; // We only upsert messages from other users via this API
+          m.isMine = isMine;
           m.createdAt = new Date(api.created_at).getTime();
         });
       }
@@ -218,6 +219,56 @@ export const upsertUser = async (apiUser: UserSearchResponse): Promise<void> => 
 };
 
 // ─── Chat Participants ────────────────────────────────────────────────────────
+
+/**
+ * Batch-upsert participants for ALL chats in a single database.write().
+ * This replaces the previous per-chat loop which opened N separate write
+ * transactions and was significantly slower for many chats.
+ */
+const batchUpsertAllParticipants = async (
+  apiChats: ChatItem[],
+): Promise<void> => {
+  // Collect all (chatId, userId) pairs that need syncing
+  const pairs: { chatId: string; userId: string }[] = [];
+  for (const api of apiChats) {
+    if (api.participants?.userIDs) {
+      const chatId = String(api.id);
+      for (const uid of api.participants.userIDs) {
+        pairs.push({ chatId, userId: uid });
+      }
+    }
+  }
+  if (pairs.length === 0) return;
+
+  await database.write(async () => {
+    const participantsCollection =
+      database.get<ChatParticipant>('chat_participants');
+
+    // Fetch all existing participants for the relevant chats in one query
+    const chatIds = [...new Set(pairs.map(p => p.chatId))];
+    const existing = await participantsCollection
+      .query(Q.where('chat_id', Q.oneOf(chatIds)))
+      .fetch();
+
+    // Build a set of "chatId:userId" keys for fast lookup
+    const existingKeys = new Set(
+      existing.map(p => `${p.chatId}:${p.userId}`),
+    );
+
+    const operations = pairs
+      .filter(({ chatId, userId }) => !existingKeys.has(`${chatId}:${userId}`))
+      .map(({ chatId, userId }) =>
+        participantsCollection.prepareCreate(p => {
+          p.chatId = chatId;
+          p.userId = userId;
+        }),
+      );
+
+    if (operations.length > 0) {
+      await database.batch(...operations);
+    }
+  });
+};
 
 /**
  * Upsert participant records for a given chat.

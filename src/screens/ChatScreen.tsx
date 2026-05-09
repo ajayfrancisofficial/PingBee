@@ -64,10 +64,12 @@ const ChatScreen = ({ route }: Props) => {
   const {
     messages: rawMessages,
     loadMore,
+    refreshMessages,
     isLoadingMore,
     isInitialLoading,
+    isRefreshing,
     hasMore,
-  } = useLocalMessages(chatId);
+  } = useLocalMessages(chatId, String(userId));
 
   // Build a senderId → displayName map from the local users table
   const [senderNames, setSenderNames] = useState<Map<string, string>>(
@@ -174,7 +176,11 @@ const ChatScreen = ({ route }: Props) => {
         onLoadEarlier={loadMore}
         // @ts-ignore
         isLoadingEarlier={isLoadingMore}
-        listProps={{ keyboardShouldPersistTaps: 'handled' }}
+        listProps={{
+          keyboardShouldPersistTaps: 'handled',
+          onRefresh: refreshMessages,
+          refreshing: isRefreshing,
+        }}
         reply={{
           swipe: {
             isEnabled: true,

@@ -6,22 +6,23 @@
  * WatermelonDB observer automatically propagates the changes to the UI.
  *
  * Returns:
- *  - chats      → live array, auto-updated by WatermelonDB
- *  - isSyncing  → true while a background fetch is in flight
+ *  - chats        → live array, auto-updated by WatermelonDB
+ *  - isSyncing    → true while the background focus-fetch is in flight
+ *  - refreshChats → pull-to-refresh callback for FlatList
+ *  - isRefreshing → true while pull-to-refresh is in flight
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Q } from '@nozbe/watermelondb';
 import { useFocusEffect } from '@react-navigation/native';
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
 import { chatApi } from '../../api/RESTApi/chatApi';
 import { upsertChats } from '../../db/upsert';
+import { useGuardedFetch } from '../useGuardedFetch';
 
 export function useLocalChats() {
   const [chats, setChats] = useState<Chat[]>([]);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const isFetchingRef = useRef(false);
 
   // ── Live WatermelonDB observer ─────────────────────────────────────────────
   useEffect(() => {
@@ -36,22 +37,18 @@ export function useLocalChats() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Fetch & upsert on every focus ─────────────────────────────────────────
-  const syncChats = useCallback(async () => {
-    if (isFetchingRef.current) return; // prevent concurrent fetches
-    isFetchingRef.current = true;
-    setIsSyncing(true);
-    try {
-      const response = await chatApi.fetchChats();
-      const apiChats = response.data?.chats ?? [];
-      await upsertChats(apiChats);
-    } catch (error) {
-      console.error('[useLocalChats] Sync failed:', error);
-    } finally {
-      isFetchingRef.current = false;
-      setIsSyncing(false);
-    }
+  // ── Shared fetch logic ─────────────────────────────────────────────────────
+  const fetchAndUpsert = useCallback(async () => {
+    const response = await chatApi.fetchChats();
+    const apiChats = response.data?.chats ?? [];
+    await upsertChats(apiChats);
   }, []);
+
+  // ── Fetch & upsert on every focus ─────────────────────────────────────────
+  const { execute: syncChats, isLoading: isSyncing } = useGuardedFetch(
+    fetchAndUpsert,
+    'useLocalChats:sync',
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -59,5 +56,11 @@ export function useLocalChats() {
     }, [syncChats]),
   );
 
-  return { chats, isSyncing };
+  // ── Pull-to-refresh (reuses the same fetch logic) ─────────────────────────
+  const { execute: refreshChats, isLoading: isRefreshing } = useGuardedFetch(
+    fetchAndUpsert,
+    'useLocalChats:refresh',
+  );
+
+  return { chats, isSyncing, refreshChats, isRefreshing };
 }
