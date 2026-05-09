@@ -82,7 +82,19 @@ export type UserProfile = components['schemas']['UserMeResponse'];
 export type AuthData = components['schemas']['AuthResponseData'];
 
 /** Individual chat item in the list */
-export type ChatItem = components['schemas']['ChatItem'];
+export type ChatItem = {
+  id: string;
+  name: string;
+  type: 'individual' | 'group';
+  unread_count: number;
+  last_message_text?: string;
+  updated_at: number;
+  avatar_url?: string;
+  participants: {
+    userIDs: string[];
+  };
+  lastMessageSentUsername: string;
+};
 
 /** List of chats */
 export type ChatList = components['schemas']['ChatList'];
@@ -145,6 +157,26 @@ export type VerifyEmailResponse = SuccessBody<'verify_email_verify_email_post'>;
 
 /** GET / → 200 response */
 export type RootResponse = SuccessBody<'root__get'>;
+
+/** POST /chat-users-details → request body */
+export type ChatUserDetailsBody = {
+  chatId: string;
+};
+
+/** POST /chat-users-details → 200 response */
+export type ChatUserDetailsResponse = {
+  success: boolean;
+  data: Array<{
+    userId: string;
+    name: string;
+    username?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    avatar_url?: string;
+    phone_number?: string;
+  }>;
+};
 
 // ── Path parameter types ──────────────────────────────────────────────────────
 

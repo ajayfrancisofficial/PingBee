@@ -8,6 +8,8 @@ import type {
   MarkAsReadBody,
   ConversationCreateBody,
   MarkAsReadResponse,
+  ChatUserDetailsBody,
+  ChatUserDetailsResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 /** How many messages to fetch per page */
@@ -74,6 +76,20 @@ export const chatApi = {
     };
     const { data } = await apiClient.post<MarkAsReadResponse>(
       ENDPOINTS.CHATS.MARK_READ,
+      body,
+    );
+    return data;
+  },
+  /**
+   * POST /chat-users-details
+   * Fetch details for all users in a chat.
+   */
+  fetchChatUserDetails: async (
+    chatId: string,
+  ): Promise<ChatUserDetailsResponse> => {
+    const body: ChatUserDetailsBody = { chatId };
+    const { data } = await apiClient.post<ChatUserDetailsResponse>(
+      ENDPOINTS.CHATS.USER_DETAILS,
       body,
     );
     return data;

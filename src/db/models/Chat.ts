@@ -14,6 +14,7 @@ export default class Chat extends Model {
   @field('last_message_text') lastMessageText?: string
   @date('updated_at') updatedAt!: number
   @field('avatar_url') avatarUrl?: string
+  @field('last_message_sent_username') lastMessageSentUsername?: string
 
   @children('messages') messages!: Query<Message>
 }

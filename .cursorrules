@@ -19,6 +19,7 @@
 - **API**: Follow the pattern in `src/api/endpoints.ts` and use `axiosClient` for requests. All API modules (e.g., `authApi.ts`, `chatApi.ts`) MUST export a single constant object containing all methods (e.g., `export const chatApi = { ... }`). Individual named exports for API functions are forbidden.
 - **Hooks**: Place reusable logic in `src/hooks/`. **ALWAYS** extract complex state and side-effect logic (e.g., search, pagination, form handling) from screens into dedicated custom hooks in `src/hooks/` to keep screen components simple and focused on layout/UI.
 - **Database**: Use WatermelonDB models in `src/db/models/` and handle queries through dedicated hooks (e.g., `src/hooks/db/`).
+- **Asynchronicity**: **ALWAYS** use `async/await` with `try/catch` for promise handling. **NEVER** use `.then().catch()`.
 
 ## Operational Guidelines
 - **Development**: Use `yarn android` or `yarn ios` to run the app.

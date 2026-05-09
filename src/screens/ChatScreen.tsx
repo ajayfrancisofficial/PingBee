@@ -22,6 +22,7 @@ import { AppTheme } from '../theme';
 import Message from '../db/models/Message';
 import User from '../db/models/User';
 import { database } from '../db';
+import { useSyncChatParticipants } from '../hooks/db/useSyncChatParticipants';
 
 /** Map a WatermelonDB Message record into GiftedChat's IMessage format */
 const mapToGiftedChat = (
@@ -69,7 +70,9 @@ const ChatScreen = ({ route }: Props) => {
   } = useLocalMessages(chatId);
 
   // Build a senderId → displayName map from the local users table
-  const [senderNames, setSenderNames] = useState<Map<string, string>>(new Map());
+  const [senderNames, setSenderNames] = useState<Map<string, string>>(
+    new Map(),
+  );
 
   useEffect(() => {
     const uniqueIds = [...new Set(rawMessages.map(m => m.senderId))].filter(
@@ -77,24 +80,29 @@ const ChatScreen = ({ route }: Props) => {
     );
     if (uniqueIds.length === 0) return;
 
-    database
-      .get<User>('users')
-      .query(Q.where('id', Q.oneOf(uniqueIds)))
-      .fetch()
-      .then(users => {
-        setSenderNames(
-          new Map(users.map(u => [u.id, u.displayName])),
-        );
-      })
-      .catch(err =>
-        console.warn('[ChatScreen] Failed to resolve sender names:', err),
-      );
+    const resolveNames = async () => {
+      try {
+        const users = await database
+          .get<User>('users')
+          .query(Q.where('id', Q.oneOf(uniqueIds)))
+          .fetch();
+
+        setSenderNames(new Map(users.map(u => [u.id, u.displayName])));
+      } catch (err) {
+        console.warn('[ChatScreen] Failed to resolve sender names:', err);
+      }
+    };
+    // might need to change the logic here.
+    resolveNames();
   }, [rawMessages, userId]);
 
   const messages = useMemo(
-    () => rawMessages.map(msg => mapToGiftedChat(msg, String(userId), senderNames)),
+    () =>
+      rawMessages.map(msg => mapToGiftedChat(msg, String(userId), senderNames)),
     [rawMessages, userId, senderNames],
   );
+  // Sync participant profiles in background
+  useSyncChatParticipants(chatId);
 
   const [replyMessage, setReplyMessage] = useState<ReplyMessage | null>(null);
   const appTheme = useAppTheme();

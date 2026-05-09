@@ -29,6 +29,11 @@ export default appSchema({
         { name: 'unread_count', type: 'number' },
         { name: 'updated_at', type: 'number', isIndexed: true },
         { name: 'avatar_url', type: 'string', isOptional: true },
+        {
+          name: 'last_message_sent_username',
+          type: 'string',
+          isOptional: true,
+        },
       ],
     }),
     tableSchema({

@@ -20,6 +20,7 @@ import type {
   ChatItem,
   MessageItem,
   UserSearchResponse,
+  ChatUserDetailsResponse,
 } from '../types/ApiTypes/RestApiTypes/restApiTypes';
 
 // ─── Chats ───────────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
 
   await database.write(async () => {
     const chatsCollection = database.get<Chat>('chats');
-    const ids = apiChats.map(c => String(c.conversation_id));
+    const ids = apiChats.map(c => String(c.id));
 
     const existing = await chatsCollection
       .query(Q.where('id', Q.oneOf(ids)))
@@ -40,34 +41,43 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
     const existingMap = new Map(existing.map(c => [c.id, c]));
 
     const operations = apiChats.map(api => {
-      const id = String(api.conversation_id);
+      const id = String(api.id);
       const existingRecord = existingMap.get(id);
 
       if (existingRecord) {
         return existingRecord.prepareUpdate(c => {
-          c.name = api.username;
-          c.type = 'individual';
-          c.lastMessageText = api.last_message || undefined;
+          c.name = api.name;
+          c.type = api.type;
+          c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = new Date(api.timestamp).getTime();
-          c.avatarUrl = undefined;
+          c.updatedAt = api.updated_at;
+          c.avatarUrl = api.avatar_url || undefined;
+          c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
       } else {
         return chatsCollection.prepareCreate(c => {
           // @ts-ignore
           c._raw.id = id;
-          c.name = api.username;
-          c.type = 'individual';
-          c.lastMessageText = api.last_message || undefined;
+          c.name = api.name;
+          c.type = api.type;
+          c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = new Date(api.timestamp).getTime();
-          c.avatarUrl = undefined;
+          c.updatedAt = api.updated_at;
+          c.avatarUrl = api.avatar_url || undefined;
+          c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
       }
     });
 
     await database.batch(...operations);
   });
+
+  // Handle participants sync
+  for (const api of apiChats) {
+    if (api.participants?.userIDs) {
+      await upsertChatParticipants(String(api.id), api.participants.userIDs);
+    }
+  }
 };
 
 // ─── Messages ────────────────────────────────────────────────────────────────
@@ -109,6 +119,56 @@ export const upsertMessages = async (
           m.status = api.is_read ? 'read' : 'sent';
           m.isMine = false; // We only upsert messages from other users via this API
           m.createdAt = new Date(api.created_at).getTime();
+        });
+      }
+    });
+
+    await database.batch(...operations);
+  });
+};
+
+/**
+ * Upsert profiles from chat-users-details API.
+ */
+export const upsertUserDetails = async (
+  users: ChatUserDetailsResponse['data'],
+): Promise<void> => {
+  if (users.length === 0) return;
+
+  await database.write(async () => {
+    const usersCollection = database.get<User>('users');
+    const ids = users.map(u => String(u.userId));
+
+    const existing = await usersCollection
+      .query(Q.where('id', Q.oneOf(ids)))
+      .fetch();
+    const existingMap = new Map(existing.map(u => [u.id, u]));
+
+    const operations = users.map(api => {
+      const id = String(api.userId);
+      const existingRecord = existingMap.get(id);
+
+      if (existingRecord) {
+        return existingRecord.prepareUpdate(u => {
+          u.name = api.name;
+          u.username = api.username ?? undefined;
+          u.firstName = api.first_name ?? undefined;
+          u.lastName = api.last_name ?? undefined;
+          u.email = api.email ?? undefined;
+          u.avatarUrl = api.avatar_url ?? undefined;
+          u.phoneNumber = api.phone_number ?? undefined;
+        });
+      } else {
+        return usersCollection.prepareCreate(u => {
+          // @ts-ignore
+          u._raw.id = id;
+          u.name = api.name;
+          u.username = api.username ?? undefined;
+          u.firstName = api.first_name ?? undefined;
+          u.lastName = api.last_name ?? undefined;
+          u.email = api.email ?? undefined;
+          u.avatarUrl = api.avatar_url ?? undefined;
+          u.phoneNumber = api.phone_number ?? undefined;
         });
       }
     });
