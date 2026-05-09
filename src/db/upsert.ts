@@ -14,9 +14,12 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from './index';
 import Chat from './models/Chat';
 import Message from './models/Message';
+import User from './models/User';
+import ChatParticipant from './models/ChatParticipant';
 import type {
   ChatItem,
   MessageItem,
+  UserSearchResponse,
 } from '../types/ApiTypes/RestApiTypes/restApiTypes';
 
 // ─── Chats ───────────────────────────────────────────────────────────────────
@@ -111,5 +114,81 @@ export const upsertMessages = async (
     });
 
     await database.batch(...operations);
+  });
+};
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+
+/**
+ * Upsert a single user from a UserSearchResponse object into the local `users` table.
+ * Stores all available profile data so sender names can be resolved offline.
+ */
+export const upsertUser = async (apiUser: UserSearchResponse): Promise<void> => {
+  const id = String(apiUser.user_id);
+
+  await database.write(async () => {
+    const usersCollection = database.get<User>('users');
+    let existing: User | null = null;
+    try {
+      existing = await usersCollection.find(id);
+    } catch {
+      // Not found — will create below
+    }
+
+    if (existing) {
+      await existing.update(u => {
+        u.name = `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
+        u.username = apiUser.username;
+        u.firstName = apiUser.firstname;
+        u.lastName = apiUser.lastname;
+        u.email = apiUser.email ?? undefined;
+      });
+    } else {
+      await usersCollection.create(u => {
+        // @ts-ignore
+        u._raw.id = id;
+        u.name = `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
+        u.username = apiUser.username;
+        u.firstName = apiUser.firstname;
+        u.lastName = apiUser.lastname;
+        u.email = apiUser.email ?? undefined;
+      });
+    }
+  });
+};
+
+// ─── Chat Participants ────────────────────────────────────────────────────────
+
+/**
+ * Upsert participant records for a given chat.
+ * Each userId entry gets a row in `chat_participants` if one does not already exist.
+ */
+export const upsertChatParticipants = async (
+  chatId: string,
+  userIds: string[],
+): Promise<void> => {
+  if (userIds.length === 0) return;
+
+  await database.write(async () => {
+    const participantsCollection = database.get<ChatParticipant>('chat_participants');
+
+    // Fetch existing rows for this chat to avoid duplicates
+    const existing = await participantsCollection
+      .query(Q.where('chat_id', chatId))
+      .fetch();
+    const existingUserIds = new Set(existing.map(p => p.userId));
+
+    const operations = userIds
+      .filter(uid => !existingUserIds.has(uid))
+      .map(uid =>
+        participantsCollection.prepareCreate(p => {
+          p.chatId = chatId;
+          p.userId = uid;
+        }),
+      );
+
+    if (operations.length > 0) {
+      await database.batch(...operations);
+    }
   });
 };

@@ -7,8 +7,6 @@ import { chatApi } from '../../api/RESTApi/chatApi';
 import {
   getHasMoreMessages,
   setHasMoreMessages,
-  getMessagesLoaded,
-  setMessagesLoaded,
 } from '../../utils/syncStorage';
 
 export function useLocalMessages(chatId: string) {
@@ -30,26 +28,22 @@ export function useLocalMessages(chatId: string) {
     return () => subscription.unsubscribe();
   }, [chatId]);
 
-  // ─── 2. Lazy Load (First Page) ────────────────────────────────────────────
+  // ─── 2. Fetch First Page on Open (always, no freshness guard) ────────────
   useEffect(() => {
     const loadInitial = async () => {
-      // If we haven't loaded the first page for this chat yet, do it now
-      if (!getMessagesLoaded(chatId)) {
-        setIsInitialLoading(true);
-        try {
-          const response = await chatApi.fetchMessages(chatId, 0);
-          const fetchedMessages = response.data?.messages || [];
-          await upsertMessages(fetchedMessages, chatId);
-          
-          const hasMoreMsgs = fetchedMessages.length >= 30; // Matches MESSAGES_PAGE_SIZE
-          setHasMoreMessages(chatId, hasMoreMsgs);
-          setHasMore(hasMoreMsgs);
-          setMessagesLoaded(chatId, true);
-        } catch (error) {
-          console.error('[useLocalMessages] Initial load failed:', error);
-        } finally {
-          setIsInitialLoading(false);
-        }
+      setIsInitialLoading(true);
+      try {
+        const response = await chatApi.fetchMessages(chatId, 0);
+        const fetchedMessages = response.data?.messages ?? [];
+        await upsertMessages(fetchedMessages, chatId);
+
+        const hasMoreMsgs = fetchedMessages.length >= 30; // Matches MESSAGES_PAGE_SIZE
+        setHasMoreMessages(chatId, hasMoreMsgs);
+        setHasMore(hasMoreMsgs);
+      } catch (error) {
+        console.error('[useLocalMessages] Initial load failed:', error);
+      } finally {
+        setIsInitialLoading(false);
       }
     };
 
@@ -64,7 +58,7 @@ export function useLocalMessages(chatId: string) {
     try {
       const skip = messages.length;
       const response = await chatApi.fetchMessages(chatId, skip);
-      const fetchedMessages = response.data?.messages || [];
+      const fetchedMessages = response.data?.messages ?? [];
       await upsertMessages(fetchedMessages, chatId);
 
       const hasMoreMsgs = fetchedMessages.length >= 30; // Matches MESSAGES_PAGE_SIZE

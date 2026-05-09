@@ -7,7 +7,6 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { getNavigationTheme } from '../theme/navigationTheme';
 import { StyleSheet, View } from 'react-native';
 import { AppTheme } from '../theme';
-import { runInitialLoad } from '../services/Sync/InitialLoadService';
 import { useWebsocket } from '../hooks/useWebsocket';
 
 const AppNavigation = createStaticNavigation(AppStack);
@@ -24,14 +23,6 @@ export const AuthSwitch = () => {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-  // Initial Load logic
-  useEffect(() => {
-    if (isLoggedIn && !isLoading) {
-      // Baseline sync (rest api)
-      runInitialLoad();
-    }
-  }, [isLoggedIn, isLoading]);
 
   if (isLoading) {
     return null; // Awaiting Keychain extraction

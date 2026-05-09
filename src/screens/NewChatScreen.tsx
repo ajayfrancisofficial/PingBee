@@ -16,7 +16,8 @@ import { useConversationActions } from '../hooks/useConversationActions';
 import type { UserSearchResponse } from '../types/ApiTypes/RestApiTypes/restApiTypes';
 import { AppTheme } from '../theme';
 import { Input } from '../components/foundations/Input';
-import { ensureChatExists } from '../services/Chat/chatController';
+import { setupConversation } from '../services/Chat/chatController';
+import { useUserStore } from '../store/userStore';
 
 const NewChatScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -26,6 +27,7 @@ const NewChatScreen = () => {
   const { searchQuery, users, isLoading, handleSearch } = useUserSearch();
   const { isStarting, selectedUserId, startConversation } =
     useConversationActions();
+  const { userId } = useUserStore();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -39,10 +41,10 @@ const NewChatScreen = () => {
       const response = await startConversation(user.user_id);
       if (response.success && response.data) {
         const chatId = String(response.data.conversation_id);
-        const name = `${user.firstname} ${user.lastname}`;
+        const name = `${user.firstname} ${user.lastname}`.trim() || user.username;
 
-        // Ensure the chat record exists locally before navigating
-        await ensureChatExists(chatId, name);
+        // Populate chat, users, and chat_participants tables
+        await setupConversation(chatId, user, String(userId));
 
         navigation.navigate('Chat', {
           name,

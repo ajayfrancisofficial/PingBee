@@ -34,12 +34,26 @@ export const websocketService = {
               }
             });
 
-            const chat = await database.get<Chat>('chats').find(p.chatId);
-            await chat.update(c => {
-              c.lastMessageText = p.text;
-              c.unreadCount += 1;
-              c.updatedAt = Date.now();
-            });
+            const chatsCollection = database.get<Chat>('chats');
+            try {
+              const chat = await chatsCollection.find(p.chatId);
+              await chat.update(c => {
+                c.lastMessageText = p.text;
+                c.unreadCount += 1;
+                c.updatedAt = Date.now();
+              });
+            } catch (error) {
+              // Chat doesn't exist locally, create it
+              await chatsCollection.create(c => {
+                // @ts-ignore
+                c._raw.id = p.chatId;
+                c.name = 'Chat';
+                c.type = 'individual';
+                c.lastMessageText = p.text;
+                c.unreadCount = 1;
+                c.updatedAt = Date.now();
+              });
+            }
           });
           break;
         }

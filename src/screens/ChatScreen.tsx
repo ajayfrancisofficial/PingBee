@@ -1,10 +1,17 @@
-import React, { useLayoutEffect, useCallback, useState, useMemo } from 'react';
+import React, {
+  useLayoutEffect,
+  useCallback,
+  useState,
+  useMemo,
+  useEffect,
+} from 'react';
 import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
 import {
   useNavigation,
   type StaticScreenProps,
 } from '@react-navigation/native';
 import { GiftedChat, IMessage, ReplyMessage } from 'react-native-gifted-chat';
+import { Q } from '@nozbe/watermelondb';
 import { useLocalMessages } from '../hooks/db/useLocalMessages';
 import { sendMessage } from '../services/Chat/messageController';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,15 +20,24 @@ import { useUserStore } from '../store/userStore';
 import { useChatStore } from '../store/chatStore';
 import { AppTheme } from '../theme';
 import Message from '../db/models/Message';
+import User from '../db/models/User';
+import { database } from '../db';
 
 /** Map a WatermelonDB Message record into GiftedChat's IMessage format */
-const mapToGiftedChat = (msg: Message, currentUserId: string): IMessage => ({
+const mapToGiftedChat = (
+  msg: Message,
+  currentUserId: string,
+  senderNames: Map<string, string>,
+): IMessage => ({
   _id: msg.id,
   text: msg.text,
   createdAt: new Date(msg.createdAt),
   user: {
     _id: msg.senderId,
-    name: msg.senderId === currentUserId ? 'You' : `User ${msg.senderId}`,
+    name:
+      msg.senderId === currentUserId
+        ? 'You'
+        : senderNames.get(msg.senderId) ?? `User ${msg.senderId}`,
   },
   pending: msg.status === 'pending',
   sent: msg.status === 'sent',
@@ -52,9 +68,32 @@ const ChatScreen = ({ route }: Props) => {
     hasMore,
   } = useLocalMessages(chatId);
 
+  // Build a senderId → displayName map from the local users table
+  const [senderNames, setSenderNames] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    const uniqueIds = [...new Set(rawMessages.map(m => m.senderId))].filter(
+      id => id !== String(userId),
+    );
+    if (uniqueIds.length === 0) return;
+
+    database
+      .get<User>('users')
+      .query(Q.where('id', Q.oneOf(uniqueIds)))
+      .fetch()
+      .then(users => {
+        setSenderNames(
+          new Map(users.map(u => [u.id, u.displayName])),
+        );
+      })
+      .catch(err =>
+        console.warn('[ChatScreen] Failed to resolve sender names:', err),
+      );
+  }, [rawMessages, userId]);
+
   const messages = useMemo(
-    () => rawMessages.map(msg => mapToGiftedChat(msg, String(userId))),
-    [rawMessages, userId],
+    () => rawMessages.map(msg => mapToGiftedChat(msg, String(userId), senderNames)),
+    [rawMessages, userId, senderNames],
   );
 
   const [replyMessage, setReplyMessage] = useState<ReplyMessage | null>(null);

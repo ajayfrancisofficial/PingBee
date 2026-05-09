@@ -1,14 +1,62 @@
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
+import { upsertUser, upsertChatParticipants } from '../../db/upsert';
+import type { UserSearchResponse } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 /**
- * Ensures a chat record exists in the local database.
- * If it doesn't exist, it creates one with the provided metadata.
+ * Called when a conversation is first created/opened from NewChatScreen.
  *
- * @param chatId - The unique identifier for the chat
- * @param name - The display name for the chat
- * @param type - The type of chat ('individual' or 'group')
- * @param avatarUrl - Optional avatar URL
+ * In a single write transaction it:
+ *  1. Ensures the chat row exists (creates it if not).
+ *  2. Upserts the other user's full profile into the `users` table.
+ *  3. Writes both the current user and the other user into `chat_participants`.
+ *
+ * @param chatId       - The conversation ID returned by the server.
+ * @param otherUser    - The full UserSearchResponse of the other participant.
+ * @param currentUserId - The logged-in user's ID (as a string).
+ */
+export const setupConversation = async (
+  chatId: string,
+  otherUser: UserSearchResponse,
+  currentUserId: string,
+): Promise<void> => {
+  const displayName =
+    `${otherUser.firstname} ${otherUser.lastname}`.trim() || otherUser.username;
+
+  // 1. Ensure chat record exists
+  await database.write(async () => {
+    const chatsCollection = database.get<Chat>('chats');
+    try {
+      await chatsCollection.find(chatId);
+      // Already exists — no-op
+    } catch {
+      console.log(`[ChatController] Creating local chat record for: ${chatId}`);
+      await chatsCollection.create(chat => {
+        // @ts-ignore
+        chat._raw.id = chatId;
+        chat.name = displayName;
+        chat.type = 'individual';
+        chat.unreadCount = 0;
+        chat.updatedAt = Date.now();
+      });
+    }
+  });
+
+  // 2. Persist the other user's profile to the users table
+  await upsertUser(otherUser);
+
+  // 3. Persist both participants
+  await upsertChatParticipants(chatId, [
+    currentUserId,
+    String(otherUser.user_id),
+  ]);
+
+  console.log(`[ChatController] setupConversation done for chat: ${chatId}`);
+};
+
+/**
+ * @deprecated Use setupConversation instead when you have a full UserSearchResponse.
+ * Kept for compatibility with any non-search entry points.
  */
 export const ensureChatExists = async (
   chatId: string,
@@ -18,16 +66,12 @@ export const ensureChatExists = async (
 ): Promise<void> => {
   await database.write(async () => {
     const chatsCollection = database.get<Chat>('chats');
-
     try {
-      // Try to find the existing chat
       await chatsCollection.find(chatId);
-      // If found, we don't need to do anything
-    } catch (error) {
-      // Chat not found, create a new one
+    } catch {
       console.log(`[ChatController] Creating local chat record for: ${chatId}`);
       await chatsCollection.create(chat => {
-        // @ts-ignore - WatermelonDB allows setting _raw.id if handled correctly for sync
+        // @ts-ignore
         chat._raw.id = chatId;
         chat.name = name;
         chat.type = type;
