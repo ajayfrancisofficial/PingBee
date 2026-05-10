@@ -5,6 +5,7 @@ import ChatsScreen from '../screens/ChatsScreen';
 import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
 import { YouStack } from './YouStack';
+import { PlatformPressable } from '@react-navigation/elements';
 
 export const BottomTabNavigator = createBottomTabNavigator({
   initialRouteName: 'Chats',
@@ -67,16 +68,16 @@ export const BottomTabNavigator = createBottomTabNavigator({
     },
   },
   screenOptions: ({ theme }) => ({
-    headerShown: true,
-    tabBarLabelVisibilityMode: 'selected',
-    tabBarActiveTintColor: theme.colors.primary,
-    headerLargeTitleEnabled: true,
-    headerTransparent: false,
     headerShadowVisible: false,
+    tabBarVisibilityAnimationConfig: {},
     headerStyle: {
       backgroundColor: theme.colors.background,
     },
     headerTintColor: theme.colors.primary,
+    animation: 'fade',
+    tabBarButton: props => (
+      <PlatformPressable {...props} android_ripple={{ color: 'transparent' }} />
+    ),
   }),
 });
 
