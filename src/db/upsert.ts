@@ -47,7 +47,7 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
       if (existingRecord) {
         return existingRecord.prepareUpdate(c => {
           c.name = api.name;
-          c.type = api.type;
+          c.type = api.type as 'individual' | 'group';
           c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
           c.updatedAt = api.updated_at;
@@ -59,7 +59,7 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
           // @ts-ignore
           c._raw.id = id;
           c.name = api.name;
-          c.type = api.type;
+          c.type = api.type as 'individual' | 'group';
           c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
           c.updatedAt = api.updated_at;
@@ -134,7 +134,8 @@ export const upsertMessages = async (
 export const upsertUserDetails = async (
   users: ChatUserDetailsResponse['data'],
 ): Promise<void> => {
-  if (users.length === 0) return;
+  if (!users || users.length === 0) return;
+
 
   await database.write(async () => {
     const usersCollection = database.get<User>('users');

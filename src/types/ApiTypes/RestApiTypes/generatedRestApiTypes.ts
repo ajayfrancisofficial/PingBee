@@ -208,6 +208,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/chat-users-details': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Get Chat Users Details */
+    post: operations['get_chat_users_details_chat_users_details_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/': {
     parameters: {
       query?: never;
@@ -217,6 +234,23 @@ export interface paths {
     };
     /** Root */
     get: operations['root__get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/health': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Health Check */
+    get: operations['health_check_health_get'];
     put?: never;
     post?: never;
     delete?: never;
@@ -242,23 +276,38 @@ export interface components {
     };
     /** ChatItem */
     ChatItem: {
-      /** Conversation Id */
-      conversation_id: number;
-      /** User Id */
-      user_id: number;
-      /** Username */
-      username: string;
-      /** Last Message */
-      last_message: string;
-      /** Timestamp */
-      timestamp: string;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      /** Type */
+      type: string;
       /** Unread Count */
       unread_count: number;
+      /** Last Message Text */
+      last_message_text?: string | null;
+      /** Updated At */
+      updated_at: number;
+      /** Avatar Url */
+      avatar_url?: string | null;
+      participants: components['schemas']['ChatParticipants'];
+      /** Lastmessagesentusername */
+      lastMessageSentUsername: string;
     };
     /** ChatList */
     ChatList: {
       /** Chats */
       chats: components['schemas']['ChatItem'][];
+    };
+    /** ChatParticipants */
+    ChatParticipants: {
+      /** Userids */
+      userIDs: string[];
+    };
+    /** ChatUserDetailsRequest */
+    ChatUserDetailsRequest: {
+      /** Chatid */
+      chatId: string;
     };
     /** ConversationCreateRequest */
     ConversationCreateRequest: {
@@ -388,6 +437,17 @@ export interface components {
       message: string;
       data?: components['schemas']['ConversationID'] | null;
     };
+    /** StandardResponse[List[UserDetail]] */
+    StandardResponse_List_UserDetail__: {
+      /** Success */
+      success: boolean;
+      /** Status */
+      status: number;
+      /** Message */
+      message: string;
+      /** Data */
+      data?: components['schemas']['UserDetail'][] | null;
+    };
     /** StandardResponse[MessageList] */
     StandardResponse_MessageList_: {
       /** Success */
@@ -439,6 +499,19 @@ export interface components {
       message: string;
       data?: components['schemas']['UserMeResponse'] | null;
     };
+    /** StandardResponse[dict] */
+    StandardResponse_dict_: {
+      /** Success */
+      success: boolean;
+      /** Status */
+      status: number;
+      /** Message */
+      message: string;
+      /** Data */
+      data?: {
+        [key: string]: unknown;
+      } | null;
+    };
     /** Token */
     Token: {
       /** Access Token */
@@ -447,6 +520,27 @@ export interface components {
       refresh_token: string;
       /** Token Type */
       token_type: string;
+    };
+    /** UserDetail */
+    UserDetail: {
+      /** Userid */
+      userId: string;
+      /** Name */
+      name: string;
+      /** Is Me */
+      is_me: boolean;
+      /** Username */
+      username?: string | null;
+      /** First Name */
+      first_name?: string | null;
+      /** Last Name */
+      last_name?: string | null;
+      /** Email */
+      email?: string | null;
+      /** Avatar Url */
+      avatar_url?: string | null;
+      /** Phone Number */
+      phone_number?: string | null;
     };
     /** UserList */
     UserList: {
@@ -1192,6 +1286,75 @@ export interface operations {
       };
     };
   };
+  get_chat_users_details_chat_users_details_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ChatUserDetailsRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_List_UserDetail__'];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
   root__get: {
     parameters: {
       query?: never;
@@ -1208,6 +1371,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['StandardResponse_NoneType_'];
+        };
+      };
+    };
+  };
+  health_check_health_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_dict_'];
         };
       };
     };
