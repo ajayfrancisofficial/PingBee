@@ -225,6 +225,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/asyncapi.json': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Asyncapi */
+    get: operations['get_asyncapi_asyncapi_json_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/': {
     parameters: {
       query?: never;
@@ -280,14 +297,13 @@ export interface components {
       id: string;
       /** Name */
       name: string;
-      /** Type */
-      type: string;
+      type: components['schemas']['ChatType'];
       /** Unread Count */
       unread_count: number;
       /** Last Message Text */
       last_message_text?: string | null;
       /** Updated At */
-      updated_at: number;
+      updated_at: string;
       /** Avatar Url */
       avatar_url?: string | null;
       participants: components['schemas']['ChatParticipants'];
@@ -304,6 +320,11 @@ export interface components {
       /** Userids */
       userIDs: string[];
     };
+    /**
+     * ChatType
+     * @enum {string}
+     */
+    ChatType: 'individual' | 'group';
     /** ChatUserDetailsRequest */
     ChatUserDetailsRequest: {
       /** Chatid */
@@ -1351,6 +1372,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  get_asyncapi_asyncapi_json_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': unknown;
         };
       };
     };

@@ -47,10 +47,10 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
       if (existingRecord) {
         return existingRecord.prepareUpdate(c => {
           c.name = api.name;
-          c.type = api.type as 'individual' | 'group';
+          c.type = api.type;
           c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = api.updated_at;
+          c.updatedAt = new Date(api.updated_at).getTime();
           c.avatarUrl = api.avatar_url || undefined;
           c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
@@ -59,10 +59,10 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
           // @ts-ignore
           c._raw.id = id;
           c.name = api.name;
-          c.type = api.type as 'individual' | 'group';
+          c.type = api.type;
           c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = api.updated_at;
+          c.updatedAt = new Date(api.updated_at).getTime();
           c.avatarUrl = api.avatar_url || undefined;
           c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
@@ -136,7 +136,6 @@ export const upsertUserDetails = async (
 ): Promise<void> => {
   if (!users || users.length === 0) return;
 
-
   await database.write(async () => {
     const usersCollection = database.get<User>('users');
     const ids = users.map(u => String(u.userId));
@@ -185,7 +184,9 @@ export const upsertUserDetails = async (
  * Upsert a single user from a UserSearchResponse object into the local `users` table.
  * Stores all available profile data so sender names can be resolved offline.
  */
-export const upsertUser = async (apiUser: UserSearchResponse): Promise<void> => {
+export const upsertUser = async (
+  apiUser: UserSearchResponse,
+): Promise<void> => {
   const id = String(apiUser.user_id);
 
   await database.write(async () => {
@@ -199,7 +200,8 @@ export const upsertUser = async (apiUser: UserSearchResponse): Promise<void> => 
 
     if (existing) {
       await existing.update(u => {
-        u.name = `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
+        u.name =
+          `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
         u.username = apiUser.username;
         u.firstName = apiUser.firstname;
         u.lastName = apiUser.lastname;
@@ -209,7 +211,8 @@ export const upsertUser = async (apiUser: UserSearchResponse): Promise<void> => 
       await usersCollection.create(u => {
         // @ts-ignore
         u._raw.id = id;
-        u.name = `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
+        u.name =
+          `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
         u.username = apiUser.username;
         u.firstName = apiUser.firstname;
         u.lastName = apiUser.lastname;
@@ -252,9 +255,7 @@ const batchUpsertAllParticipants = async (
       .fetch();
 
     // Build a set of "chatId:userId" keys for fast lookup
-    const existingKeys = new Set(
-      existing.map(p => `${p.chatId}:${p.userId}`),
-    );
+    const existingKeys = new Set(existing.map(p => `${p.chatId}:${p.userId}`));
 
     const operations = pairs
       .filter(({ chatId, userId }) => !existingKeys.has(`${chatId}:${userId}`))
@@ -282,7 +283,8 @@ export const upsertChatParticipants = async (
   if (userIds.length === 0) return;
 
   await database.write(async () => {
-    const participantsCollection = database.get<ChatParticipant>('chat_participants');
+    const participantsCollection =
+      database.get<ChatParticipant>('chat_participants');
 
     // Fetch existing rows for this chat to avoid duplicates
     const existing = await participantsCollection
