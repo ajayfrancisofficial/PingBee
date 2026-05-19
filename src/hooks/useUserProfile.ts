@@ -20,7 +20,7 @@ export function useUserProfile() {
   useFocusEffect(
     useCallback(() => {
       syncProfile();
-    }, [syncProfile])
+    }, [syncProfile]),
   );
 
   return { isLoading };
