@@ -1,17 +1,3 @@
-/**
- * useLocalChats.ts
- *
- * Observes all chats from WatermelonDB. On every screen focus, fetches the
- * latest chats from the REST API and upserts them into the local DB. The
- * WatermelonDB observer automatically propagates the changes to the UI.
- *
- * Returns:
- *  - chats        → live array, auto-updated by WatermelonDB
- *  - isSyncing    → true while the background focus-fetch is in flight
- *  - refreshChats → pull-to-refresh callback for FlatList
- *  - isRefreshing → true while pull-to-refresh is in flight
- */
-
 import { useEffect, useState, useCallback } from 'react';
 import { Q } from '@nozbe/watermelondb';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +7,17 @@ import { chatApi } from '../../api/RESTApi/chatApi';
 import { upsertChats } from '../../db/upsert';
 import { useGuardedFetch } from '../useGuardedFetch';
 
+/**
+ * Observes all chats from WatermelonDB. On every screen focus, fetches the
+ * latest chats from the REST API and upserts them into the local DB. The
+ * WatermelonDB observer automatically propagates the changes to the UI.
+ *
+ * @returns An object containing:
+ *  - `chats`: Live array of chats, auto-updated by WatermelonDB.
+ *  - `isSyncing`: True while the background focus-fetch is in flight.
+ *  - `refreshChats`: Pull-to-refresh callback for FlatList.
+ *  - `isRefreshing`: True while pull-to-refresh is in flight.
+ */
 export function useLocalChats() {
   const [chats, setChats] = useState<Chat[]>([]);
 
