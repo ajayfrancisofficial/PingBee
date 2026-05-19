@@ -1,18 +1,11 @@
-/**
- * useGuardedFetch.ts
- *
- * Reusable hook that wraps an async fetch-and-sync operation with:
- *   - A ref guard to prevent concurrent executions
- *   - An `isLoading` state for spinner / refreshing indicators
- *   - A stable `execute` callback safe to pass to onRefresh, useFocusEffect, etc.
- */
-
 import { useRef, useState, useCallback } from 'react';
 
 /**
- * @param fetchFn  The async work to perform (fetch → upsert, etc.).
- *                 Receives no arguments — close over whatever you need.
- * @param tag      Optional label for console.error logs.
+ * Wraps an async function with a concurrency guard and loading state.
+ *
+ * @param fetchFn - The async function to execute.
+ * @param tag - Optional label for error logging (default: 'useGuardedFetch').
+ * @returns An object containing the stable `execute` callback and `isLoading` state.
  */
 export function useGuardedFetch(
   fetchFn: () => Promise<void>,
