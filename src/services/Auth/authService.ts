@@ -18,21 +18,21 @@ export const authService = {
   login: async (request: UserLoginBody): Promise<LoginSuccessResponse> => {
     try {
       const data = await authApi.login(request);
-      const tokenData = data.data;
-      if (!tokenData) throw new Error('Auth data missing in response');
+      const loginData = data.data;
+      if (!loginData) throw new Error('Auth data missing in response');
 
       // 1. Store tokens securely
-      await Keychain.setGenericPassword('token', tokenData.access_token, {
+      await Keychain.setGenericPassword('token', loginData.access_token, {
         service: 'accessToken',
       });
-      await Keychain.setGenericPassword('token', tokenData.refresh_token, {
+      await Keychain.setGenericPassword('token', loginData.refresh_token, {
         service: 'refreshToken',
       });
 
       // 2. Update stores
       useUserStore.getState().setUser({
-        userId: tokenData.user_id,
-        isVerified: tokenData.is_verified,
+        userId: loginData.user_id,
+        isVerified: loginData.is_verified,
       });
       useAuthStore.getState().setLoggedIn(true);
 
@@ -47,21 +47,21 @@ export const authService = {
   ): Promise<RegisterSuccessResponse> => {
     try {
       const data = await authApi.register(request);
-      const tokenData = data.data;
-      if (!tokenData) throw new Error('Auth data missing in response');
+      const registerData = data.data;
+      if (!registerData) throw new Error('Auth data missing in response');
 
       // 1. Store tokens securely
-      await Keychain.setGenericPassword('token', tokenData.access_token, {
+      await Keychain.setGenericPassword('token', registerData.access_token, {
         service: 'accessToken',
       });
-      await Keychain.setGenericPassword('token', tokenData.refresh_token, {
+      await Keychain.setGenericPassword('token', registerData.refresh_token, {
         service: 'refreshToken',
       });
 
       // 2. Update stores
       useUserStore.getState().setUser({
-        userId: tokenData.user_id,
-        isVerified: tokenData.is_verified,
+        userId: registerData.user_id,
+        isVerified: registerData.is_verified,
       });
       useAuthStore.getState().setLoggedIn(true);
       snackbar.show({
@@ -114,17 +114,26 @@ export const authService = {
       });
 
       // Save new tokens
-      const tokenData = refreshData.data;
-      if (!tokenData) throw new Error('Token data missing in refresh response');
+      const refreshTokenData = refreshData.data;
+      if (!refreshTokenData)
+        throw new Error('Token data missing in refresh response');
 
-      await Keychain.setGenericPassword('token', tokenData.access_token, {
-        service: 'accessToken',
-      });
-      await Keychain.setGenericPassword('token', tokenData.refresh_token, {
-        service: 'refreshToken',
-      });
+      await Keychain.setGenericPassword(
+        'token',
+        refreshTokenData.access_token,
+        {
+          service: 'accessToken',
+        },
+      );
+      await Keychain.setGenericPassword(
+        'token',
+        refreshTokenData.refresh_token,
+        {
+          service: 'refreshToken',
+        },
+      );
 
-      return tokenData.access_token;
+      return refreshTokenData.access_token;
     } catch (error) {
       // If refresh fails, we should probably logout
       snackbar.show({

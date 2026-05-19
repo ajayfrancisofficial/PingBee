@@ -26,7 +26,7 @@ const getMediaInfo = (
  * This is also used by OutgoingSync to retry pending messages.
  */
 export const formatMessagePayload = (message: Message): WsClientMessage => ({
-  type: 'SEND_MSG',
+  event: 'SEND_MSG',
   payload: {
     id: message.id,
     chatId: message.chatId,
@@ -159,7 +159,7 @@ export const editMessage = async (
 
   if (websocketApi.getIsConnected()) {
     websocketApi.sendRaw({
-      type: 'EDIT_MSG',
+      event: 'EDIT_MSG',
       payload: {
         id: messageId,
         text: newText,
@@ -213,7 +213,7 @@ export const deleteMessage = async (
 
   if (websocketApi.getIsConnected()) {
     websocketApi.sendRaw({
-      type: 'DELETE_MSG',
+      event: 'DELETE_MSG',
       payload: {
         id: messageId,
         deleteType: type,
@@ -230,7 +230,7 @@ export const deleteMessage = async (
 export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
   if (websocketApi.getIsConnected()) {
     websocketApi.sendRaw({
-      type: 'TYPING',
+      event: 'TYPING',
       payload: {
         chatId,
         isTyping,
@@ -246,7 +246,7 @@ export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
 export const sendPresenceStatus = (status: 'online' | 'offline') => {
   if (websocketApi.getIsConnected()) {
     websocketApi.sendRaw({
-      type: 'PRESENCE',
+      event: 'PRESENCE',
       payload: {
         status,
       },

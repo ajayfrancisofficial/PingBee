@@ -1,10 +1,8 @@
 import { userApi } from '../../api/RESTApi/userApi';
-import { chatApi } from '../../api/RESTApi/chatApi';
 import { useUserStore } from '../../store/userStore';
 import type {
   GetMeResponse,
   GetAllUsersResponse,
-  ConversationResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export type UpdateProfilePictureType = 'removed' | 'gallery' | 'camera';
@@ -32,10 +30,12 @@ export const userService = {
    * Shows how a multipart/form-data request would be structured.
    */
   updateProfilePicture: async (
-    localUri: string, 
-    updateType: UpdateProfilePictureType
+    localUri: string,
+    updateType: UpdateProfilePictureType,
   ): Promise<{ success: boolean; url: string }> => {
-    console.log(`[userService] Updating profile picture. Type: ${updateType}, URI: ${localUri}`);
+    console.log(
+      `[userService] Updating profile picture. Type: ${updateType}, URI: ${localUri}`,
+    );
 
     // Simulate network delay
     await new Promise(resolve => setTimeout(() => resolve(undefined), 800));
@@ -51,9 +51,5 @@ export const userService = {
 
   getAllUsers: async (): Promise<GetAllUsersResponse> => {
     return await userApi.getAllUsers();
-  },
-
-  getOrCreateConversation: async (userId: string): Promise<ConversationResponse> => {
-    return await chatApi.getOrCreateConversation(userId);
   },
 };

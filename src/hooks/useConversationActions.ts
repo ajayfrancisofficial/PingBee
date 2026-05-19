@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { chatApi } from '../api/RESTApi/chatApi';
+import { chatService } from '../services/Chat/chatService';
 
 export function useConversationActions() {
   const [isStarting, setIsStarting] = useState(false);
@@ -9,7 +9,7 @@ export function useConversationActions() {
     setIsStarting(true);
     setSelectedUserId(userId);
     try {
-      const response = await chatApi.getOrCreateConversation(userId);
+      const response = await chatService.getOrCreateConversation(userId);
       return response;
     } catch (error) {
       throw error;

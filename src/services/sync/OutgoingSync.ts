@@ -30,7 +30,7 @@ export const performOutgoingSync = async () => {
     // 2. Sync Edits
     for (const message of pendingEdits) {
       websocketApi.sendRaw({
-        type: 'EDIT_MSG',
+        event: 'EDIT_MSG',
         payload: {
           id: message.id,
           text: message.text,
@@ -43,7 +43,7 @@ export const performOutgoingSync = async () => {
     // 3. Sync Deletions
     for (const message of pendingDeletes) {
       websocketApi.sendRaw({
-        type: 'DELETE_MSG',
+        event: 'DELETE_MSG',
         payload: {
           id: message.id,
           deleteType: message.deleteType || 'deleteForEveryone',

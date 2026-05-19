@@ -12,6 +12,7 @@ import { Edges, SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { AppTheme } from '../theme';
 import { ChevronRight } from 'lucide-react-native';
 import { sizing } from '../theme/sizing';
@@ -58,6 +59,9 @@ export const ProfileScreen = () => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, phoneNumber } = useUserStore();
+  
+  // Sync user profile on focus
+  useUserProfile();
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
