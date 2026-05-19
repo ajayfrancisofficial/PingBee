@@ -7,6 +7,7 @@ import type {
   WsServerMessage,
   ServerEventPayloads,
 } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
+import { parseDateToMillis } from '../../utils/time';
 
 export const websocketService = {
   /**
@@ -27,10 +28,10 @@ export const websocketService = {
               msg.text = p.text;
               msg.status = 'sent';
               msg.isMine = false;
-              msg.createdAt = new Date(p.createdAt).getTime();
-              msg.serverTimestamp = new Date(p.serverTimestamp).getTime();
-              if (p.replyToId) {
-                msg.replyToId = p.replyToId as string;
+              msg.createdAt = parseDateToMillis(p.createdAt);
+              msg.serverTimestamp = parseDateToMillis(p.serverTimestamp);
+              if ((p as any).replyToId) {
+                msg.replyToId = (p as any).replyToId as string;
               }
             });
 
@@ -71,7 +72,7 @@ export const websocketService = {
                 m.text = p.text;
                 m.isEdited = true;
                 if (p.editedAt) {
-                  m.editedAt = new Date(p.editedAt).getTime();
+                  m.editedAt = parseDateToMillis(p.editedAt);
                 }
                 m.editStatus = 'synced';
               });
@@ -100,7 +101,7 @@ export const websocketService = {
             const message = await database.get<Message>('messages').find(p.id);
             await message.update(m => {
               m.editStatus = 'synced';
-              m.editedAt = new Date(p.editedAt).getTime();
+              m.editedAt = parseDateToMillis(p.editedAt);
             });
           });
           break;
@@ -123,7 +124,7 @@ export const websocketService = {
               await message.update(m => {
                 m.isDeleted = true;
                 if (p.deletedAt) {
-                  m.deletedAt = new Date(p.deletedAt).getTime();
+                  m.deletedAt = parseDateToMillis(p.deletedAt);
                 }
                 m.deleteType = p.deleteType as any;
                 m.deleteStatus = 'synced';
@@ -153,7 +154,7 @@ export const websocketService = {
             const message = await database.get<Message>('messages').find(p.id);
             await message.update(m => {
               m.deleteStatus = 'synced';
-              m.deletedAt = new Date(p.deletedAt).getTime();
+              m.deletedAt = parseDateToMillis(p.deletedAt);
             });
           });
           break;
@@ -179,7 +180,7 @@ export const websocketService = {
             const message = await database.get<Message>('messages').find(p.id);
             await message.update(m => {
               m.status = 'sent';
-              m.serverTimestamp = new Date(p.serverTimestamp).getTime();
+              m.serverTimestamp = parseDateToMillis(p.serverTimestamp);
             });
           });
           break;

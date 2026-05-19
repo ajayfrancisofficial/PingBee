@@ -88,11 +88,11 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
             numberOfLines={2}
           >
             {chat.lastMessageSentUsername
-              ? `${
-                  chat.lastMessageSentUsername === currentUser
-                    ? 'You'
-                    : chat.lastMessageSentUsername
-                }: `
+              ? chat.lastMessageSentUsername === currentUser
+                ? 'You: '
+                : chat.type !== 'individual'
+                ? `${chat.lastMessageSentUsername}: `
+                : null
               : null}
             {chat.lastMessageText ?? ''}
           </Text>
