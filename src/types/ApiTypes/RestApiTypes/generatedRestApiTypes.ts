@@ -140,6 +140,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/users-avatar': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Upload Avatar */
+    post: operations['upload_avatar_users_avatar_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/conversation': {
     parameters: {
       query?: never;
@@ -290,6 +307,11 @@ export interface components {
       user_id: number;
       /** Is Verified */
       is_verified: boolean;
+    };
+    /** Body_upload_avatar_users_avatar_post */
+    Body_upload_avatar_users_avatar_post: {
+      /** File */
+      file: string;
     };
     /** ChatItem */
     ChatItem: {
@@ -585,6 +607,8 @@ export interface components {
       email: string;
       /** Is Verified */
       is_verified: boolean;
+      /** Avatar Url */
+      avatar_url?: string | null;
     };
     /** UserRegister */
     UserRegister: {
@@ -621,6 +645,8 @@ export interface components {
       email?: string | null;
       /** Phone */
       phone?: string | null;
+      /** Avatar Url */
+      avatar_url?: string | null;
     };
     /** ValidationError */
     ValidationError: {
@@ -1031,6 +1057,39 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['StandardResponse_UserList_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  upload_avatar_users_avatar_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'multipart/form-data': components['schemas']['Body_upload_avatar_users_avatar_post'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_dict_'];
         };
       };
       /** @description Validation Error */
