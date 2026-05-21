@@ -22,6 +22,7 @@ import type {
   UserSearchResponse,
   ChatUserDetailsResponse,
 } from '../types/ApiTypes/RestApiTypes/restApiTypes';
+import { parseDateToMillis } from '../utils/time';
 
 // ─── Chats ───────────────────────────────────────────────────────────────────
 
