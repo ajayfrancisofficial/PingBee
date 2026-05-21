@@ -50,7 +50,7 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
           c.type = api.type;
           c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = new Date(api.updated_at).getTime();
+          c.updatedAt = parseDateToMillis(api.updated_at);
           c.avatarUrl = api.avatar_url || undefined;
           c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
@@ -62,7 +62,7 @@ export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
           c.type = api.type;
           c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = new Date(api.updated_at).getTime();
+          c.updatedAt = parseDateToMillis(api.updated_at);
           c.avatarUrl = api.avatar_url || undefined;
           c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
@@ -119,7 +119,7 @@ export const upsertMessages = async (
           m.text = api.message;
           m.status = api.is_read ? 'read' : 'sent';
           m.isMine = isMine;
-          m.createdAt = new Date(api.created_at).getTime();
+          m.createdAt = parseDateToMillis(api.created_at);
         });
       }
     });
