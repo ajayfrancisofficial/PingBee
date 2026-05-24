@@ -14,80 +14,85 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from './index';
 import Chat from './models/Chat';
 import Message from './models/Message';
+import User from './models/User';
+import ChatParticipant from './models/ChatParticipant';
 import type {
-  ApiChat,
-  ApiMessage,
-  MissedSyncEvent,
-} from '../types/api';
+  ChatItem,
+  MessageItem,
+  UserSearchResponse,
+  ChatUserDetailsResponse,
+} from '../types/ApiTypes/RestApiTypes/restApiTypes';
+import { parseDateToMillis } from '../utils/time';
 
 // ─── Chats ───────────────────────────────────────────────────────────────────
 
 /**
- * Upsert an array of ApiChat objects into the local `chats` table.
- * Creates new records for unknown IDs and updates existing ones.
+ * Upsert an array of ChatItem objects into the local `chats` table.
  */
-export const upsertChats = async (apiChats: ApiChat[]): Promise<void> => {
+export const upsertChats = async (apiChats: ChatItem[]): Promise<void> => {
   if (apiChats.length === 0) return;
 
   await database.write(async () => {
     const chatsCollection = database.get<Chat>('chats');
-    const ids = apiChats.map(c => c.id);
+    const ids = apiChats.map(c => String(c.id));
 
-    // Fetch all existing chats whose IDs are in our incoming set
     const existing = await chatsCollection
       .query(Q.where('id', Q.oneOf(ids)))
       .fetch();
     const existingMap = new Map(existing.map(c => [c.id, c]));
 
     const operations = apiChats.map(api => {
-      const existingRecord = existingMap.get(api.id);
+      const id = String(api.id);
+      const existingRecord = existingMap.get(id);
 
       if (existingRecord) {
-        // Update — only if server data is newer
         return existingRecord.prepareUpdate(c => {
           c.name = api.name;
           c.type = api.type;
-          if (api.last_message_text !== null) {
-            c.lastMessageText = api.last_message_text;
-          }
+          c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = api.updated_at;
-          if (api.avatar_url !== null) {
-            c.avatarUrl = api.avatar_url;
-          }
+          c.updatedAt = parseDateToMillis(api.updated_at);
+          c.avatarUrl = api.avatar_url || undefined;
+          c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
       } else {
-        // Create
         return chatsCollection.prepareCreate(c => {
-          // @ts-ignore — WatermelonDB allows setting id on prepareCreate
-          c._raw.id = api.id;
+          // @ts-ignore
+          c._raw.id = id;
           c.name = api.name;
           c.type = api.type;
-          c.lastMessageText = api.last_message_text ?? undefined;
+          c.lastMessageText = api.last_message_text || undefined;
           c.unreadCount = api.unread_count;
-          c.updatedAt = api.updated_at;
-          c.avatarUrl = api.avatar_url ?? undefined;
+          c.updatedAt = parseDateToMillis(api.updated_at);
+          c.avatarUrl = api.avatar_url || undefined;
+          c.lastMessageSentUsername = api.lastMessageSentUsername;
         });
       }
     });
 
     await database.batch(...operations);
   });
+
+  // Handle participants sync — batch all chats' participants in a single write
+  await batchUpsertAllParticipants(apiChats);
 };
 
 // ─── Messages ────────────────────────────────────────────────────────────────
 
 /**
- * Upsert an array of ApiMessage objects into the local `messages` table.
+ * Upsert an array of MessageItem objects into the local `messages` table.
+ * @param currentUserId - The authenticated user's ID, used to correctly set `isMine`.
  */
 export const upsertMessages = async (
-  apiMessages: ApiMessage[],
+  apiMessages: MessageItem[],
+  chatId: string,
+  currentUserId: string,
 ): Promise<void> => {
   if (apiMessages.length === 0) return;
 
   await database.write(async () => {
     const messagesCollection = database.get<Message>('messages');
-    const ids = apiMessages.map(m => m.id);
+    const ids = apiMessages.map(m => String(m.message_id));
 
     const existing = await messagesCollection
       .query(Q.where('id', Q.oneOf(ids)))
@@ -95,38 +100,27 @@ export const upsertMessages = async (
     const existingMap = new Map(existing.map(m => [m.id, m]));
 
     const operations = apiMessages.map(api => {
-      const existingRecord = existingMap.get(api.id);
+      const id = String(api.message_id);
+      const senderId = String(api.sender_id);
+      const isMine = senderId === currentUserId;
+      const existingRecord = existingMap.get(id);
 
       if (existingRecord) {
-        // Update mutable fields only (status, edited text, deleted state)
         return existingRecord.prepareUpdate(m => {
-          m.status = api.status;
-          m.isEdited = api.is_edited;
-          if (api.edited_at !== null) m.editedAt = api.edited_at;
-          m.isDeleted = api.is_deleted;
-          if (api.deleted_at !== null) m.deletedAt = api.deleted_at;
-          if (api.delete_type !== null) m.deleteType = api.delete_type;
+          m.text = api.message;
+          m.status = api.is_read ? 'read' : 'sent';
+          m.isMine = isMine;
         });
       } else {
-        // Create
         return messagesCollection.prepareCreate(m => {
           // @ts-ignore
-          m._raw.id = api.id;
-          m.chatId = api.chat_id;
-          m.senderId = api.sender_id;
-          m.text = api.text;
-          if (api.media_url !== null) m.mediaUrl = api.media_url;
-          if (api.media_type !== null) m.mediaType = api.media_type;
-          m.status = api.status;
-          m.isMine = api.is_mine;
-          if (api.reply_to_id !== null) m.replyToId = api.reply_to_id;
-          m.isEdited = api.is_edited;
-          if (api.edited_at !== null) m.editedAt = api.edited_at;
-          m.isDeleted = api.is_deleted;
-          if (api.deleted_at !== null) m.deletedAt = api.deleted_at;
-          if (api.delete_type !== null) m.deleteType = api.delete_type;
-          m.createdAt = api.created_at;
-          m.serverTimestamp = api.server_timestamp;
+          m._raw.id = id;
+          m.chatId = chatId;
+          m.senderId = senderId;
+          m.text = api.message;
+          m.status = api.is_read ? 'read' : 'sent';
+          m.isMine = isMine;
+          m.createdAt = parseDateToMillis(api.created_at);
         });
       }
     });
@@ -135,114 +129,181 @@ export const upsertMessages = async (
   });
 };
 
-// ─── Missed Sync Event Applicator ────────────────────────────────────────────
+/**
+ * Upsert profiles from chat-users-details API.
+ */
+export const upsertUserDetails = async (
+  users: ChatUserDetailsResponse['data'],
+): Promise<void> => {
+  if (!users || users.length === 0) return;
+
+  await database.write(async () => {
+    const usersCollection = database.get<User>('users');
+    const ids = users.map(u => String(u.userId));
+
+    const existing = await usersCollection
+      .query(Q.where('id', Q.oneOf(ids)))
+      .fetch();
+    const existingMap = new Map(existing.map(u => [u.id, u]));
+
+    const operations = users.map(api => {
+      const id = String(api.userId);
+      const existingRecord = existingMap.get(id);
+
+      if (existingRecord) {
+        return existingRecord.prepareUpdate(u => {
+          u.name = api.name;
+          u.username = api.username ?? undefined;
+          u.firstName = api.first_name ?? undefined;
+          u.lastName = api.last_name ?? undefined;
+          u.email = api.email ?? undefined;
+          u.avatarUrl = api.avatar_url ?? undefined;
+          u.phoneNumber = api.phone_number ?? undefined;
+        });
+      } else {
+        return usersCollection.prepareCreate(u => {
+          // @ts-ignore
+          u._raw.id = id;
+          u.name = api.name;
+          u.username = api.username ?? undefined;
+          u.firstName = api.first_name ?? undefined;
+          u.lastName = api.last_name ?? undefined;
+          u.email = api.email ?? undefined;
+          u.avatarUrl = api.avatar_url ?? undefined;
+          u.phoneNumber = api.phone_number ?? undefined;
+        });
+      }
+    });
+
+    await database.batch(...operations);
+  });
+};
+
+// ─── Users ────────────────────────────────────────────────────────────────────
 
 /**
- * Apply a batch of missed-sync events to the local database.
- * Events are processed in order — the server guarantees chronological ordering.
+ * Upsert a single user from a UserSearchResponse object into the local `users` table.
+ * Stores all available profile data so sender names can be resolved offline.
  */
-export const applyMissedSyncEvents = async (
-  events: MissedSyncEvent[],
+export const upsertUser = async (
+  apiUser: UserSearchResponse,
 ): Promise<void> => {
-  if (events.length === 0) return;
+  const id = String(apiUser.user_id);
 
-  // Process event types that require simple DB reads+writes
-  // We iterate sequentially to respect ordering guarantees
-  for (const event of events) {
+  await database.write(async () => {
+    const usersCollection = database.get<User>('users');
+    let existing: User | null = null;
     try {
-      await database.write(async () => {
-        switch (event.type) {
-          case 'NEW_MSG': {
-            const { payload: p } = event;
-            const messagesCollection = database.get<Message>('messages');
+      existing = await usersCollection.find(id);
+    } catch {
+      // Not found — will create below
+    }
 
-            // Skip if we already have this message (WS may have delivered it)
-            const existing = await messagesCollection
-              .query(Q.where('id', p.id))
-              .fetchCount();
-            if (existing > 0) break;
-
-            await messagesCollection.create(m => {
-              // @ts-ignore
-              m._raw.id = p.id;
-              m.chatId = p.chat_id;
-              m.senderId = p.sender_id;
-              m.text = p.text;
-              if (p.media_url !== null) m.mediaUrl = p.media_url ?? undefined;
-              if (p.media_type !== null) m.mediaType = p.media_type ?? undefined;
-              m.status = 'sent';
-              m.isMine = false;
-              if (p.reply_to_id !== null) m.replyToId = p.reply_to_id ?? undefined;
-              m.isEdited = false;
-              m.isDeleted = false;
-              m.createdAt = p.created_at;
-              m.serverTimestamp = p.server_timestamp;
-            });
-
-            // Update chat's last message and unread count
-            try {
-              const chat = await database.get<Chat>('chats').find(p.chat_id);
-              await chat.update(c => {
-                c.lastMessageText = p.text;
-                c.unreadCount += 1;
-                c.updatedAt = p.server_timestamp;
-              });
-            } catch {
-              // Chat not loaded locally yet; will be fetched by initial load
-            }
-            break;
-          }
-
-          case 'EDIT_MSG': {
-            const { payload: p } = event;
-            try {
-              const message = await database.get<Message>('messages').find(p.id);
-              await message.update(m => {
-                m.text = p.text;
-                m.isEdited = true;
-                m.editedAt = p.edited_at;
-                m.editStatus = 'synced';
-              });
-            } catch {
-              // Message not local yet; will be fetched via pagination
-            }
-            break;
-          }
-
-          case 'DELETE_MSG': {
-            const { payload: p } = event;
-            if (p.delete_type === 'deleteForMe') break; // Server shouldn't broadcast this but just in case
-
-            try {
-              const message = await database.get<Message>('messages').find(p.id);
-              await message.update(m => {
-                m.isDeleted = true;
-                m.deletedAt = p.deleted_at;
-                m.deleteType = p.delete_type;
-                m.deleteStatus = 'synced';
-              });
-            } catch {
-              // Not local
-            }
-            break;
-          }
-
-          case 'MSG_STATUS': {
-            const { payload: p } = event;
-            try {
-              const message = await database.get<Message>('messages').find(p.id);
-              await message.update(m => {
-                m.status = p.status;
-              });
-            } catch {
-              // Not local
-            }
-            break;
-          }
-        }
+    if (existing) {
+      await existing.update(u => {
+        u.name =
+          `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
+        u.username = apiUser.username;
+        u.firstName = apiUser.firstname;
+        u.lastName = apiUser.lastname;
+        u.email = apiUser.email ?? undefined;
       });
-    } catch (error) {
-      console.warn('[upsert] Failed to apply missed sync event:', event.type, error);
+    } else {
+      await usersCollection.create(u => {
+        // @ts-ignore
+        u._raw.id = id;
+        u.name =
+          `${apiUser.firstname} ${apiUser.lastname}`.trim() || apiUser.username;
+        u.username = apiUser.username;
+        u.firstName = apiUser.firstname;
+        u.lastName = apiUser.lastname;
+        u.email = apiUser.email ?? undefined;
+      });
+    }
+  });
+};
+
+// ─── Chat Participants ────────────────────────────────────────────────────────
+
+/**
+ * Batch-upsert participants for ALL chats in a single database.write().
+ * This replaces the previous per-chat loop which opened N separate write
+ * transactions and was significantly slower for many chats.
+ */
+const batchUpsertAllParticipants = async (
+  apiChats: ChatItem[],
+): Promise<void> => {
+  // Collect all (chatId, userId) pairs that need syncing
+  const pairs: { chatId: string; userId: string }[] = [];
+  for (const api of apiChats) {
+    if (api.participants?.userIDs) {
+      const chatId = String(api.id);
+      for (const uid of api.participants.userIDs) {
+        pairs.push({ chatId, userId: uid });
+      }
     }
   }
+  if (pairs.length === 0) return;
+
+  await database.write(async () => {
+    const participantsCollection =
+      database.get<ChatParticipant>('chat_participants');
+
+    // Fetch all existing participants for the relevant chats in one query
+    const chatIds = [...new Set(pairs.map(p => p.chatId))];
+    const existing = await participantsCollection
+      .query(Q.where('chat_id', Q.oneOf(chatIds)))
+      .fetch();
+
+    // Build a set of "chatId:userId" keys for fast lookup
+    const existingKeys = new Set(existing.map(p => `${p.chatId}:${p.userId}`));
+
+    const operations = pairs
+      .filter(({ chatId, userId }) => !existingKeys.has(`${chatId}:${userId}`))
+      .map(({ chatId, userId }) =>
+        participantsCollection.prepareCreate(p => {
+          p.chatId = chatId;
+          p.userId = userId;
+        }),
+      );
+
+    if (operations.length > 0) {
+      await database.batch(...operations);
+    }
+  });
+};
+
+/**
+ * Upsert participant records for a given chat.
+ * Each userId entry gets a row in `chat_participants` if one does not already exist.
+ */
+export const upsertChatParticipants = async (
+  chatId: string,
+  userIds: string[],
+): Promise<void> => {
+  if (userIds.length === 0) return;
+
+  await database.write(async () => {
+    const participantsCollection =
+      database.get<ChatParticipant>('chat_participants');
+
+    // Fetch existing rows for this chat to avoid duplicates
+    const existing = await participantsCollection
+      .query(Q.where('chat_id', chatId))
+      .fetch();
+    const existingUserIds = new Set(existing.map(p => p.userId));
+
+    const operations = userIds
+      .filter(uid => !existingUserIds.has(uid))
+      .map(uid =>
+        participantsCollection.prepareCreate(p => {
+          p.chatId = chatId;
+          p.userId = uid;
+        }),
+      );
+
+    if (operations.length > 0) {
+      await database.batch(...operations);
+    }
+  });
 };

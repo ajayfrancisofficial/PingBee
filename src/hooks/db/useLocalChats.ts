@@ -1,33 +1,25 @@
-/**
- * useLocalChats.ts
- *
- * Observes all chats from WatermelonDB and exposes a `loadMore` function
- * for cursor-based pagination against the REST API.
- *
- * Returns:
- *  - chats         → live array, auto-updated by WatermelonDB
- *  - loadMore()    → fetch the next page from REST and upsert into DB
- *  - isLoadingMore → true while a page fetch is in flight
- *  - hasMore       → whether there are more pages to load
- */
-
 import { useEffect, useState, useCallback } from 'react';
 import { Q } from '@nozbe/watermelondb';
+import { useFocusEffect } from '@react-navigation/native';
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
+import { chatApi } from '../../api/RESTApi/chatApi';
 import { upsertChats } from '../../db/upsert';
-import { fetchChats } from '../../api/chatApi';
-import {
-  getChatsCursor,
-  setChatsCursor,
-  getHasMoreChats,
-  setHasMoreChats,
-} from '../../utils/syncStorage';
+import { useGuardedFetch } from '../useGuardedFetch';
 
+/**
+ * Observes all chats from WatermelonDB. On every screen focus, fetches the
+ * latest chats from the REST API and upserts them into the local DB. The
+ * WatermelonDB observer automatically propagates the changes to the UI.
+ *
+ * @returns An object containing:
+ *  - `chats`: Live array of chats, auto-updated by WatermelonDB.
+ *  - `isSyncing`: True while the background focus-fetch is in flight.
+ *  - `refreshChats`: Pull-to-refresh callback for FlatList.
+ *  - `isRefreshing`: True while pull-to-refresh is in flight.
+ */
 export function useLocalChats() {
   const [chats, setChats] = useState<Chat[]>([]);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(getHasMoreChats);
 
   // ── Live WatermelonDB observer ─────────────────────────────────────────────
   useEffect(() => {
@@ -42,28 +34,30 @@ export function useLocalChats() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Load next page from REST ───────────────────────────────────────────────
-  const loadMore = useCallback(async () => {
-    if (isLoadingMore || !getHasMoreChats()) return;
+  // ── Shared fetch logic ─────────────────────────────────────────────────────
+  const fetchAndUpsert = useCallback(async () => {
+    const response = await chatApi.fetchChats();
+    const apiChats = response.data?.chats ?? [];
+    await upsertChats(apiChats);
+  }, []);
 
-    setIsLoadingMore(true);
-    try {
-      const cursor = getChatsCursor();
-      if (!cursor) return; // Shouldn't happen if hasMore is true, but guard anyway
+  // ── Fetch & upsert on every focus ─────────────────────────────────────────
+  const { execute: syncChats, isLoading: isSyncing } = useGuardedFetch(
+    fetchAndUpsert,
+    'useLocalChats:sync',
+  );
 
-      const response = await fetchChats(cursor);
+  useFocusEffect(
+    useCallback(() => {
+      syncChats();
+    }, [syncChats]),
+  );
 
-      await upsertChats(response.chats);
+  // ── Pull-to-refresh (reuses the same fetch logic) ─────────────────────────
+  const { execute: refreshChats, isLoading: isRefreshing } = useGuardedFetch(
+    fetchAndUpsert,
+    'useLocalChats:refresh',
+  );
 
-      setChatsCursor(response.next_cursor);
-      setHasMoreChats(response.has_more);
-      setHasMore(response.has_more);
-    } catch (error) {
-      console.error('[useLocalChats] loadMore failed:', error);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  }, [isLoadingMore]);
-
-  return { chats, loadMore, isLoadingMore, hasMore };
+  return { chats, isSyncing, refreshChats, isRefreshing };
 }

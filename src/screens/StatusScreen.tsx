@@ -14,7 +14,7 @@ const StatusScreen = () => {
       data={[]}
       keyExtractor={(_, index) => index.toString()}
       renderItem={() => null}
-      ListHeaderComponent={<Text style={styles.text}>Updates</Text>}
+      ListHeaderComponent={<Text style={styles.text}>//Todo</Text>}
     />
   );
 };

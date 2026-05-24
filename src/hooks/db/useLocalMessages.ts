@@ -3,20 +3,16 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import { upsertMessages } from '../../db/upsert';
-import { fetchMessages } from '../../api/chatApi';
+import { chatApi, MESSAGES_PAGE_SIZE } from '../../api/RESTApi/chatApi';
 import {
-  getMessagesCursor,
-  setMessagesCursor,
   getHasMoreMessages,
   setHasMoreMessages,
-  getMessagesLoaded,
-  setMessagesLoaded,
 } from '../../utils/syncStorage';
+import { useGuardedFetch } from '../useGuardedFetch';
 
-export function useLocalMessages(chatId: string) {
+export function useLocalMessages(chatId: string, currentUserId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [hasMore, setHasMore] = useState(() => getHasMoreMessages(chatId));
 
   // ─── 1. Observe WatermelonDB ───────────────────────────────────────────────
@@ -24,7 +20,7 @@ export function useLocalMessages(chatId: string) {
     const subscription = database
       .get<Message>('messages')
       .query(Q.where('chat_id', chatId), Q.sortBy('created_at', Q.desc))
-      .observe()
+      .observeWithColumns(['status', 'text', 'is_edited', 'is_deleted'])
       .subscribe(newMessages => {
         setMessages(newMessages);
       });
@@ -32,58 +28,69 @@ export function useLocalMessages(chatId: string) {
     return () => subscription.unsubscribe();
   }, [chatId]);
 
-  // ─── 2. Lazy Load (First Page) ────────────────────────────────────────────
+  // ─── Shared fetch-page-0 logic ─────────────────────────────────────────────
+  // Used by both the initial mount load and pull-to-refresh.
+  const fetchLatestPage = useCallback(async () => {
+    const response = await chatApi.fetchMessages(chatId, 0);
+    const fetchedMessages = response.data?.messages ?? [];
+    await upsertMessages(fetchedMessages, chatId, currentUserId);
+
+    const hasMoreMsgs = fetchedMessages.length >= MESSAGES_PAGE_SIZE;
+    setHasMoreMessages(chatId, hasMoreMsgs);
+    setHasMore(hasMoreMsgs);
+  }, [chatId, currentUserId]);
+
+  // ─── 2. Fetch First Page on Open ──────────────────────────────────────────
+  const { execute: loadInitial, isLoading: isInitialLoading } = useGuardedFetch(
+    fetchLatestPage,
+    'useLocalMessages:initial',
+  );
+
   useEffect(() => {
-    const loadInitial = async () => {
-      // If we haven't loaded the first page for this chat yet, do it now
-      if (!getMessagesLoaded(chatId)) {
-        setIsInitialLoading(true);
-        try {
-          const response = await fetchMessages(chatId);
-          await upsertMessages(response.messages);
-          
-          setMessagesCursor(chatId, response.next_cursor);
-          setHasMoreMessages(chatId, response.has_more);
-          setHasMore(response.has_more);
-          setMessagesLoaded(chatId, true);
-        } catch (error) {
-          console.error('[useLocalMessages] Initial load failed:', error);
-        } finally {
-          setIsInitialLoading(false);
-        }
-      }
-    };
-
     loadInitial();
-  }, [chatId]);
+  }, [loadInitial]);
 
-  // ─── 3. Load More (Pagination) ───────────────────────────────────────────
+  // ─── 3. Load More (Cursor-based Pagination) ──────────────────────────────
+  //
+  // Uses the actual WatermelonDB message count for this chat as the skip
+  // offset, avoiding skip-drift when new messages arrive between pages.
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !getHasMoreMessages(chatId)) return;
 
     setIsLoadingMore(true);
     try {
-      const cursor = getMessagesCursor(chatId);
-      if (!cursor) return;
+      const localCount = await database
+        .get<Message>('messages')
+        .query(Q.where('chat_id', chatId))
+        .fetchCount();
 
-      const response = await fetchMessages(chatId, cursor);
-      await upsertMessages(response.messages);
+      const response = await chatApi.fetchMessages(chatId, localCount);
+      const fetchedMessages = response.data?.messages ?? [];
+      await upsertMessages(fetchedMessages, chatId, currentUserId);
 
-      setMessagesCursor(chatId, response.next_cursor);
-      setHasMoreMessages(chatId, response.has_more);
-      setHasMore(response.has_more);
+      const hasMoreMsgs = fetchedMessages.length >= MESSAGES_PAGE_SIZE;
+      setHasMoreMessages(chatId, hasMoreMsgs);
+      setHasMore(hasMoreMsgs);
     } catch (error) {
       console.error('[useLocalMessages] loadMore failed:', error);
     } finally {
       setIsLoadingMore(false);
     }
-  }, [chatId, isLoadingMore]);
+  }, [chatId, isLoadingMore, currentUserId]);
+
+  // ─── 4. Pull-to-Refresh (reuses the same fetch logic) ────────────────────
+  const { execute: refreshMessages, isLoading: isRefreshing } = useGuardedFetch(
+    fetchLatestPage,
+    'useLocalMessages:refresh',
+  );
 
   return {
     messages,
     loadMore,
+    refreshMessages,
     isLoadingMore,
     isInitialLoading,
+    isRefreshing,
     hasMore,
   };
 }

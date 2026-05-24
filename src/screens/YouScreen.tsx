@@ -42,6 +42,7 @@ const edges: Edges = Platform.select({
 });
 
 import { sizing } from '../theme/sizing';
+import { useUserProfile } from '../hooks/useUserProfile';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -81,7 +82,8 @@ export const YouScreen = () => {
   const { name, about, profilePicture } = useUserStore();
   const iconColor = theme.colors.text.secondary;
   const iconSize = sizing.iconSizes.base;
-
+  // Sync user profile on focus
+  useUserProfile();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
 
@@ -159,15 +161,9 @@ export const YouScreen = () => {
         data={[]}
         keyExtractor={(_, index) => index.toString()}
         renderItem={() => null}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: Platform.OS === 'ios' ? 0 : insets.top },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         ListHeaderComponent={
           <>
-            {/* Top Spacing for header */}
-            <View style={{ height: Platform.OS === 'ios' ? 44 : 56 }} />
-
             {/* Profile Section */}
             <View style={styles.profileSection}>
               {/* About tooltip */}

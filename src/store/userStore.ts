@@ -4,35 +4,44 @@ import { MediaUtils } from '../utils/media';
 import { zustandStorage } from '../utils/mmkvStorage';
 
 interface UserState {
-  userId: string;
+  userId: number | null;
+  username: string;
+  email: string;
+  isVerified: boolean;
   name: string;
   about: string;
   phoneNumber: string;
-  email: string;
   profilePicture: string; // use "" if deleted
   avatar: string; // use "" if deleted
   setUser: (
     user: Partial<
       Omit<
         UserState,
-        'setUser' | 'updateProfilePicture' | 'deleteProfilePicture'
+        'setUser' | 'updateProfilePicture' | 'deleteProfilePicture' | 'clearUser'
       >
     >,
   ) => void;
   updateProfilePicture: (url: string) => Promise<void>;
   deleteProfilePicture: () => void;
+  clearUser: () => void;
 }
+
+const initialState = {
+  userId: null,
+  username: '',
+  email: '',
+  isVerified: false,
+  name: '',
+  about: '',
+  phoneNumber: '',
+  profilePicture: '',
+  avatar: '',
+};
 
 export const useUserStore = create<UserState>()(
   persist(
     set => ({
-      userId: 'user-1',
-      name: 'Ajay',
-      about: 'sample about',
-      phoneNumber: '+91 89215 68816',
-      email: 'ajay@pingbee.app',
-      profilePicture: 'https://randomuser.me/api/portraits/men/32.jpg',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      ...initialState,
 
       setUser: user => set(state => ({ ...state, ...user })),
 
@@ -61,6 +70,8 @@ export const useUserStore = create<UserState>()(
           profilePicture: '',
           avatar: '',
         })),
+
+      clearUser: () => set(initialState),
     }),
     {
       name: 'pingbee-user-storage',

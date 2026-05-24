@@ -1,0 +1,2 @@
+1. update restapitypes for new chatusersdetails
+2. z in time response

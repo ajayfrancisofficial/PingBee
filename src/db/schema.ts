@@ -7,8 +7,17 @@ export default appSchema({
       name: 'users',
       columns: [
         { name: 'name', type: 'string' },
-        { name: 'avatar_url', type: 'string' },
-        { name: 'phone_number', type: 'string', isIndexed: true },
+        { name: 'username', type: 'string', isOptional: true },
+        { name: 'first_name', type: 'string', isOptional: true },
+        { name: 'last_name', type: 'string', isOptional: true },
+        { name: 'email', type: 'string', isOptional: true },
+        { name: 'avatar_url', type: 'string', isOptional: true },
+        {
+          name: 'phone_number',
+          type: 'string',
+          isIndexed: true,
+          isOptional: true,
+        },
       ],
     }),
     tableSchema({
@@ -20,6 +29,11 @@ export default appSchema({
         { name: 'unread_count', type: 'number' },
         { name: 'updated_at', type: 'number', isIndexed: true },
         { name: 'avatar_url', type: 'string', isOptional: true },
+        {
+          name: 'last_message_sent_username',
+          type: 'string',
+          isOptional: true,
+        },
       ],
     }),
     tableSchema({

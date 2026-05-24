@@ -5,6 +5,7 @@ import { AuthSwitch } from './src/navigation/AuthSwitch';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { Snackbar } from './src/components/foundations/Snackbar';
 
 const queryClient = new QueryClient();
 
@@ -16,8 +17,12 @@ function App() {
       <BottomSheetModalProvider>
         <SafeAreaProvider>
           <QueryClientProvider client={queryClient}>
-            <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+            <StatusBar
+              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+              translucent={true}
+            />
             <AuthSwitch />
+            <Snackbar />
           </QueryClientProvider>
         </SafeAreaProvider>
       </BottomSheetModalProvider>

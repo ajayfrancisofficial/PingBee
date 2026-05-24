@@ -31,11 +31,15 @@ export const YouStack = createNativeStackNavigator({
       },
     },
   },
-  screenOptions: {
+  screenOptions: ({ theme }) => ({
     headerShown: true,
-    headerTransparent: true,
+    headerTransparent: false,
+    headerShadowVisible: false,
+    headerStyle: {
+      backgroundColor: theme.colors.background,
+    },
     headerLargeTitleEnabled: false,
-  },
+  }),
 });
 
 export type YouStackParamList = StaticParamList<typeof YouStack>;

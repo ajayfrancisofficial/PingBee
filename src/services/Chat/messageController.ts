@@ -1,10 +1,10 @@
 import { IMessage } from 'react-native-gifted-chat';
-import { database } from '../db';
-import Message from '../db/models/Message';
-import Chat from '../db/models/Chat';
-import { useUserStore } from '../store/userStore';
-import { sendRaw, getIsConnected } from './websocket';
-import type { WSSendMsg } from '../types/websocket';
+import { database } from '../../db';
+import Message from '../../db/models/Message';
+import Chat from '../../db/models/Chat';
+import { useUserStore } from '../../store/userStore';
+import { websocketApi } from '../../api/WebsocketApi/websocketApi';
+import type { WsClientMessage } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
 
 /**
  * Detect media type from an IMessage's optional fields.
@@ -25,8 +25,8 @@ const getMediaInfo = (
  * Format a WatermelonDB Message record into the WebSocket MSG payload.
  * This is also used by OutgoingSync to retry pending messages.
  */
-export const formatMessagePayload = (message: Message): WSSendMsg => ({
-  type: 'SEND_MSG',
+export const formatMessagePayload = (message: Message): WsClientMessage => ({
+  event: 'SEND_MSG',
   payload: {
     id: message.id,
     chatId: message.chatId,
@@ -38,7 +38,8 @@ export const formatMessagePayload = (message: Message): WSSendMsg => ({
       mediaType: message.mediaType,
     }),
     ...(message.replyToId && { replyToId: message.replyToId }),
-  },
+  } as any,
+  timestamp: new Date().toISOString(),
 });
 
 /**
@@ -46,7 +47,7 @@ export const formatMessagePayload = (message: Message): WSSendMsg => ({
  *
  * This is the ONLY function you should call to send messages. Import it anywhere:
  * ```
- * import { sendMessage } from '../services/messageController';
+ * import { sendMessage } from '../services/Chat/messageController';
  *
  * // In GiftedChat's onSend:
  * const onSend = (messages: IMessage[]) => {
@@ -74,7 +75,7 @@ export const sendMessage = async (
 
     const newMessage = await messagesCollection.create(msg => {
       msg.chatId = chatId;
-      msg.senderId = userId;
+      msg.senderId = String(userId);
       msg.text = message.text;
       msg.status = 'pending';
       msg.isMine = true;
@@ -109,9 +110,9 @@ export const sendMessage = async (
   });
 
   // 2. If online, send via WebSocket immediately
-  if (getIsConnected()) {
+  if (websocketApi.getIsConnected()) {
     const payload = formatMessagePayload(savedMessage);
-    sendRaw(payload);
+    websocketApi.sendRaw(payload);
   }
 
   return savedMessage.id;
@@ -156,14 +157,15 @@ export const editMessage = async (
     }
   });
 
-  if (getIsConnected()) {
-    sendRaw({
-      type: 'EDIT_MSG',
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
+      event: 'EDIT_MSG',
       payload: {
         id: messageId,
         text: newText,
         editedAt,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -209,14 +211,15 @@ export const deleteMessage = async (
     }
   });
 
-  if (getIsConnected()) {
-    sendRaw({
-      type: 'DELETE_MSG',
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
+      event: 'DELETE_MSG',
       payload: {
         id: messageId,
         deleteType: type,
         deletedAt,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -225,13 +228,14 @@ export const deleteMessage = async (
  * Send typing indicator status to the chat.
  */
 export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
-  if (getIsConnected()) {
-    sendRaw({
-      type: 'TYPING',
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
+      event: 'TYPING',
       payload: {
         chatId,
         isTyping,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };
@@ -240,12 +244,13 @@ export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
  * Send presence status (online/offline) to the server.
  */
 export const sendPresenceStatus = (status: 'online' | 'offline') => {
-  if (getIsConnected()) {
-    sendRaw({
-      type: 'PRESENCE',
+  if (websocketApi.getIsConnected()) {
+    websocketApi.sendRaw({
+      event: 'PRESENCE',
       payload: {
         status,
       },
+      timestamp: new Date().toISOString(),
     });
   }
 };

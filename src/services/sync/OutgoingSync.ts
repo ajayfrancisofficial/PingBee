@@ -1,7 +1,7 @@
 import { database } from '../../db';
 import Message from '../../db/models/Message';
-import { sendRaw, getIsConnected } from '../websocket';
-import { formatMessagePayload } from '../messageController';
+import { websocketApi } from '../../api/WebsocketApi/websocketApi';
+import { formatMessagePayload } from '../Chat/messageController';
 
 let isSyncing = false;
 
@@ -10,7 +10,7 @@ let isSyncing = false;
  * Call this when the connection is restored.
  */
 export const performOutgoingSync = async () => {
-  if (isSyncing || !getIsConnected()) return;
+  if (isSyncing || !websocketApi.getIsConnected()) return;
   isSyncing = true;
 
   try {
@@ -18,38 +18,43 @@ export const performOutgoingSync = async () => {
 
     const pendingNew = allMessages.filter(m => m.status === 'pending');
     const pendingEdits = allMessages.filter(m => m.editStatus === 'pending');
-    const pendingDeletes = allMessages.filter(m => m.deleteStatus === 'pending');
+    const pendingDeletes = allMessages.filter(
+      m => m.deleteStatus === 'pending',
+    );
 
     // 1. Sync New Messages
     for (const message of pendingNew) {
-      sendRaw(formatMessagePayload(message));
+      websocketApi.sendRaw(formatMessagePayload(message));
     }
 
     // 2. Sync Edits
     for (const message of pendingEdits) {
-      sendRaw({
-        type: 'EDIT_MSG',
+      websocketApi.sendRaw({
+        event: 'EDIT_MSG',
         payload: {
           id: message.id,
           text: message.text,
           editedAt: new Date(message.editedAt || Date.now()).toISOString(),
         },
+        timestamp: new Date().toISOString(),
       });
     }
 
     // 3. Sync Deletions
     for (const message of pendingDeletes) {
-      sendRaw({
-        type: 'DELETE_MSG',
+      websocketApi.sendRaw({
+        event: 'DELETE_MSG',
         payload: {
           id: message.id,
           deleteType: message.deleteType || 'deleteForEveryone',
           deletedAt: new Date(message.deletedAt || Date.now()).toISOString(),
         },
+        timestamp: new Date().toISOString(),
       });
     }
 
-    const total = pendingNew.length + pendingEdits.length + pendingDeletes.length;
+    const total =
+      pendingNew.length + pendingEdits.length + pendingDeletes.length;
     if (total > 0) {
       console.log(`[OutgoingSync] Synced ${total} pending action(s)`);
     }
