@@ -1,0 +1,42 @@
+# PingBee Project Rules for AI Agents
+
+## Tech Stack
+- **Framework**: React Native (0.84+)
+- **Language**: TypeScript (Strict Mode)
+- **State Management**: 
+    - **Global**: Zustand (v5)
+    - **Server State**: TanStack Query (v5)
+    - **Local DB**: WatermelonDB (v0.28)
+- **Navigation**: React Navigation (v7)
+- **Styling**: Vanilla `StyleSheet` with a custom `useAppTheme` hook and `makeStyles` pattern.
+- **Icons**: Lucide React Native
+
+## Coding Standards
+- **Components**: Use functional components with hooks. Prefer `useMemo` for styles and heavy computations.
+- **Types**: Always define interfaces/types for props and data models. Avoid `any` at all costs.
+- **Navigation**: **NEVER** use `any` type for `useNavigation()`. Always use proper types (e.g., `StaticParamList` from your stack) or rely on inference if possible.
+- **Styling**: **ALWAYS** use values from the theme (`colors`, `spacing`, `typography`, `borderRadius`, `iconSizes`). Never use hardcoded pixel values for spacing or colors. Even icon sizes should come from `theme.iconSizes` (if available) or `theme.spacing`.
+- **API**: Follow the pattern in `src/api/endpoints.ts` and use `axiosClient` for requests. All API modules (e.g., `authApi.ts`, `chatApi.ts`) MUST export a single constant object containing all methods (e.g., `export const chatApi = { ... }`). Individual named exports for API functions are forbidden.
+- **Hooks**: Place reusable logic in `src/hooks/`. **ALWAYS** extract complex state and side-effect logic (e.g., search, pagination, form handling) from screens into dedicated custom hooks in `src/hooks/` to keep screen components simple and focused on layout/UI.
+- **Database**: Use WatermelonDB models in `src/db/models/` and handle queries through dedicated hooks (e.g., `src/hooks/db/`).
+- **Asynchronicity**: **ALWAYS** use `async/await` with `try/catch` for promise handling. **NEVER** use `.then().catch()`.
+
+## Operational Guidelines
+- **Development**: Use `yarn android` or `yarn ios` to run the app.
+- **State Persistence**: Sensitive data should be handled via `react-native-keychain` or `react-native-mmkv`.
+- **Animations**: Use `react-native-reanimated` (v4) for complex UI transitions.
+
+## Project Structure
+- `src/api`: API endpoints and axios client.
+- `src/components`: Reusable UI components.
+- `src/db`: WatermelonDB models, schema, and migrations.
+- `src/hooks`: Custom React hooks (logic, db queries, theme).
+- `src/screens`: Main application screens.
+- `src/theme`: Theme configuration and color palettes.
+
+## Agent Instructions
+- When adding new features, check for existing patterns in `src/screens/ChatsScreen.tsx`.
+- When creating API calls, update `src/api/endpoints.ts` first.
+- Always prefer local DB (WatermelonDB) for offline-first capabilities where applicable.
+- **NEVER** write direct `axios` or `apiClient` calls in services (`src/services/`). All API call logic MUST be implemented in the API layer (`src/api/RESTApi/`) and then called from services.
+- If you need to run the app, the terminal command is `yarn android`.

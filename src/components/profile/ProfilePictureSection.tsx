@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Image, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { useUserStore } from '../../store/userStore';
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { ProfilePictureOptionsModal } from './ProfilePictureOptionsModal';
 import { MediaUtils } from '../../utils/media';
-import { updateProfilePictureApi } from '../../services/userService';
+import { userService } from '../../services/User/userService';
+import { TransitionTags } from '../../constants/transitions';
 
 export const ProfilePictureSection = () => {
   const theme = useAppTheme();
@@ -32,7 +34,7 @@ export const ProfilePictureSection = () => {
             const oldAvatarUri = avatar;
 
             await updateProfilePicture(uri);
-            await updateProfilePictureApi(uri, 'gallery');
+            await userService.updateProfilePicture(uri, 'gallery');
 
             // Delete old profile picture and avatar ONLY after successful update
             if (oldProfileUri) {
@@ -64,7 +66,7 @@ export const ProfilePictureSection = () => {
             const oldAvatarUri = avatar;
 
             await updateProfilePicture(uri);
-            await updateProfilePictureApi(uri, 'camera');
+            await userService.updateProfilePicture(uri, 'camera');
 
             // Delete old profile picture and avatar ONLY after successful update
             if (oldProfileUri) {
@@ -95,13 +97,17 @@ export const ProfilePictureSection = () => {
       await MediaUtils.deleteMedia(avatar);
     }
     deleteProfilePicture();
-    updateProfilePictureApi('', 'removed').catch(console.error);
+    userService.updateProfilePicture('', 'removed').catch(console.error);
   };
 
   return (
     <>
       <View style={styles.imageSection}>
-        <Image source={{ uri: profilePicture }} style={styles.profileImage} />
+        <Animated.Image
+          source={{ uri: profilePicture }}
+          style={styles.profileImage}
+          sharedTransitionTag={TransitionTags.profileImage}
+        />
         <TouchableOpacity
           activeOpacity={0.6}
           onPress={() => setIsOptionsVisible(true)}
@@ -111,15 +117,13 @@ export const ProfilePictureSection = () => {
       </View>
 
       {/* Picture Options Sheet */}
-      {isOptionsVisible && (
-        <ProfilePictureOptionsModal
-          visible={isOptionsVisible}
-          onClose={() => setIsOptionsVisible(false)}
-          onTakePhoto={handleTakePhoto}
-          onChoosePhoto={handleChoosePhoto}
-          onDeletePhoto={handleDeletePhoto}
-        />
-      )}
+      <ProfilePictureOptionsModal
+        visible={isOptionsVisible}
+        onClose={() => setIsOptionsVisible(false)}
+        onTakePhoto={handleTakePhoto}
+        onChoosePhoto={handleChoosePhoto}
+        onDeletePhoto={handleDeletePhoto}
+      />
 
       {/* Confirmation Dialog */}
       {isConfirmVisible && (

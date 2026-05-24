@@ -1,76 +1,84 @@
-import { createNativeBottomTabNavigator } from '@react-navigation/bottom-tabs/unstable';
-import { Platform, Text, View } from 'react-native';
+import { StaticParamList } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { CircleDashed, Phone, MessageCircle, User } from 'lucide-react-native';
 import ChatsScreen from '../screens/ChatsScreen';
 import StatusScreen from '../screens/StatusScreen';
 import CallsScreen from '../screens/CallsScreen';
 import { YouStack } from './YouStack';
-import { BottomTabParamList } from '../types/navigation';
+import { PlatformPressable } from '@react-navigation/elements';
 
-export const BottomTabNavigator =
-  createNativeBottomTabNavigator<BottomTabParamList>({
-    initialRouteName: 'Chats',
-    screens: {
-      Status: {
-        screen: StatusScreen,
-        options: {
-          tabBarIcon: () =>
-            Platform.select({
-              ios: { type: 'sfSymbol', name: 'circle.dashed' },
-              default: undefined as any,
-            }),
-        },
-      },
-      Calls: {
-        screen: CallsScreen,
-        options: {
-          tabBarIcon: ({ focused }) =>
-            Platform.select({
-              ios: { type: 'sfSymbol', name: focused ? 'phone.fill' : 'phone' },
-              default: undefined as any,
-            }),
-        },
-      },
-      Chats: {
-        screen: ChatsScreen,
-        options: {
-          tabBarIcon: ({ focused }) =>
-            Platform.select({
-              ios: {
-                type: 'sfSymbol',
-                name: focused ? 'message.fill' : 'message',
-              },
-              default: undefined as any,
-            }),
-          tabBarBadge: 1,
-          //use unread mssges count
-        },
-      },
-      YouStack: {
-        screen: YouStack,
-        options: {
-          title: 'You',
-          headerShown: false,
-          tabBarIcon: ({ focused }) =>
-            Platform.select({
-              ios: {
-                type: 'sfSymbol',
-                name: focused ? 'person.fill' : 'person',
-              },
-              default: undefined as any,
-            }),
-        },
+export const BottomTabNavigator = createBottomTabNavigator({
+  initialRouteName: 'Chats',
+  screens: {
+    Status: {
+      screen: StatusScreen,
+      options: {
+        tabBarIcon: ({ color, size, focused }) => (
+          <CircleDashed
+            color={color}
+            size={size}
+            strokeWidth={focused ? 2.5 : 2}
+            fill={focused ? color : 'none'}
+          />
+        ),
       },
     },
-    screenOptions: ({ theme }) => ({
-      headerShown: true,
-      tabBarLabelVisibilityMode: 'selected',
-      tabBarMinimizeBehavior: 'onScrollDown',
-      tabBarActiveTintColor: theme.colors.primary,
-      tabBarActiveIndicatorColor: theme.colors.primary,
-      tabBarRippleColor: theme.colors.primary,
-      headerLargeTitleEnabled: true,
-      headerTransparent: true,
-      headerLargeTitleShadowVisible: true,
-      headerTintColor: theme.colors.primary,
-    }),
-  });
+    Calls: {
+      screen: CallsScreen,
+      options: {
+        tabBarIcon: ({ color, size, focused }) => (
+          <Phone
+            color={color}
+            size={size}
+            strokeWidth={focused ? 2.5 : 2}
+            fill={focused ? color : 'none'}
+          />
+        ),
+      },
+    },
+    Chats: {
+      screen: ChatsScreen,
+      options: {
+        tabBarIcon: ({ color, size, focused }) => (
+          <MessageCircle
+            color={color}
+            size={size}
+            strokeWidth={focused ? 2.5 : 2}
+            fill={focused ? color : 'none'}
+          />
+        ),
+        tabBarBadge: 1,
+        //use unread mssges count
+      },
+    },
+    YouStack: {
+      screen: YouStack,
+      options: {
+        title: 'You',
+        headerShown: false,
+        tabBarIcon: ({ color, size, focused }) => (
+          <User
+            color={color}
+            size={size}
+            strokeWidth={focused ? 2.5 : 2}
+            fill={focused ? color : 'none'}
+          />
+        ),
+      },
+    },
+  },
+  screenOptions: ({ theme }) => ({
+    headerShadowVisible: false,
+    tabBarVisibilityAnimationConfig: {},
+    headerStyle: {
+      backgroundColor: theme.colors.background,
+    },
+    headerTintColor: theme.colors.primary,
+    animation: 'fade',
+    tabBarButton: props => (
+      <PlatformPressable {...props} android_ripple={{ color: 'transparent' }} />
+    ),
+  }),
+});
+
+export type BottomTabParamList = StaticParamList<typeof BottomTabNavigator>;

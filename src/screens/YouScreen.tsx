@@ -5,10 +5,20 @@ import {
   StyleSheet,
   Platform,
   FlatList,
-  Image,
   TouchableOpacity,
 } from 'react-native';
-import { Edges, SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Edges,
+  SafeAreaView,
+  useSafeAreaInsets,
+} from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { LogoutButton } from '../components/common/LogoutButton';
 import { useAppTheme } from '../hooks/useAppTheme';
@@ -24,6 +34,7 @@ import {
   MessageCircle,
   ChevronRight,
 } from 'lucide-react-native';
+import { TransitionTags } from '../constants/transitions';
 
 const edges: Edges = Platform.select({
   ios: ['bottom'],
@@ -31,6 +42,7 @@ const edges: Edges = Platform.select({
 });
 
 import { sizing } from '../theme/sizing';
+import { useUserProfile } from '../hooks/useUserProfile';
 
 interface SettingsRowProps {
   icon: React.ReactNode;
@@ -64,22 +76,88 @@ const SettingsRow = ({
 );
 
 export const YouScreen = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation();
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
   const { name, about, profilePicture } = useUserStore();
   const iconColor = theme.colors.text.secondary;
   const iconSize = sizing.iconSizes.base;
+  // Sync user profile on focus
+  useUserProfile();
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: event => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerTitleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [80, 120],
+      [0, 1],
+      Extrapolation.CLAMP,
+    );
+    const translateY = interpolate(
+      scrollY.value,
+      [80, 120],
+      [10, 0],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [{ translateY }],
+    };
+  });
+
+  const bodyNameStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [60, 100],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+    const scale = interpolate(
+      scrollY.value,
+      [60, 100],
+      [1, 0.9],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  });
+
+  const aboutBubbleStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      scrollY.value,
+      [0, 50],
+      [1, 0],
+      Extrapolation.CLAMP,
+    );
+    return { opacity };
+  });
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      title: name ?? 'You',
+      headerTitle: () => (
+        <Animated.View style={headerTitleStyle}>
+          <Text style={styles.headerTitleText}>{name}</Text>
+        </Animated.View>
+      ),
     });
-  }, [navigation]);
+  }, [navigation, name, headerTitleStyle, styles.headerTitleText]);
 
   return (
     <SafeAreaView edges={edges} style={styles.container}>
-      <FlatList
+      <Animated.FlatList
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         data={[]}
         keyExtractor={(_, index) => index.toString()}
         renderItem={() => null}
@@ -89,29 +167,30 @@ export const YouScreen = () => {
             {/* Profile Section */}
             <View style={styles.profileSection}>
               {/* About tooltip */}
-              <View style={styles.aboutBubble}>
+              <Animated.View style={[styles.aboutBubble, aboutBubbleStyle]}>
                 <Text style={styles.aboutText}>{about}</Text>
                 <View style={styles.aboutBubbleArrow} />
-              </View>
+              </Animated.View>
 
               {/* Profile Image */}
               <TouchableOpacity
                 onPress={() => navigation.navigate('Profile')}
                 activeOpacity={0.8}
               >
-                <Image
+                <Animated.Image
                   source={{ uri: profilePicture }}
                   style={styles.profileImage}
+                  sharedTransitionTag={TransitionTags.profileImage}
                 />
               </TouchableOpacity>
 
               {/* Name */}
-              <View style={styles.nameRow}>
+              <Animated.View style={[styles.nameRow, bodyNameStyle]}>
                 <Text style={styles.nameText}>{name}</Text>
                 <View style={styles.plusBadge}>
                   <Text style={styles.plusText}>+</Text>
                 </View>
-              </View>
+              </Animated.View>
             </View>
 
             {/* Settings Label */}
@@ -248,6 +327,11 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       ...typography.variants.heading1,
       fontSize: 28, // slight override
       color: colors.text.primary,
+    },
+    headerTitleText: {
+      ...typography.variants.heading3,
+      color: colors.text.primary,
+      fontWeight: typography.weights.bold,
     },
     plusBadge: {
       width: 22,

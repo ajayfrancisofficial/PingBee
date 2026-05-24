@@ -1,36 +1,94 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ModalWrapper, ModalWrapperProps } from './ModalWrapper';
+import {
+  BottomSheetModal,
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetModalProps,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { X } from 'lucide-react-native';
 import { sizing } from '../../theme/sizing';
 
-export interface BottomSheetProps extends Omit<ModalWrapperProps, 'justifyContent' | 'animationType'> {
+export interface BottomSheetProps
+  extends Omit<BottomSheetModalProps, 'children' | 'snapPoints'> {
+  visible: boolean;
+  onClose: () => void;
   title?: string;
   showCloseButton?: boolean;
+  children: React.ReactNode;
+  enableDynamicSizing?: boolean;
+  showBackdrop?: boolean;
+  snapPoints?: Array<string | number>;
 }
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
+  visible,
+  onClose,
   title,
   showCloseButton = true,
   children,
-  onClose,
+  enableDynamicSizing = true,
+  showBackdrop = true,
+  snapPoints,
+  onChange,
   ...props
 }) => {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
-  const styles = React.useMemo(() => makeStyles(theme, insets.bottom), [theme, insets.bottom]);
+  const styles = React.useMemo(
+    () => makeStyles(theme, insets.bottom),
+    [theme, insets.bottom],
+  );
+
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+
+  useEffect(() => {
+    if (visible) {
+      bottomSheetModalRef.current?.present();
+    } else {
+      bottomSheetModalRef.current?.dismiss();
+    }
+  }, [visible]);
+
+  const handleSheetChanges = useCallback<NonNullable<BottomSheetModalProps['onChange']>>(
+    (index, position, type) => {
+      // -1 means the sheet was dismissed
+      if (index === -1) {
+        onClose();
+      }
+      onChange?.(index, position, type);
+    },
+    [onChange, onClose],
+  );
+
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
 
   return (
-    <ModalWrapper
+    <BottomSheetModal
+      ref={bottomSheetModalRef}
+      enableDynamicSizing={enableDynamicSizing}
+      snapPoints={snapPoints || (enableDynamicSizing ? undefined : ['50%'])}
+      backdropComponent={showBackdrop ? renderBackdrop : undefined}
+      onChange={handleSheetChanges}
+      backgroundStyle={{ backgroundColor: theme.colors.backgrounds.default }}
+      handleIndicatorStyle={{ backgroundColor: theme.colors.borders.separator }}
       {...props}
-      onClose={onClose}
-      animationType="slide"
-      justifyContent="flex-end"
     >
-      <View style={styles.sheetContainer}>
+      <BottomSheetView style={styles.sheetContainer}>
         {/* Header */}
         {(title || showCloseButton) && (
           <View style={styles.header}>
@@ -45,29 +103,30 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                   onPress={onClose}
                   activeOpacity={0.7}
                 >
-                  <X size={sizing.iconSizes.sm} color={theme.colors.text.secondary} />
+                  <X
+                    size={sizing.iconSizes.sm}
+                    color={theme.colors.text.secondary}
+                  />
                 </TouchableOpacity>
               )}
             </View>
           </View>
         )}
-        
-        <View style={styles.content}>
-          {children}
-        </View>
-      </View>
-    </ModalWrapper>
+
+        <View style={styles.content}>{children}</View>
+      </BottomSheetView>
+    </BottomSheetModal>
   );
 };
 
-const makeStyles = ({ colors, borderRadius, typography, spacing }: AppTheme, bottomInset: number) =>
+const makeStyles = (
+  { colors, typography, spacing }: AppTheme,
+  bottomInset: number,
+) =>
   StyleSheet.create({
     sheetContainer: {
-      backgroundColor: colors.backgrounds.default,
-      borderTopLeftRadius: borderRadius.xl,
-      borderTopRightRadius: borderRadius.xl,
       paddingBottom: Math.max(bottomInset, spacing.xl),
-      paddingTop: spacing.lg,
+      paddingTop: spacing.sm,
       paddingHorizontal: spacing.lg,
     },
     header: {

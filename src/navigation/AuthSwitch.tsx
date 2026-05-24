@@ -7,6 +7,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { getNavigationTheme } from '../theme/navigationTheme';
 import { StyleSheet, View } from 'react-native';
 import { AppTheme } from '../theme';
+import { useWebsocket } from '../hooks/useWebsocket';
 
 const AppNavigation = createStaticNavigation(AppStack);
 const AuthNavigation = createStaticNavigation(AuthStack);
@@ -15,6 +16,10 @@ export const AuthSwitch = () => {
   const { isLoggedIn, isLoading, checkAuth } = useAuthStore();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+
+  // Handle WebSocket lifecycle
+  useWebsocket();
+
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
