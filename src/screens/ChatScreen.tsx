@@ -32,7 +32,7 @@ const mapToGiftedChat = (
 ): IMessage => ({
   _id: msg.id,
   text: msg.text,
-  createdAt: new Date(msg.createdAt),
+  createdAt: Number(msg.createdAt),
   user: {
     _id: msg.senderId,
     name:
