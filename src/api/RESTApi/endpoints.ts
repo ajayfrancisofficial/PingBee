@@ -1,5 +1,8 @@
-export const API_BASE_URL = 'https://chat-app-81bx.onrender.com';
-export const WS_BASE_URL = 'wss://chat-app-81bx.onrender.com/ws';
+export const renderBaseUrl = 'https://chat-app-81bx.onrender.com';
+export const renderWsBaseUrl = 'wss://chat-app-81bx.onrender.com/ws';
+
+export const API_BASE_URL = 'https://api-pingbee.duckdns.org';
+export const WS_BASE_URL = 'wss://api-pingbee.duckdns.org/ws';
 
 export const ENDPOINTS = {
   AUTH: {
