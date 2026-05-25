@@ -9,13 +9,7 @@
  *   - Event mapping   → manually mapped for type-safe payload access
  */
 
-import type { components, operations } from './generatedWsApiTypes';
-
-// ── Utility extractors ────────────────────────────────────────────────────────
-
-/** Extract the 200 success response body for a given operation key. */
-type SuccessBody<T extends keyof operations> =
-  operations[T]['responses'][200]['content']['application/json'];
+import type { components } from './generatedWsApiTypes';
 
 // ── Schema aliases (Server Events & Payloads) ──────────────────────────────────
 
@@ -77,17 +71,23 @@ export type ErrorPayload = components['schemas']['ErrorPayload'];
 // ── Client Payload Aliases ───────────────────────────────────────────────────
 
 export type SendMessagePayload = components['schemas']['SendMessagePayload'];
+export type TypingPayload = components['schemas']['TypingPayload'];
+export type MessageStatusPayload =
+  components['schemas']['MessageStatusPayload'];
+export type PresencePayload = components['schemas']['PresencePayload'];
+export type EditMessagePayload = components['schemas']['EditMessagePayload'];
+export type DeleteMessagePayload =
+  components['schemas']['DeleteMessagePayload'];
 
-// ── Operation response types ──────────────────────────────────────────────────
+/** Mapping of Client Event names to their respective Payload types */
+export type ClientEventPayloads = {
+  SEND_MSG: SendMessagePayload;
+  TYPING: TypingPayload;
+  MSG_STATUS: MessageStatusPayload;
+  PRESENCE: PresencePayload;
+  EDIT_MSG: EditMessagePayload;
+  DELETE_MSG: DeleteMessagePayload;
+};
 
-/** GET /server-message → 200 response */
-export type ServerMessageResponse =
-  SuccessBody<'server_msg_server_message_post'>;
-
-/** GET /client-message → 200 response */
-export type ClientMessageResponse =
-  SuccessBody<'client_msg_client_message_post'>;
-
-/** POST /payloads/send-message → 200 response */
-export type SendMessagePayloadResponse =
-  SuccessBody<'p1_payloads_send_message_post'>;
+/** All possible Client Event names */
+export type ClientEvent = keyof ClientEventPayloads;

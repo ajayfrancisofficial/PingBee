@@ -11,6 +11,9 @@ export const ENDPOINTS = {
     REFRESH_TOKEN: '/refresh',
     SEND_VERIFICATION: '/send-verification',
     VERIFY_EMAIL: '/verify-email',
+    FORGOT_PASSWORD: '/forgot-password',
+    VERIFY_FORGOT_OTP: '/verify-forgot-password-otp',
+    RESET_PASSWORD: '/reset-password',
   },
   USERS: {
     ME: '/me',

@@ -44,6 +44,15 @@ export type ResendOTPBody = components['schemas']['ResendOTP'];
 /** POST /verify-email — request body */
 export type EmailVerificationBody = components['schemas']['EmailVerification'];
 
+/** POST /forgot-password — request body */
+export type ForgotPasswordBody = components['schemas']['ForgotPasswordRequest'];
+
+/** POST /verify-forgot-password-otp — request body */
+export type VerifyForgotOTPBody = components['schemas']['VerifyOTPRequest'];
+
+/** POST /reset-password — request body */
+export type ResetPasswordBody = components['schemas']['ResetPasswordByIdRequest'];
+
 /** POST /user-search — request body */
 export type UserSearchBody = components['schemas']['UserSearchRequest'];
 
@@ -143,6 +152,15 @@ export type SendVerificationResponse =
 
 /** POST /verify-email → 200 response */
 export type VerifyEmailResponse = SuccessBody<'verify_email_verify_email_post'>;
+
+/** POST /forgot-password → 200 response */
+export type ForgotPasswordResponse = SuccessBody<'forgot_password_forgot_password_post'>;
+
+/** POST /verify-forgot-password-otp → 200 response */
+export type VerifyForgotOTPResponse = SuccessBody<'verify_forgot_password_otp_verify_forgot_password_otp_post'>;
+
+/** POST /reset-password → 200 response */
+export type ResetPasswordResponse = SuccessBody<'reset_password_reset_password_post'>;
 
 /** GET / → 200 response */
 export type RootResponse = SuccessBody<'root__get'>;

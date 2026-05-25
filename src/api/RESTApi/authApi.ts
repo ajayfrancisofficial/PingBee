@@ -12,6 +12,12 @@ import type {
   VerifyEmailResponse,
   RefreshTokenBody,
   RefreshSuccessResponse,
+  ForgotPasswordBody,
+  ForgotPasswordResponse,
+  VerifyForgotOTPBody,
+  VerifyForgotOTPResponse,
+  ResetPasswordBody,
+  ResetPasswordResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const authApi = {
@@ -77,6 +83,45 @@ export const authApi = {
   ): Promise<RefreshSuccessResponse> => {
     const { data } = await axios.post<RefreshSuccessResponse>(
       `${API_BASE_URL}${ENDPOINTS.AUTH.REFRESH_TOKEN}`,
+      request,
+    );
+    return data;
+  },
+
+  /**
+   * POST /forgot-password
+   */
+  forgotPassword: async (
+    request: ForgotPasswordBody,
+  ): Promise<ForgotPasswordResponse> => {
+    const { data } = await apiClient.post<ForgotPasswordResponse>(
+      ENDPOINTS.AUTH.FORGOT_PASSWORD,
+      request,
+    );
+    return data;
+  },
+
+  /**
+   * POST /verify-forgot-password-otp
+   */
+  verifyForgotPasswordOTP: async (
+    request: VerifyForgotOTPBody,
+  ): Promise<VerifyForgotOTPResponse> => {
+    const { data } = await apiClient.post<VerifyForgotOTPResponse>(
+      ENDPOINTS.AUTH.VERIFY_FORGOT_OTP,
+      request,
+    );
+    return data;
+  },
+
+  /**
+   * POST /reset-password
+   */
+  resetPassword: async (
+    request: ResetPasswordBody,
+  ): Promise<ResetPasswordResponse> => {
+    const { data } = await apiClient.post<ResetPasswordResponse>(
+      ENDPOINTS.AUTH.RESET_PASSWORD,
       request,
     );
     return data;

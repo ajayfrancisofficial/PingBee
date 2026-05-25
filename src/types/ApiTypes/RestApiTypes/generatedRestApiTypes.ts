@@ -106,6 +106,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/forgot-password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Forgot Password */
+    post: operations['forgot_password_forgot_password_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/verify-forgot-password-otp': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Verify Forgot Password Otp */
+    post: operations['verify_forgot_password_otp_verify_forgot_password_otp_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/reset-password': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Reset Password */
+    post: operations['reset_password_reset_password_post'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/users': {
     parameters: {
       query?: never;
@@ -392,6 +443,14 @@ export interface components {
       message: string;
       error: components['schemas']['ErrorDetail'];
     };
+    /** ForgotPasswordRequest */
+    ForgotPasswordRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -420,7 +479,7 @@ export interface components {
     /** MessageItem */
     MessageItem: {
       /** Message Id */
-      message_id: number;
+      message_id: string;
       /** Sender Id */
       sender_id: number;
       /** Message */
@@ -431,6 +490,8 @@ export interface components {
       is_read: boolean;
       /** Is Deleted For Everyone */
       is_deleted_for_everyone: boolean;
+      /** Is Delete For Me */
+      is_delete_for_me: boolean;
     };
     /** MessageList */
     MessageList: {
@@ -449,6 +510,13 @@ export interface components {
        * Format: email
        */
       email: string;
+    };
+    /** ResetPasswordByIdRequest */
+    ResetPasswordByIdRequest: {
+      /** User Id */
+      user_id: number;
+      /** New Password */
+      new_password: string;
     };
     /** StandardResponse[AuthResponseData] */
     StandardResponse_AuthResponseData_: {
@@ -541,6 +609,16 @@ export interface components {
       /** Message */
       message: string;
       data?: components['schemas']['UserMeResponse'] | null;
+    };
+    /** StandardResponse[VerifyOTPResponse] */
+    StandardResponse_VerifyOTPResponse_: {
+      /** Success */
+      success: boolean;
+      /** Status */
+      status: number;
+      /** Message */
+      message: string;
+      data?: components['schemas']['VerifyOTPResponse'] | null;
     };
     /** StandardResponse[dict] */
     StandardResponse_dict_: {
@@ -660,6 +738,21 @@ export interface components {
       input?: unknown;
       /** Context */
       ctx?: Record<string, never>;
+    };
+    /** VerifyOTPRequest */
+    VerifyOTPRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Code */
+      code: string;
+    };
+    /** VerifyOTPResponse */
+    VerifyOTPResponse: {
+      /** User Id */
+      user_id: number;
     };
   };
   responses: never;
@@ -1004,6 +1097,186 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  forgot_password_forgot_password_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ForgotPasswordRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_NoneType_'];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  verify_forgot_password_otp_verify_forgot_password_otp_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['VerifyOTPRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_VerifyOTPResponse_'];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  reset_password_reset_password_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ResetPasswordByIdRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_NoneType_'];
+        };
+      };
+      /** @description Bad Request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
       /** @description Internal Server Error */
