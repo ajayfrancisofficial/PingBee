@@ -10,58 +10,103 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { User, Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
+import {
+  useNavigation,
+  NavigationProp,
+  type StaticScreenProps,
+} from '@react-navigation/native';
+import { Lock, ArrowLeft, Eye, EyeOff } from 'lucide-react-native';
 import { Button } from '../../components/foundations/Button';
 import { Input } from '../../components/foundations/Input';
 import { ThemeSwitch } from '../../components/common/ThemeSwitch';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { authService } from '../../services/Auth/authService';
-import { AuthStackParamList } from '../../types/navigation';
+import { AuthStackParamList } from '../../navigation/AuthStack';
+import { snackbar } from '../../components/foundations/Snackbar';
 
-export const LoginScreen = () => {
-  const [identifier, setIdentifier] = useState('');
+export type ResetPasswordScreenParams = { userId: number };
+type Props = StaticScreenProps<ResetPasswordScreenParams>;
+
+export const ResetPasswordScreen = ({ route }: Props) => {
+  const { userId } = route.params;
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const theme = useAppTheme();
   const navigation = useNavigation<NavigationProp<AuthStackParamList>>();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
-  const handleLogin = async () => {
-    if (!identifier || !password) return;
+  const handlePasswordChange = (val: string) => {
+    setPassword(val);
+    if (!val) {
+      setPasswordError('Password is required');
+    } else if (val.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+    } else {
+      setPasswordError('');
+    }
+  };
+
+  const handleConfirmPasswordChange = (val: string) => {
+    setConfirmPassword(val);
+    if (!val) {
+      setConfirmError('Please confirm your password');
+    } else if (val !== password) {
+      setConfirmError('Passwords do not match');
+    } else {
+      setConfirmError('');
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!password || password.length < 6 || password !== confirmPassword) {
+      return;
+    }
     setLoading(true);
 
     try {
-      await authService.login({
-        identifier,
-        password,
+      await authService.resetPassword(userId, password);
+      snackbar.show({
+        message: 'Your password has been reset successfully.',
+        type: 'success',
       });
-      // On success, the store's setLoggedIn will trigger the AuthSwitch
-      // and redirect automatically to the App stack.
+      // Reset navigation stack to Welcome -> Login so that back navigation behaves correctly
+      navigation.reset({
+        index: 1,
+        routes: [{ name: 'Welcome' }, { name: 'Login' }],
+      });
     } catch (error) {
+      // Error handled by API client
     } finally {
       setLoading(false);
     }
   };
 
+  const isFormValid =
+    password &&
+    confirmPassword &&
+    !passwordError &&
+    !confirmError &&
+    password === confirmPassword;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topBar}>
-        {navigation.canGoBack() ? (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <ArrowLeft
-              size={theme.sizing.iconSizes.base}
-              color={theme.colors.text.primary}
-            />
-          </TouchableOpacity>
-        ) : (
-          <View />
-        )}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ArrowLeft
+            size={theme.sizing.iconSizes.base}
+            color={theme.colors.text.primary}
+          />
+        </TouchableOpacity>
         <ThemeSwitch />
       </View>
 
@@ -79,31 +124,20 @@ export const LoginScreen = () => {
               style={styles.logo}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Login</Text>
+            <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.description}>
-              Welcome back! Please enter your details.
+              Please enter your new password below. Ensure it is at least 6
+              characters long.
             </Text>
           </View>
 
           <View style={styles.form}>
             <Input
-              label="Email or Username"
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-              leftIcon={
-                <User
-                  size={theme.sizing.iconSizes.md}
-                  color={theme.colors.text.secondary}
-                />
-              }
-            />
-
-            <Input
-              label="Password"
+              label="New Password"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={handlePasswordChange}
               secureTextEntry={!showPassword}
+              error={passwordError}
               leftIcon={
                 <Lock
                   size={theme.sizing.iconSizes.md}
@@ -129,31 +163,45 @@ export const LoginScreen = () => {
               }
             />
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate('ForgotPassword')}
-              style={styles.forgotPasswordContainer}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            <Input
+              label="Confirm New Password"
+              value={confirmPassword}
+              onChangeText={handleConfirmPasswordChange}
+              secureTextEntry={!showConfirmPassword}
+              error={confirmError}
+              leftIcon={
+                <Lock
+                  size={theme.sizing.iconSizes.md}
+                  color={theme.colors.text.secondary}
+                />
+              }
+              rightIcon={
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <Eye
+                      size={theme.sizing.iconSizes.md}
+                      color={theme.colors.text.secondary}
+                    />
+                  ) : (
+                    <EyeOff
+                      size={theme.sizing.iconSizes.md}
+                      color={theme.colors.text.secondary}
+                    />
+                  )}
+                </TouchableOpacity>
+              }
+            />
 
             <Button
-              title="Login"
-              onPress={handleLogin}
+              title="Reset Password"
+              onPress={handleResetPassword}
               isLoading={loading}
-              disabled={!identifier || password.length < 6}
-              style={styles.loginButton}
+              disabled={!isFormValid}
+              style={styles.resetButton}
             />
           </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Register')}
-            style={styles.footer}
-          >
-            <Text style={styles.footerText}>
-              Don't have an account?{' '}
-              <Text style={styles.signUpText}>Sign up</Text>
-            </Text>
-          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -207,35 +255,14 @@ const makeStyles = ({
       ...typography.variants.body,
       color: colors.text.secondary,
       textAlign: 'center',
+      paddingHorizontal: spacing.sm,
     },
     form: {
       flex: 1,
     },
-    forgotPasswordContainer: {
-      alignSelf: 'flex-end',
-      marginTop: spacing.xs,
-      marginBottom: spacing.sm,
-    },
-    forgotPasswordText: {
-      ...typography.variants.bodyMedium,
-      color: colors.brand.primary,
-    },
-    loginButton: {
-      marginTop: spacing.md,
+    resetButton: {
+      marginTop: spacing.lg,
       height: sizing.buttonHeights.lg,
       borderRadius: borderRadius.lg,
-    },
-    footer: {
-      marginTop: 'auto',
-      paddingVertical: spacing.xl,
-      alignItems: 'center',
-    },
-    footerText: {
-      ...typography.variants.body,
-      color: colors.text.secondary,
-    },
-    signUpText: {
-      ...typography.variants.bodyMedium,
-      color: colors.brand.primary,
     },
   });

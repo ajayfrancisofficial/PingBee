@@ -94,6 +94,42 @@ export const authService = {
     }
   },
 
+  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await authApi.forgotPassword({ email });
+      if (!response.success) throw new Error(response.message || 'Failed to send OTP');
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  verifyOTP: async (email: string, code: string): Promise<{ success: boolean; message: string; userId: number }> => {
+    try {
+      const response = await authApi.verifyForgotPasswordOTP({ email, code });
+      if (!response.success) throw new Error(response.message || 'Verification failed');
+      
+      const data = response.data;
+      if (!data) throw new Error('Verification data missing in response');
+      return { success: response.success, message: response.message, userId: data.user_id };
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  resetPassword: async (
+    userId: number,
+    password: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await authApi.resetPassword({ user_id: userId, new_password: password });
+      if (!response.success) throw new Error(response.message || 'Failed to reset password');
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   logout: async (): Promise<void> => {
     try {
       await useAuthStore.getState().logout();

@@ -3,68 +3,85 @@
  * Do not make direct changes to the file.
  */
 
-export interface paths {
-  '/client-message': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Client Msg */
-    post: operations['client_msg_client_message_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/server-message': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Server Msg */
-    post: operations['server_msg_server_message_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/payloads/send-message': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** P1 */
-    post: operations['p1_payloads_send_message_post'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-}
+export type paths = Record<string, never>;
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    /** DeleteMessagePayload */
+    DeleteMessagePayload: {
+      /** Id */
+      id: number | string;
+      /**
+       * Deletetype
+       * @enum {string}
+       */
+      deleteType: 'deleteForMe' | 'deleteForEveryone' | 'both';
+      /**
+       * Deletedforeveryoneat
+       * @default null
+       */
+      deletedForEveryoneAt: number | string | null;
+      /**
+       * Deletedformeat
+       * @default null
+       */
+      deletedForMeAt: number | string | null;
+    };
+    /** EditMessagePayload */
+    EditMessagePayload: {
+      /** Id */
+      id: number | string;
+      /** Text */
+      text: string;
+      /**
+       * Editedat
+       * @default null
+       */
+      editedAt: number | string | null;
+    };
+    /** MessageStatusPayload */
+    MessageStatusPayload: {
+      /** Messageid */
+      messageId: number | string;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'read' | 'delivered';
+    };
+    /** PresencePayload */
+    PresencePayload: {
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: 'online' | 'offline';
+    };
+    /** SendMessagePayload */
+    SendMessagePayload: {
+      /** Chatid */
+      chatId: number;
+      /** Text */
+      text: string;
+      /** Id */
+      id: number | string;
+    };
+    /** TypingPayload */
+    TypingPayload: {
+      /** Chatid */
+      chatId: number;
+      /** Istyping */
+      isTyping: boolean;
+    };
     /** AckDeleteMessagePayload */
     AckDeleteMessagePayload: {
       /** Id */
       id: string;
-      /** Deletedat */
-      deletedAt: string;
+      /**
+       * Deletetype
+       * @enum {string}
+       */
+      deleteType: 'deleteForMe' | 'deleteForEveryone' | 'both';
     };
     /** AckEditMessagePayload */
     AckEditMessagePayload: {
@@ -103,10 +120,11 @@ export interface components {
     ReceiveDeleteMessagePayload: {
       /** Id */
       id: string;
-      /** Deletetype */
-      deleteType: string;
-      /** Deletedat */
-      deletedAt?: string | null;
+      /**
+       * Deletetype
+       * @enum {string}
+       */
+      deleteType: 'deleteForEveryone' | 'both';
     };
     /** ReceiveEditMessagePayload */
     ReceiveEditMessagePayload: {
@@ -114,8 +132,11 @@ export interface components {
       id: string;
       /** Text */
       text: string;
-      /** Editedat */
-      editedAt?: string | null;
+      /**
+       * Editedat
+       * @default null
+       */
+      editedAt: string | null;
     };
     /** ReceiveMessagePayload */
     ReceiveMessagePayload: {
@@ -134,15 +155,6 @@ export interface components {
       /** Isdeletedforeveryone */
       isDeletedForEveryone: boolean;
     };
-    /** SendMessagePayload */
-    SendMessagePayload: {
-      /** Chatid */
-      chatId: number;
-      /** Text */
-      text: string;
-      /** Id */
-      id: number | string;
-    };
     /** TypingBroadcastPayload */
     TypingBroadcastPayload: {
       /** Chatid */
@@ -154,12 +166,30 @@ export interface components {
     };
     /** WsClientMessage */
     WsClientMessage: {
-      /** Type */
-      type: string;
+      /**
+       * Event
+       * @enum {string}
+       */
+      event:
+        | 'SEND_MSG'
+        | 'TYPING'
+        | 'MSG_STATUS'
+        | 'PRESENCE'
+        | 'EDIT_MSG'
+        | 'DELETE_MSG';
       /** Payload */
-      payload: unknown;
-      /** Timestamp */
-      timestamp?: number | string | null;
+      payload:
+        | components['schemas']['SendMessagePayload']
+        | components['schemas']['TypingPayload']
+        | components['schemas']['MessageStatusPayload']
+        | components['schemas']['PresencePayload']
+        | components['schemas']['EditMessagePayload']
+        | components['schemas']['DeleteMessagePayload'];
+      /**
+       * Timestamp
+       * @default null
+       */
+      timestamp: number | string | null;
     };
     /** WsServerMessage */
     WsServerMessage: {
@@ -201,65 +231,4 @@ export interface components {
   pathItems: never;
 }
 export type $defs = Record<string, never>;
-export interface operations {
-  client_msg_client_message_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WsClientMessage'];
-        };
-      };
-    };
-  };
-  server_msg_server_message_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['WsServerMessage'];
-        };
-      };
-    };
-  };
-  p1_payloads_send_message_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['SendMessagePayload'];
-        };
-      };
-    };
-  };
-}
+export type operations = Record<string, never>;

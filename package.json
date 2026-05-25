@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "sync-types": "openapi-typescript https://api-pingbee.duckdns.org/openapi.json -o src/types/ApiTypes/RestApiTypes/generatedRestApiTypes.ts"
+    "sync-types": "node scripts/sync-types.js"
   },
   "dependencies": {
     "@gorhom/bottom-sheet": "^5",
