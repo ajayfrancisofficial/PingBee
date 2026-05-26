@@ -13,6 +13,7 @@ import type {
   VerifyEmailResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 import { snackbar } from '../../components/foundations/Snackbar';
+import { DBService } from '../DB/DBService';
 
 export const authService = {
   login: async (request: UserLoginBody): Promise<LoginSuccessResponse> => {
@@ -94,24 +95,35 @@ export const authService = {
     }
   },
 
-  forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+  forgotPassword: async (
+    email: string,
+  ): Promise<{ success: boolean; message: string }> => {
     try {
       const response = await authApi.forgotPassword({ email });
-      if (!response.success) throw new Error(response.message || 'Failed to send OTP');
+      if (!response.success)
+        throw new Error(response.message || 'Failed to send OTP');
       return response;
     } catch (error) {
       throw error;
     }
   },
 
-  verifyOTP: async (email: string, code: string): Promise<{ success: boolean; message: string; userId: number }> => {
+  verifyOTP: async (
+    email: string,
+    code: string,
+  ): Promise<{ success: boolean; message: string; userId: number }> => {
     try {
       const response = await authApi.verifyForgotPasswordOTP({ email, code });
-      if (!response.success) throw new Error(response.message || 'Verification failed');
-      
+      if (!response.success)
+        throw new Error(response.message || 'Verification failed');
+
       const data = response.data;
       if (!data) throw new Error('Verification data missing in response');
-      return { success: response.success, message: response.message, userId: data.user_id };
+      return {
+        success: response.success,
+        message: response.message,
+        userId: data.user_id,
+      };
     } catch (error) {
       throw error;
     }
@@ -122,8 +134,12 @@ export const authService = {
     password: string,
   ): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await authApi.resetPassword({ user_id: userId, new_password: password });
-      if (!response.success) throw new Error(response.message || 'Failed to reset password');
+      const response = await authApi.resetPassword({
+        user_id: userId,
+        new_password: password,
+      });
+      if (!response.success)
+        throw new Error(response.message || 'Failed to reset password');
       return response;
     } catch (error) {
       throw error;
@@ -134,6 +150,8 @@ export const authService = {
     try {
       await useAuthStore.getState().logout();
       useUserStore.getState().clearUser();
+      // Clear the local WatermelonDB data via DBService
+      await DBService.clearDatabase();
     } catch (error) {}
   },
 
@@ -176,8 +194,7 @@ export const authService = {
         message: 'Session expired. Please log in again.',
         type: 'warning',
       });
-      await useAuthStore.getState().logout();
-      useUserStore.getState().clearUser();
+      await authService.logout();
       throw error;
     }
   },

@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Button } from '../foundations/Button';
-import { useAuthStore } from '../../store/authStore';
+import { authService } from '../../services/Auth/authService';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 
 export const LogoutButton = () => {
-  const logout = useAuthStore(state => state.logout);
   const [loading, setLoading] = useState(false);
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
@@ -14,7 +13,7 @@ export const LogoutButton = () => {
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await logout();
+      await authService.logout();
     } catch (e) {
       console.log('Error logging out', e);
     } finally {
