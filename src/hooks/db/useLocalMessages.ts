@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
-import { upsertMessages } from '../../db/upsert';
+import { DBService } from '../../services/DB/DBService';
 import { chatApi, MESSAGES_PAGE_SIZE } from '../../api/RESTApi/chatApi';
 import {
   getHasMoreMessages,
@@ -19,8 +19,17 @@ export function useLocalMessages(chatId: string, currentUserId: string) {
   useEffect(() => {
     const subscription = database
       .get<Message>('messages')
-      .query(Q.where('chat_id', chatId), Q.sortBy('created_at', Q.desc))
-      .observeWithColumns(['status', 'text', 'is_edited', 'is_deleted'])
+      .query(
+        Q.where('chat_id', chatId),
+        Q.where('is_deleted_for_me', Q.notEq(true)),
+        Q.sortBy('created_at', Q.desc),
+      )
+      .observeWithColumns([
+        'status',
+        'text',
+        'is_edited',
+        'is_deleted_for_everyone',
+      ])
       .subscribe(newMessages => {
         setMessages(newMessages);
       });
@@ -33,7 +42,7 @@ export function useLocalMessages(chatId: string, currentUserId: string) {
   const fetchLatestPage = useCallback(async () => {
     const response = await chatApi.fetchMessages(chatId, 0);
     const fetchedMessages = response.data?.messages ?? [];
-    await upsertMessages(fetchedMessages, chatId, currentUserId);
+    await DBService.upsertMessages(fetchedMessages, chatId, currentUserId);
 
     const hasMoreMsgs = fetchedMessages.length >= MESSAGES_PAGE_SIZE;
     setHasMoreMessages(chatId, hasMoreMsgs);
@@ -61,12 +70,15 @@ export function useLocalMessages(chatId: string, currentUserId: string) {
     try {
       const localCount = await database
         .get<Message>('messages')
-        .query(Q.where('chat_id', chatId))
+        .query(
+          Q.where('chat_id', chatId),
+          Q.where('is_deleted_for_me', Q.notEq(true)),
+        )
         .fetchCount();
 
       const response = await chatApi.fetchMessages(chatId, localCount);
       const fetchedMessages = response.data?.messages ?? [];
-      await upsertMessages(fetchedMessages, chatId, currentUserId);
+      await DBService.upsertMessages(fetchedMessages, chatId, currentUserId);
 
       const hasMoreMsgs = fetchedMessages.length >= MESSAGES_PAGE_SIZE;
       setHasMoreMessages(chatId, hasMoreMsgs);

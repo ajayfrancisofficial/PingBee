@@ -1,6 +1,6 @@
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
-import { upsertUser, upsertChatParticipants } from '../../db/upsert';
+import { DBService } from '../../services/DB/DBService';
 import type { UserSearchResponse } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 /**
@@ -43,10 +43,10 @@ export const setupConversation = async (
   });
 
   // 2. Persist the other user's profile to the users table
-  await upsertUser(otherUser);
+  await DBService.upsertUser(otherUser);
 
   // 3. Persist both participants
-  await upsertChatParticipants(chatId, [
+  await DBService.upsertChatParticipants(chatId, [
     currentUserId,
     String(otherUser.user_id),
   ]);

@@ -16,7 +16,6 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const currentUser = useUserStore(state => state.username);
-  console.log('🚀 ~ ChatCardComponent ~ currentUser:', currentUser);
 
   const getInitials = (name: string) => {
     if (!name) return '?';

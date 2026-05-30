@@ -13,7 +13,7 @@ import type {
   UserSearchResponse,
   ChatUserDetailsResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
-import { parseDateToMillis } from '../../utils/time';
+import { parseDateToMillis } from '../../utils/DateTimeUtils';
 
 /**
  * DBService groups all WatermelonDB operations into a single exported object.

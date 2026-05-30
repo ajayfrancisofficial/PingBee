@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { chatApi } from '../../api/RESTApi/chatApi';
-import { upsertUserDetails } from '../../db/upsert';
+import { DBService } from '../../services/DB/DBService';
 import type { ChatUserDetailsResponse } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 /**
@@ -26,7 +26,7 @@ export function useSyncChatParticipants(chatId: string) {
         const response = await chatApi.fetchChatUserDetails(chatId);
         if (response.success && response.data) {
           setUserDetails(response.data);
-          await upsertUserDetails(response.data);
+          await DBService.upsertUserDetails(response.data);
         }
       } catch (err) {
         console.warn(

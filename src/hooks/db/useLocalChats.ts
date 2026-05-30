@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
 import { chatApi } from '../../api/RESTApi/chatApi';
-import { upsertChats } from '../../db/upsert';
+import { DBService } from '../../services/DB/DBService';
 import { useGuardedFetch } from '../useGuardedFetch';
 
 /**
@@ -38,7 +38,7 @@ export function useLocalChats() {
   const fetchAndUpsert = useCallback(async () => {
     const response = await chatApi.fetchChats();
     const apiChats = response.data?.chats ?? [];
-    await upsertChats(apiChats);
+    await DBService.upsertChats(apiChats);
   }, []);
 
   // ── Fetch & upsert on every focus ─────────────────────────────────────────

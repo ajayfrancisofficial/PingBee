@@ -7,7 +7,7 @@ import type {
   WsServerMessage,
   ServerEventPayloads,
 } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
-import { parseDateToMillis } from '../../utils/time';
+import { parseDateToMillis } from '../../utils/DateTimeUtils';
 
 export const websocketService = {
   /**
@@ -30,8 +30,8 @@ export const websocketService = {
               msg.isMine = false;
               msg.createdAt = parseDateToMillis(p.createdAt);
               msg.serverTimestamp = parseDateToMillis(p.serverTimestamp);
-              if ((p as any).replyToId) {
-                msg.replyToId = (p as any).replyToId as string;
+              if (p.replyTo) {
+                msg.replyToId = p.replyTo;
               }
             });
 
@@ -107,55 +107,90 @@ export const websocketService = {
           break;
         }
 
-        case 'RECEIVE_DELETE_MSG': {
-          const p = payload as ServerEventPayloads['RECEIVE_DELETE_MSG'];
-
-          if (p.deleteType === 'deleteForMe') {
-            break;
-          }
-
+        case 'RECEIVE_DELETE_MSGS': {
+          const p = payload as ServerEventPayloads['RECEIVE_DELETE_MSGS'];
           await database.write(async () => {
-            try {
-              const message = await database
-                .get<Message>('messages')
-                .find(p.id);
-              const oldText = message.text;
+            for (const item of p.messages) {
+              try {
+                const message = await database
+                  .get<Message>('messages')
+                  .find(item.id);
+                const oldText = message.text;
 
-              await message.update(m => {
-                m.isDeleted = true;
-                if (p.deletedAt) {
-                  m.deletedAt = parseDateToMillis(p.deletedAt);
-                }
-                m.deleteType = p.deleteType as any;
-                m.deleteStatus = 'synced';
-              });
-
-              const chat = await database
-                .get<Chat>('chats')
-                .find(message.chatId);
-              if (chat.lastMessageText === oldText) {
-                await chat.update(c => {
-                  c.lastMessageText = 'This message was deleted';
+                await message.update(m => {
+                  m.isDeletedForEveryone = true;
+                  m.text = 'This message was deleted';
+                  m.deletedForEveryoneAt = parseDateToMillis(
+                    item.deletedForEveryoneAt,
+                  );
+                  m.deleteStatus = 'synced';
                 });
+
+                try {
+                  const chat = await database
+                    .get<Chat>('chats')
+                    .find(message.chatId);
+                  if (chat.lastMessageText === oldText) {
+                    await chat.update(c => {
+                      c.lastMessageText = 'This message was deleted';
+                    });
+                  }
+                } catch {
+                  // Chat update is optional
+                }
+              } catch (e) {
+                console.warn(
+                  '[websocketService] RECEIVE_DELETE_MSGS: message not found:',
+                  item.id,
+                );
               }
-            } catch (e) {
-              console.warn(
-                '[websocketService] Cannot process incoming RECEIVE_DELETE_MSG, message not found:',
-                p.id,
-              );
             }
           });
           break;
         }
 
-        case 'ACK_DELETE_MSG': {
-          const p = payload as ServerEventPayloads['ACK_DELETE_MSG'];
+        case 'ACK_DELETE_MSGS': {
+          const p = payload as ServerEventPayloads['ACK_DELETE_MSGS'];
           await database.write(async () => {
-            const message = await database.get<Message>('messages').find(p.id);
-            await message.update(m => {
-              m.deleteStatus = 'synced';
-              m.deletedAt = parseDateToMillis(p.deletedAt);
-            });
+            for (const item of p.messages) {
+              if (item.error) {
+                console.warn(
+                  '[websocketService] ACK_DELETE_MSGS error for message:',
+                  item.id,
+                  item.error,
+                );
+                continue;
+              }
+
+              try {
+                const message = await database
+                  .get<Message>('messages')
+                  .find(item.id);
+
+                if (
+                  item.deleteType === 'deleteForMe' ||
+                  item.deleteType === 'both'
+                ) {
+                  // Destroy locally — message is only hidden for us
+                  await message.destroyPermanently();
+                } else {
+                  await message.update(m => {
+                    m.deleteStatus = 'synced';
+                    m.text = 'This message was deleted';
+                    if (item.deletedForEveryoneAt) {
+                      m.deletedForEveryoneAt = parseDateToMillis(
+                        item.deletedForEveryoneAt,
+                      );
+                    }
+                  });
+                }
+              } catch (e) {
+                console.warn(
+                  '[websocketService] ACK_DELETE_MSGS: message not found:',
+                  item.id,
+                );
+              }
+            }
           });
           break;
         }
