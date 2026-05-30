@@ -84,3 +84,18 @@ export const ensureChatExists = async (
     }
   });
 };
+
+/**
+ * Checks if a chat is a group chat.
+ * @param chatId - The unique ID of the chat.
+ * @returns A promise resolving to true if group, false otherwise.
+ */
+export const fetchChatIsGroup = async (chatId: string): Promise<boolean> => {
+  try {
+    const chat = await database.get<Chat>('chats').find(chatId);
+    return chat.type === 'group';
+  } catch (err) {
+    console.warn('[ChatController] failed to find chat:', err);
+    return false;
+  }
+};

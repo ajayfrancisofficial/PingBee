@@ -23,6 +23,8 @@ export const websocketService = {
           await database.write(async () => {
             const messagesCollection = database.get<Message>('messages');
             await messagesCollection.create(msg => {
+              // @ts-ignore
+              msg._raw.id = p.id;
               msg.chatId = p.chatId;
               msg.senderId = p.senderId;
               msg.text = p.text;

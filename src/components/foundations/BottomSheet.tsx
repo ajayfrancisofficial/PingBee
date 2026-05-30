@@ -54,7 +54,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     }
   }, [visible]);
 
-  const handleSheetChanges = useCallback<NonNullable<BottomSheetModalProps['onChange']>>(
+  const handleSheetChanges = useCallback<
+    NonNullable<BottomSheetModalProps['onChange']>
+  >(
     (index, position, type) => {
       // -1 means the sheet was dismissed
       if (index === -1) {
@@ -84,7 +86,11 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
       snapPoints={snapPoints || (enableDynamicSizing ? undefined : ['50%'])}
       backdropComponent={showBackdrop ? renderBackdrop : undefined}
       onChange={handleSheetChanges}
-      backgroundStyle={{ backgroundColor: theme.colors.backgrounds.default }}
+      backgroundStyle={{
+        backgroundColor: theme.colors.backgrounds.default,
+        borderTopLeftRadius: theme.borderRadius.xxl,
+        borderTopRightRadius: theme.borderRadius.xxl,
+      }}
       handleIndicatorStyle={{ backgroundColor: theme.colors.borders.separator }}
       {...props}
     >
