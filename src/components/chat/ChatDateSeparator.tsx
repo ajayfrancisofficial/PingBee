@@ -6,15 +6,21 @@ import { formatSeparatorDate } from '../../utils/DateTimeUtils';
 
 interface ChatDateSeparatorProps {
   date: Date;
+  /** When true the outer container's vertical padding is removed so the pill
+   * can be used as a standalone floating element. */
+  floating?: boolean;
 }
 
-export const ChatDateSeparator: React.FC<ChatDateSeparatorProps> = ({ date }) => {
+export const ChatDateSeparator: React.FC<ChatDateSeparatorProps> = ({
+  date,
+  floating = false,
+}) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const label = formatSeparatorDate(date);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, floating && styles.containerFloating]}>
       <View style={styles.pill}>
         <Text style={styles.text}>{label}</Text>
       </View>
@@ -27,6 +33,9 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
     container: {
       alignItems: 'center',
       paddingVertical: spacing.md,
+    },
+    containerFloating: {
+      paddingVertical: 0,
     },
     pill: {
       paddingHorizontal: spacing.md,

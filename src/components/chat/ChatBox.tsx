@@ -40,6 +40,7 @@ import Message from '../../db/models/Message';
 import User from '../../db/models/User';
 import { database } from '../../db';
 import { getTypingText } from '../../utils/TypingUtils';
+import { useChatViewabilityTracker } from '../../hooks/useChatViewabilityTracker';
 
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { DeleteActionSheet, DeleteType } from './DeleteActionSheet';
@@ -223,6 +224,9 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     toggleSelection,
     clearSelection,
   } = useMultiSelectMode(messages);
+
+  const { floatingDate, onViewableItemsChanged, viewabilityConfig } =
+    useChatViewabilityTracker<ListItem>();
 
   const editableSelectedMessage = useMemo<Message | null>(() => {
     if (selectedCount !== 1) return null;
@@ -445,7 +449,15 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         showsVerticalScrollIndicator={false}
         renderScrollComponent={renderScrollComponent}
         itemLayoutAnimation={LinearTransition.duration(250)}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
       />
+
+      {floatingDate && (
+        <View style={styles.floatingHeaderContainer} pointerEvents="none">
+          <ChatDateSeparator date={floatingDate} floating />
+        </View>
+      )}
 
       {/* Footer: switches between selection toolbar and text input */}
       <KeyboardStickyView offset={{ opened: insets.bottom }}>
@@ -510,5 +522,13 @@ const makeStyles = ({ colors, spacing }: AppTheme) =>
     },
     loadMoreSpinner: {
       marginVertical: spacing.md,
+    },
+    floatingHeaderContainer: {
+      position: 'absolute',
+      top: spacing.sm,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      zIndex: 10,
     },
   });
