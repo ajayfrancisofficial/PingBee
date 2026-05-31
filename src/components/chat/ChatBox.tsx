@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   FlatList,
   ListRenderItem,
+  Pressable,
   StyleSheet,
   View,
 } from 'react-native';
@@ -16,8 +17,11 @@ import {
   KeyboardChatScrollView,
   KeyboardStickyView,
 } from 'react-native-keyboard-controller';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { Q } from '@nozbe/watermelondb';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -25,6 +29,7 @@ import {
   LocalMessage,
 } from '../../hooks/db/useLocalMessages';
 import { useSyncChatParticipants } from '../../hooks/db/useSyncChatParticipants';
+import { useResolvedSenderNames } from '../../hooks/db/useResolvedSenderNames';
 import {
   deleteMessages,
   editMessage,
@@ -36,9 +41,8 @@ import { useUserStore } from '../../store/userStore';
 import { useMultiSelectMode } from '../../hooks/useMultiSelectMode';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { AppTheme } from '../../theme';
+import { ChevronDown } from 'lucide-react-native';
 import Message from '../../db/models/Message';
-import User from '../../db/models/User';
-import { database } from '../../db';
 import { getTypingText } from '../../utils/TypingUtils';
 import { useChatViewabilityTracker } from '../../hooks/useChatViewabilityTracker';
 
@@ -114,34 +118,10 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     onLoadingChange?.(isInitialLoading);
   }, [isInitialLoading, onLoadingChange]);
 
-  // ─── Sender name resolution ───────────────────────────────────────────────
-
-  const [senderNames, setSenderNames] = useState<Map<string, string>>(
-    new Map(),
-  );
-
-  useEffect(() => {
-    const replySenderIds = messages
-      .map(m => m.replyMessage?.senderId)
-      .filter(Boolean) as string[];
-    const uniqueIds = [
-      ...new Set([...messages.map(m => m.senderId), ...replySenderIds]),
-    ].filter(id => id !== String(userId));
-    if (uniqueIds.length === 0) return;
-
-    database
-      .get<User>('users')
-      .query(Q.where('id', Q.oneOf(uniqueIds)))
-      .fetch()
-      .then(users =>
-        setSenderNames(new Map(users.map(u => [u.id, u.displayName]))),
-      )
-      .catch(err =>
-        console.warn('[ChatBox] sender name resolution failed:', err),
-      );
-  }, [messages, userId]);
-
   useSyncChatParticipants(chatId);
+
+  // ─── Sender name resolution ───────────────────────────────────────────────
+  const senderNames = useResolvedSenderNames(messages, userId);
 
   // ─── Typing indicator ─────────────────────────────────────────────────────
 
@@ -225,8 +205,12 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     clearSelection,
   } = useMultiSelectMode(messages);
 
-  const { floatingDate, onViewableItemsChanged, viewabilityConfig } =
-    useChatViewabilityTracker<ListItem>();
+  const {
+    floatingDate,
+    minVisibleIndex,
+    onViewableItemsChanged,
+    viewabilityConfig,
+  } = useChatViewabilityTracker<ListItem>();
 
   const editableSelectedMessage = useMemo<Message | null>(() => {
     if (selectedCount !== 1) return null;
@@ -451,14 +435,6 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         itemLayoutAnimation={LinearTransition.duration(250)}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        onScrollToIndexFailed={info => {
-          setTimeout(() => {
-            flatListRef.current?.scrollToIndex({
-              index: info.index,
-              animated: true,
-            });
-          }, 50);
-        }}
       />
 
       {floatingDate && (
@@ -468,7 +444,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       )}
 
       {/* Floating Scroll to Bottom Indicator */}
-      {((unreadCount > 0 && !isAtBottom) || minVisibleIndex >= 10) && (
+      {minVisibleIndex >= 10 && (
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(200)}
@@ -482,13 +458,6 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
             }
           >
             <ChevronDown size={22} color={appTheme.colors.brand.primary} />
-            {unreadCount > 0 && (
-              <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </Text>
-              </View>
-            )}
           </Pressable>
         </Animated.View>
       )}
