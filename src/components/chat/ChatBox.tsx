@@ -451,12 +451,46 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         itemLayoutAnimation={LinearTransition.duration(250)}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
+        onScrollToIndexFailed={info => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: info.index,
+              animated: true,
+            });
+          }, 50);
+        }}
       />
 
       {floatingDate && (
         <View style={styles.floatingHeaderContainer} pointerEvents="none">
           <ChatDateSeparator date={floatingDate} floating />
         </View>
+      )}
+
+      {/* Floating Scroll to Bottom Indicator */}
+      {((unreadCount > 0 && !isAtBottom) || minVisibleIndex >= 10) && (
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(200)}
+          style={styles.scrollToBottomContainer}
+          pointerEvents="box-none"
+        >
+          <Pressable
+            style={styles.scrollToBottomButton}
+            onPress={() =>
+              flatListRef.current?.scrollToOffset({ offset: 0, animated: true })
+            }
+          >
+            <ChevronDown size={22} color={appTheme.colors.brand.primary} />
+            {unreadCount > 0 && (
+              <View style={styles.badgeContainer}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+        </Animated.View>
       )}
 
       {/* Footer: switches between selection toolbar and text input */}
@@ -530,5 +564,44 @@ const makeStyles = ({ colors, spacing }: AppTheme) =>
       right: 0,
       alignItems: 'center',
       zIndex: 10,
+    },
+    scrollToBottomContainer: {
+      position: 'absolute',
+      bottom: spacing.md + 60,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      zIndex: 9,
+    },
+    scrollToBottomButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.backgrounds.elevated,
+      justifyContent: 'center',
+      alignItems: 'center',
+      // Shadows
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15,
+      shadowRadius: 4,
+      elevation: 4,
+    },
+    badgeContainer: {
+      position: 'absolute',
+      top: -4,
+      right: -4,
+      backgroundColor: colors.brand.primary,
+      minWidth: 18,
+      height: 18,
+      borderRadius: 9,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 4,
+    },
+    badgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: '700',
     },
   });
