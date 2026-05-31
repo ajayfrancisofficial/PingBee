@@ -79,7 +79,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const lastSenderName = useRef<string>('');
   const lastEditingMessage = useRef<Message | null>(null);
 
-  if (replyingTo) {
+  // Clear reply mode if editing mode is entered
+  useEffect(() => {
+    if (editingMessage && replyingTo) {
+      onClearReply();
+    }
+  }, [editingMessage, replyingTo, onClearReply]);
+
+  if (replyingTo && !editingMessage) {
     lastReplyingTo.current = replyingTo;
     lastSenderName.current = replyingToSenderName;
   }
@@ -89,10 +96,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   // Drive animation values using timing transitions
   useEffect(() => {
-    replyVisible.value = withTiming(replyingTo ? 1 : 0, {
+    const isReplyVisible = replyingTo && !editingMessage;
+    replyVisible.value = withTiming(isReplyVisible ? 1 : 0, {
       duration: 200,
     });
-  }, [replyingTo, replyVisible]);
+  }, [replyingTo, editingMessage, replyVisible]);
 
   useEffect(() => {
     editVisible.value = withTiming(editingMessage ? 1 : 0, {
