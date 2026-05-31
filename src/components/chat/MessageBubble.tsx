@@ -4,6 +4,9 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  withRepeat,
+  withSequence,
+  withDelay,
   interpolate,
   Easing,
 } from 'react-native-reanimated';
@@ -26,7 +29,7 @@ import { formatMessageTime } from '../../utils/DateTimeUtils';
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface MessageBubbleProps {
-  message: Message;
+  message?: Message;
   repliedMessage?: Message;
   repliedSenderName?: string;
   senderName: string;
@@ -36,11 +39,13 @@ export interface MessageBubbleProps {
   onPress: (message: Message) => void;
   onReply: (message: Message) => void;
   // Primitive values passed to trigger React.memo re-render on database changes
-  status: 'pending' | 'sent' | 'delivered' | 'read';
-  text: string;
-  isEdited: boolean;
-  isDeletedForEveryone: boolean;
+  status?: 'pending' | 'sent' | 'delivered' | 'read';
+  text?: string;
+  isEdited?: boolean;
+  isDeletedForEveryone?: boolean;
   isGroup: boolean;
+  /** When true, renders animated typing dots instead of message content */
+  isTypingIndicator?: boolean;
 }
 
 // ─── SelectionCheckbox ────────────────────────────────────────────────────────
@@ -116,6 +121,76 @@ const checkboxStyles = StyleSheet.create({
   },
 });
 
+// ─── TypingDots ───────────────────────────────────────────────────────────────
+
+const DOT_SIZE = 8;
+const DOT_TRAVEL = 5;
+const DOT_DURATION = 350;
+const DOT_DELAYS = [0, 150, 300];
+
+/**
+ * Three animated dots that bounce in a rolling wave — used inside the
+ * typing indicator bubble.
+ */
+const TypingDots: React.FC<{ theme: AppTheme }> = ({ theme }) => {
+  const dot0 = useSharedValue(0);
+  const dot1 = useSharedValue(0);
+  const dot2 = useSharedValue(0);
+  const dots = [dot0, dot1, dot2];
+
+  useEffect(() => {
+    dots.forEach((sv, i) => {
+      sv.value = withDelay(
+        DOT_DELAYS[i],
+        withRepeat(
+          withSequence(
+            withTiming(-DOT_TRAVEL, { duration: DOT_DURATION }),
+            withTiming(0, { duration: DOT_DURATION }),
+          ),
+          -1,
+          false,
+        ),
+      );
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const dotStyles = dots.map(sv =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useAnimatedStyle(() => ({ transform: [{ translateY: sv.value }] })),
+  );
+
+  return (
+    <View style={typingDotsStyles.row}>
+      {dots.map((_, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            typingDotsStyles.dot,
+            { backgroundColor: theme.colors.text.secondary },
+            dotStyles[i],
+          ]}
+        />
+      ))}
+    </View>
+  );
+};
+
+const typingDotsStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  dot: {
+    width: DOT_SIZE,
+    height: DOT_SIZE,
+    borderRadius: DOT_SIZE / 2,
+  },
+});
+
 // ─── TickIndicator ────────────────────────────────────────────────────────────
 
 interface TickProps {
@@ -158,22 +233,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     onPress,
     onReply,
     isGroup,
+    isTypingIndicator = false,
   }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => makeStyles(theme), [theme]);
     const swipeableRef = useRef<SwipeableMethods>(null);
 
-    const isMine = message.isMine;
-    const isDeleted = message.isDeletedForEveryone;
+    const isMine = isTypingIndicator ? false : message?.isMine ?? false;
+    const isDeleted = isTypingIndicator
+      ? false
+      : message?.isDeletedForEveryone ?? false;
 
-    const handlePress = useCallback(() => onPress(message), [onPress, message]);
-    const handleLongPress = useCallback(
-      () => onLongPress(message),
-      [onLongPress, message],
-    );
+    const handlePress = useCallback(() => {
+      if (message) onPress(message);
+    }, [onPress, message]);
+    const handleLongPress = useCallback(() => {
+      if (message) onLongPress(message);
+    }, [onLongPress, message]);
     const handleSwipeOpen = useCallback(
-      (direction: 'left' | 'right') => {
-        onReply(message);
+      (_direction: 'left' | 'right') => {
+        if (message) onReply(message);
         // Snap back after triggering reply
         swipeableRef.current?.close();
       },
@@ -229,24 +308,30 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
       [styles, theme],
     );
 
-    const displayText = isDeleted ? 'This message was deleted' : message.text;
+    const displayText = isDeleted
+      ? 'This message was deleted'
+      : message?.text ?? '';
 
     return (
       <Swipeable
         ref={swipeableRef}
-        enabled={!isSelectionMode}
+        enabled={!isSelectionMode && !isTypingIndicator}
         friction={2}
         overshootLeft={false}
         overshootRight={false}
-        renderLeftActions={!isMine ? renderLeftActions : undefined}
-        renderRightActions={isMine ? renderRightActions : undefined}
+        renderLeftActions={
+          !isMine && !isTypingIndicator ? renderLeftActions : undefined
+        }
+        renderRightActions={
+          isMine && !isTypingIndicator ? renderRightActions : undefined
+        }
         leftThreshold={40}
         rightThreshold={40}
         onSwipeableWillOpen={handleSwipeOpen}
       >
         <Pressable
-          onPress={handlePress}
-          onLongPress={handleLongPress}
+          onPress={isTypingIndicator ? undefined : handlePress}
+          onLongPress={isTypingIndicator ? undefined : handleLongPress}
           delayLongPress={350}
           style={styles.row}
         >
@@ -278,115 +363,136 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
               </View>
             )}
 
-            {/* ── Bubble ── */}
-            <View
-              style={[
-                styles.bubble,
-                isMine ? styles.bubbleMine : styles.bubbleTheirs,
-                isDeleted && styles.bubbleDeleted,
-                repliedMessage && styles.bubbleWithReply,
-              ]}
-            >
-              {/* Sender name — received messages only for group chats */}
-              {!isMine && isGroup && (
-                <Text
-                  style={[
-                    styles.senderName,
-                    repliedMessage && {
-                      paddingHorizontal: theme.spacing.md - theme.spacing.xs,
-                    },
-                  ]}
-                  numberOfLines={2}
-                >
+            {/* ── Bubble wrapper — column so label sits above the bubble ── */}
+            <View style={styles.bubbleColumn}>
+              {/* Typing label — shown above the bubble for typing indicator */}
+              {isTypingIndicator && isGroup && senderName ? (
+                <Text style={styles.typingLabel} numberOfLines={1}>
                   {senderName}
                 </Text>
-              )}
+              ) : null}
 
-              {/* Reply preview if exists */}
-              {repliedMessage && (
-                <View
-                  style={[
-                    styles.replyPreviewContainer,
-                    isMine && styles.replyPreviewContainerMine,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.replyAccentBar,
-                      {
-                        backgroundColor: repliedMessage.isMine
-                          ? theme.colors.brand.primary
-                          : theme.colors.brand.secondary,
-                      },
-                    ]}
-                  />
-                  <View style={styles.replyContent}>
-                    <Text
-                      style={[
-                        styles.replySenderName,
-                        isMine && styles.replySenderNameMine,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {repliedSenderName}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.replyPreviewText,
-                        isMine && styles.textMine,
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {repliedMessage.isDeletedForEveryone
-                        ? 'This message was deleted'
-                        : repliedMessage.text}
-                    </Text>
-                  </View>
-                </View>
-              )}
-
-              {/* Wrap main content to maintain correct padding when reply is present */}
+              {/* ── Bubble ── */}
               <View
-                style={
-                  repliedMessage
-                    ? styles.mainContentContainerWithReply
-                    : undefined
-                }
+                style={[
+                  styles.bubble,
+                  isMine ? styles.bubbleMine : styles.bubbleTheirs,
+                  isDeleted && styles.bubbleDeleted,
+                  repliedMessage && styles.bubbleWithReply,
+                ]}
               >
-                {/* Message text */}
-                <Text
-                  style={[
-                    styles.messageText,
-                    isMine ? styles.textMine : styles.textTheirs,
-                    isDeleted && styles.textDeleted,
-                  ]}
-                >
-                  {displayText}
-                </Text>
+                {isTypingIndicator ? (
+                  // ── Typing indicator mode: bouncing dots only ──
+                  <TypingDots theme={theme} />
+                ) : (
+                  <>
+                    {/* Sender name — received messages only for group chats */}
+                    {!isMine && isGroup && (
+                      <Text
+                        style={[
+                          styles.senderName,
+                          repliedMessage && {
+                            paddingHorizontal:
+                              theme.spacing.md - theme.spacing.xs,
+                          },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {senderName}
+                      </Text>
+                    )}
 
-                {/* Footer: timestamp + ticks */}
-                <View style={styles.footer}>
-                  {message.isEdited && !isDeleted && (
-                    <Pencil
-                      size={10}
-                      color={theme.colors.text.secondary}
-                      style={{ marginRight: 2 }}
-                    />
-                  )}
-                  <Text style={styles.timestamp}>
-                    {formatMessageTime(Number(message.createdAt))}
-                  </Text>
-                  {isMine && (
-                    <TickIndicator
-                      status={message.status}
-                      isMine={isMine}
-                      theme={theme}
-                    />
-                  )}
-                </View>
+                    {/* Reply preview if exists */}
+                    {repliedMessage && (
+                      <View
+                        style={[
+                          styles.replyPreviewContainer,
+                          isMine && styles.replyPreviewContainerMine,
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.replyAccentBar,
+                            {
+                              backgroundColor: repliedMessage.isMine
+                                ? theme.colors.brand.primary
+                                : theme.colors.brand.secondary,
+                            },
+                          ]}
+                        />
+                        <View style={styles.replyContent}>
+                          <Text
+                            style={[
+                              styles.replySenderName,
+                              isMine && styles.replySenderNameMine,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {repliedSenderName}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.replyPreviewText,
+                              isMine && styles.textMine,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {repliedMessage.isDeletedForEveryone
+                              ? 'This message was deleted'
+                              : repliedMessage.text}
+                          </Text>
+                        </View>
+                      </View>
+                    )}
+
+                    {/* Wrap main content to maintain correct padding when reply is present */}
+                    <View
+                      style={
+                        repliedMessage
+                          ? styles.mainContentContainerWithReply
+                          : undefined
+                      }
+                    >
+                      {/* Message text */}
+                      <Text
+                        style={[
+                          styles.messageText,
+                          isMine ? styles.textMine : styles.textTheirs,
+                          isDeleted && styles.textDeleted,
+                        ]}
+                      >
+                        {displayText}
+                      </Text>
+
+                      {/* Footer: timestamp + ticks */}
+                      <View style={styles.footer}>
+                        {message?.isEdited && !isDeleted && (
+                          <Pencil
+                            size={10}
+                            color={theme.colors.text.secondary}
+                            style={{ marginRight: 2 }}
+                          />
+                        )}
+                        <Text style={styles.timestamp}>
+                          {formatMessageTime(Number(message?.createdAt))}
+                        </Text>
+                        {isMine && message && (
+                          <TickIndicator
+                            status={message.status}
+                            isMine={isMine}
+                            theme={theme}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  </>
+                )}
               </View>
+              {/* end bubble */}
             </View>
+            {/* end bubbleColumn */}
           </View>
+          {/* end messageContainer */}
         </Pressable>
       </Swipeable>
     );
@@ -438,9 +544,23 @@ const makeStyles = ({
       justifyContent: 'center',
     },
 
+    // Bubble column wrapper (allows typing label to sit above the bubble)
+    bubbleColumn: {
+      flexDirection: 'column',
+      alignItems: 'flex-start',
+      maxWidth: '75%',
+    },
+
+    // Typing label (e.g. "Alice is typing…") above the typing indicator bubble
+    typingLabel: {
+      ...typography.variants.caption,
+      color: colors.text.secondary,
+      marginBottom: spacing.xs,
+      paddingHorizontal: spacing.xs,
+    },
+
     // Bubble
     bubble: {
-      maxWidth: '75%',
       paddingHorizontal: spacing.md,
       paddingTop: spacing.sm,
       paddingBottom: spacing.xs,

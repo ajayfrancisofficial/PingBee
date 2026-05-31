@@ -31,6 +31,7 @@ export interface ChatBoxFooterProps {
   onClearReply: () => void;
   editingMessage: Message | null;
   onCancelEdit: () => void;
+  onTyping?: (isTyping: boolean) => void;
 }
 
 export const ChatBoxFooter: React.FC<ChatBoxFooterProps> = ({
@@ -50,6 +51,7 @@ export const ChatBoxFooter: React.FC<ChatBoxFooterProps> = ({
   onClearReply,
   editingMessage,
   onCancelEdit,
+  onTyping,
 }) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -152,6 +154,7 @@ export const ChatBoxFooter: React.FC<ChatBoxFooterProps> = ({
             onClearReply={onClearReply}
             editingMessage={editingMessage}
             onCancelEdit={onCancelEdit}
+            onTyping={onTyping}
           />
         </Animated.View>
       );

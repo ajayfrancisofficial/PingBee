@@ -44,6 +44,13 @@ export interface MessageInputProps {
   // Edit mode
   editingMessage: Message | null;
   onCancelEdit: () => void;
+
+  /**
+   * Called whenever the user's typing state changes.
+   * true = user started typing, false = user cleared input.
+   * The parent hook (useTypingIndicator) owns the debounce.
+   */
+  onTyping?: (isTyping: boolean) => void;
 }
 
 export const MessageInput: React.FC<MessageInputProps> = ({
@@ -55,6 +62,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   onClearReply,
   editingMessage,
   onCancelEdit,
+  onTyping,
 }) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -181,7 +189,10 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <TextInput
             style={styles.textInput}
             value={value}
-            onChangeText={onChangeText}
+            onChangeText={text => {
+              onChangeText(text);
+              onTyping?.(text.length > 0);
+            }}
             placeholder="Type a message..."
             placeholderTextColor={theme.colors.text.tertiary}
             multiline

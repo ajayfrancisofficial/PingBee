@@ -16,6 +16,7 @@ import {
   KeyboardChatScrollView,
   KeyboardStickyView,
 } from 'react-native-keyboard-controller';
+import Animated, { LinearTransition } from 'react-native-reanimated';
 import { Q } from '@nozbe/watermelondb';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,10 +34,12 @@ import { fetchChatIsGroup } from '../../services/Chat/chatController';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { useUserStore } from '../../store/userStore';
 import { useMultiSelectMode } from '../../hooks/useMultiSelectMode';
+import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { AppTheme } from '../../theme';
 import Message from '../../db/models/Message';
 import User from '../../db/models/User';
 import { database } from '../../db';
+import { getTypingText } from '../../utils/TypingUtils';
 
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { DeleteActionSheet, DeleteType } from './DeleteActionSheet';
@@ -56,7 +59,9 @@ export interface ChatBoxProps {
 
 type MessageItem = { type: 'message'; message: LocalMessage; id: string };
 type SeparatorItem = { type: 'separator'; date: Date; id: string };
-type ListItem = MessageItem | SeparatorItem;
+/** Typing indicator — prepended at index 0 so it appears at the visual bottom of the inverted FlatList */
+type TypingItem = { type: 'typing'; id: 'typing-indicator'; label: string };
+type ListItem = MessageItem | SeparatorItem | TypingItem;
 
 // ─── ChatBox ──────────────────────────────────────────────────────────────────
 
@@ -137,14 +142,43 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
 
   useSyncChatParticipants(chatId);
 
+  // ─── Typing indicator ─────────────────────────────────────────────────────
+
+  const { typingUserIds, notifyTyping } = useTypingIndicator(chatId);
+
+  /**
+   * Builds a group-aware typing label from typer IDs + resolved sender names.
+   * Falls back to "typing…" if names haven't resolved yet.
+   */
+  const typingLabel = useMemo(() => {
+    return getTypingText(
+      typingUserIds,
+      senderNames,
+      isGroup ? 'group' : 'individual',
+    );
+  }, [typingUserIds, senderNames, isGroup]);
+
   // ─── List data (messages interleaved with date separators) ───────────────
   //
   // messages is DESC (newest first) — ideal for an inverted FlatList.
   // A date separator is inserted after each day boundary so that in the
   // inverted render it appears ABOVE the oldest message of each day group.
   //
+  // The TypingItem is PREPENDED at index 0: since the FlatList is inverted,
+  // index 0 = visually the bottom-most item, just above the footer.
+  //
   const listData = useMemo<ListItem[]>(() => {
     const items: ListItem[] = [];
+
+    // Prepend typing bubble if someone is typing
+    if (typingUserIds.length > 0) {
+      items.push({
+        type: 'typing',
+        id: 'typing-indicator',
+        label: typingLabel,
+      });
+    }
+
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
       items.push({ type: 'message', message: msg, id: `msg-${msg.id}` });
@@ -164,7 +198,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       }
     }
     return items;
-  }, [messages]);
+  }, [messages, typingUserIds, typingLabel]);
 
   // ─── Input state ──────────────────────────────────────────────────────────
 
@@ -244,7 +278,9 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     }
     setInputText('');
     setReplyingTo(null);
-  }, [inputText, editingMessage, chatId, replyingTo]);
+    // Clear typing indicator immediately on send
+    notifyTyping(false);
+  }, [inputText, editingMessage, chatId, replyingTo, notifyTyping]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingMessage(null);
@@ -307,6 +343,19 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       switch (item.type) {
         case 'separator':
           return <ChatDateSeparator date={item.date} />;
+        case 'typing':
+          return (
+            <MessageBubble
+              isTypingIndicator
+              senderName={item.label}
+              isSelectionMode={false}
+              isSelected={false}
+              onLongPress={() => {}}
+              onPress={() => {}}
+              onReply={() => {}}
+              isGroup={isGroup}
+            />
+          );
         case 'message':
         default: {
           const { message } = item;
@@ -345,6 +394,8 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     },
     [
       userId,
+      typingUserIds,
+      typingLabel,
       senderNames,
       isSelectionMode,
       selectedIds,
@@ -378,7 +429,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
 
   return (
     <View style={styles.container}>
-      <FlatList<ListItem>
+      <Animated.FlatList<ListItem>
         ref={flatListRef}
         data={listData}
         inverted
@@ -391,6 +442,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderScrollComponent={renderScrollComponent}
+        itemLayoutAnimation={LinearTransition.duration(250)}
       />
 
       {/* Footer: switches between selection toolbar and text input */}
@@ -411,6 +463,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
           onClearReply={handleClearReply}
           editingMessage={editingMessage}
           onCancelEdit={handleCancelEdit}
+          onTyping={notifyTyping}
         />
       </KeyboardStickyView>
 

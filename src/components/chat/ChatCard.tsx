@@ -1,11 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { withObservables } from '@nozbe/watermelondb/react';
+import { Q } from '@nozbe/watermelondb';
 import Chat from '../../db/models/Chat';
+import User from '../../db/models/User';
+import { database } from '../../db';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { Users } from 'lucide-react-native';
 import { useUserStore } from '../../store/userStore';
+import { useChatStore } from '../../store/chatStore';
+import { getTypingText } from '../../utils/TypingUtils';
 
 interface ChatCardProps {
   chat: Chat;
@@ -16,6 +21,33 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const currentUser = useUserStore(state => state.username);
+  const currentUserId = useUserStore(state => state.userId);
+  const typingUsers = useChatStore(state => state.typingUsers[chat.id]);
+  const [typerNames, setTyperNames] = useState<Map<string, string>>(new Map());
+
+  const remoteTypers = useMemo(() => {
+    return (typingUsers || []).filter(id => id !== String(currentUserId));
+  }, [typingUsers, currentUserId]);
+
+  useEffect(() => {
+    if (remoteTypers.length === 0) return;
+
+    database
+      .get<User>('users')
+      .query(Q.where('id', Q.oneOf(remoteTypers)))
+      .fetch()
+      .then(users => {
+        setTyperNames(new Map(users.map(u => [u.id, u.displayName])));
+      })
+      .catch(err => {
+        console.warn('[ChatCard] Failed to fetch typing user names:', err);
+      });
+  }, [remoteTypers]);
+
+  const typingText = useMemo(() => {
+    if (remoteTypers.length === 0) return null;
+    return getTypingText(remoteTypers, typerNames, chat.type);
+  }, [remoteTypers, typerNames, chat.type]);
 
   const getInitials = (name: string) => {
     if (!name) return '?';
@@ -79,22 +111,31 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
         </View>
 
         <View style={styles.messageRow}>
-          <Text
-            style={[
-              styles.lastMessage,
-              chat.unreadCount ? styles.lastMessageUnread : null,
-            ]}
-            numberOfLines={2}
-          >
-            {chat.lastMessageSentUsername
-              ? chat.lastMessageSentUsername === currentUser
-                ? 'You: '
-                : chat.type !== 'individual'
-                ? `${chat.lastMessageSentUsername}: `
-                : null
-              : null}
-            {chat.lastMessageText ?? ''}
-          </Text>
+          {typingText ? (
+            <Text
+              style={[styles.lastMessage, styles.typingText]}
+              numberOfLines={1}
+            >
+              {typingText}
+            </Text>
+          ) : (
+            <Text
+              style={[
+                styles.lastMessage,
+                chat.unreadCount ? styles.lastMessageUnread : null,
+              ]}
+              numberOfLines={2}
+            >
+              {chat.lastMessageSentUsername
+                ? chat.lastMessageSentUsername === currentUser
+                  ? 'You: '
+                  : chat.type !== 'individual'
+                  ? `${chat.lastMessageSentUsername}: `
+                  : null
+                : null}
+              {chat.lastMessageText ?? ''}
+            </Text>
+          )}
 
           {chat.unreadCount ? (
             <View style={styles.badge}>
@@ -199,6 +240,10 @@ const makeStyles = ({
       ...typography.variants.description,
       fontWeight: typography.weights.medium,
       color: colors.brand.primary,
+    },
+    typingText: {
+      color: colors.brand.primary,
+      fontWeight: typography.weights.semiBold,
     },
     badge: {
       backgroundColor: colors.brand.primary,
