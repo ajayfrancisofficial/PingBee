@@ -387,6 +387,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
               isEdited={message.isEdited}
               isDeletedForEveryone={message.isDeletedForEveryone}
               isGroup={isGroup}
+              isEditing={editingMessage?.id === message.id}
             />
           );
         }
@@ -403,6 +404,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       handleMessagePress,
       handleReply,
       isGroup,
+      editingMessage,
     ],
   );
 

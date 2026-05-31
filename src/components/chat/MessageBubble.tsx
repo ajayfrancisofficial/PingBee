@@ -46,6 +46,8 @@ export interface MessageBubbleProps {
   isGroup: boolean;
   /** When true, renders animated typing dots instead of message content */
   isTypingIndicator?: boolean;
+  /** When true, highlights the bubble as currently editing */
+  isEditing?: boolean;
 }
 
 // ─── SelectionCheckbox ────────────────────────────────────────────────────────
@@ -234,6 +236,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     onReply,
     isGroup,
     isTypingIndicator = false,
+    isEditing = false,
   }) => {
     const theme = useAppTheme();
     const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -379,6 +382,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
                   isMine ? styles.bubbleMine : styles.bubbleTheirs,
                   isDeleted && styles.bubbleDeleted,
                   repliedMessage && styles.bubbleWithReply,
+                  isEditing && styles.bubbleEditing,
                 ]}
               >
                 {isTypingIndicator ? (
@@ -581,6 +585,11 @@ const makeStyles = ({
     },
     bubbleDeleted: {
       backgroundColor: colors.surfaces.default,
+    },
+    bubbleEditing: {
+      borderWidth: 1.5,
+      borderColor: colors.brand.secondary,
+      borderStyle: 'dashed',
     },
     bubbleWithReply: {
       paddingTop: spacing.xs,
