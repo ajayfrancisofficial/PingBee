@@ -84,6 +84,8 @@ export const DBService = {
         .query(Q.where('id', Q.oneOf(ids)))
         .fetch();
       const existingMap = new Map(existing.map(m => [m.id, m]));
+      let shouldUpdateLastMessage = false;
+
       const operations = apiMessages
         .map(api => {
           const id = String(api.message_id);
@@ -91,20 +93,31 @@ export const DBService = {
           const isMine = senderId === currentUserId;
           const existingRecord = existingMap.get(id);
           if (api.is_delete_for_me) {
-            if (existingRecord)
+            if (existingRecord) {
+              shouldUpdateLastMessage = true;
               return existingRecord.prepareDestroyPermanently();
+            }
             return null;
           }
           if (existingRecord) {
+            const nextText = api.is_deleted_for_everyone
+              ? 'This message was deleted'
+              : api.message;
+            if (
+              existingRecord.text !== nextText ||
+              existingRecord.isDeletedForEveryone !==
+                api.is_deleted_for_everyone
+            ) {
+              shouldUpdateLastMessage = true;
+            }
             return existingRecord.prepareUpdate(m => {
-              m.text = api.is_deleted_for_everyone
-                ? 'This message was deleted'
-                : api.message;
+              m.text = nextText;
               m.status = api.is_read ? 'read' : 'sent';
               m.isMine = isMine;
               m.isDeletedForEveryone = api.is_deleted_for_everyone;
             });
           } else {
+            shouldUpdateLastMessage = true;
             return messagesCollection.prepareCreate(m => {
               // @ts-ignore
               m._raw.id = id;
@@ -122,6 +135,10 @@ export const DBService = {
         })
         .filter(op => op !== null);
       await database.batch(...operations);
+
+      if (shouldUpdateLastMessage) {
+        await DBService.updateChatLastMessageInTransaction(chatId);
+      }
     });
   },
 
@@ -240,6 +257,45 @@ export const DBService = {
         await database.batch(...operations);
       }
     });
+  },
+
+  /**
+   * Recalculate and update the last message text of a chat based on its newest local message.
+   * Assumes it is already running inside a database write transaction.
+   * @param chatId - The ID of the chat to update
+   */
+  updateChatLastMessageInTransaction: async (chatId: string): Promise<void> => {
+    try {
+      const chatsCollection = database.get<Chat>('chats');
+      const chat = await chatsCollection.find(chatId);
+
+      const latestMessages = await database
+        .get<Message>('messages')
+        .query(
+          Q.where('chat_id', chatId),
+          Q.where('is_deleted_for_me', Q.notEq(true)),
+          Q.sortBy('created_at', Q.desc),
+          Q.take(1),
+        )
+        .fetch();
+
+      const latest = latestMessages[0] ?? null;
+      let newText: string | undefined = undefined;
+      if (latest) {
+        newText = latest.isDeletedForEveryone
+          ? 'This message was deleted'
+          : latest.text;
+      }
+
+      await chat.update(c => {
+        c.lastMessageText = newText;
+      });
+    } catch (err) {
+      console.warn(
+        '[DBService] updateChatLastMessageInTransaction failed:',
+        err,
+      );
+    }
   },
 
   /**

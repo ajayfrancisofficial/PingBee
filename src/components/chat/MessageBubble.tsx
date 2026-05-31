@@ -318,7 +318,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = React.memo(
     return (
       <Swipeable
         ref={swipeableRef}
-        enabled={!isSelectionMode && !isTypingIndicator}
+        enabled={!isSelectionMode && !isTypingIndicator && !isDeleted}
         friction={2}
         overshootLeft={false}
         overshootRight={false}

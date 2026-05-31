@@ -4,6 +4,7 @@ import Chat from '../../db/models/Chat';
 import { useUserStore } from '../../store/userStore';
 import { websocketApi } from '../../api/WebsocketApi/websocketApi';
 import type { WsClientMessage } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
+import { DBService } from '../DB/DBService';
 
 /**
  * Build the full WebSocket client message for sending a new message (SEND_MSG event).
@@ -89,6 +90,7 @@ export const deleteMessages = async (
 
   const updatedMessages = await database.write(async () => {
     const records: Message[] = [];
+    let chatIdToUpdate: string | null = null;
     for (const messageId of messageIds) {
       try {
         const message = await database.get<Message>('messages').find(messageId);
@@ -114,16 +116,8 @@ export const deleteMessages = async (
             m.deletedForEveryoneAt = now;
             m.deleteStatus = 'pending';
           });
-
-          try {
-            const chat = await database.get<Chat>('chats').find(message.chatId);
-            await chat.update(c => {
-              c.lastMessageText = 'This message was deleted';
-            });
-          } catch {
-            // Chat update is optional
-          }
         }
+        chatIdToUpdate = message.chatId;
         records.push(message);
       } catch (err) {
         console.error(
@@ -132,6 +126,10 @@ export const deleteMessages = async (
           err,
         );
       }
+    }
+
+    if (chatIdToUpdate) {
+      await DBService.updateChatLastMessageInTransaction(chatIdToUpdate);
     }
     return records;
   });
