@@ -210,7 +210,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     minVisibleIndex,
     onViewableItemsChanged,
     viewabilityConfig,
-  } = useChatViewabilityTracker<ListItem>();
+  } = useChatViewabilityTracker<ListItem>(listData.length);
 
   const editableSelectedMessage = useMemo<Message | null>(() => {
     if (selectedCount !== 1) return null;
@@ -438,9 +438,14 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
       />
 
       {floatingDate && (
-        <View style={styles.floatingHeaderContainer} pointerEvents="none">
+        <Animated.View
+          entering={FadeIn.duration(250)}
+          exiting={FadeOut.duration(200)}
+          style={styles.floatingHeaderContainer}
+          pointerEvents="none"
+        >
           <ChatDateSeparator date={floatingDate} floating />
-        </View>
+        </Animated.View>
       )}
 
       {/* Floating Scroll to Bottom Indicator */}

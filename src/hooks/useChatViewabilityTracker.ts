@@ -24,10 +24,15 @@ export interface ViewableChatItem {
  */
 export function useChatViewabilityTracker<
   T extends ViewableChatItem = ViewableChatItem,
->() {
+>(listLength: number) {
   const [floatingDate, setFloatingDate] = useState<Date | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const [minVisibleIndex, setMinVisibleIndex] = useState(0);
+
+  const listLengthRef = useRef(listLength);
+  useEffect(() => {
+    listLengthRef.current = listLength;
+  }, [listLength]);
 
   // Keep track of the latest unread message in the current viewport
   const latestUnreadRef = useRef<ViewableChatItem['message'] | null>(null);
@@ -129,7 +134,16 @@ export function useChatViewabilityTracker<
           return;
         }
 
-        setFloatingDate(itemDate);
+        // Check if the oldest item in the list is visible
+        const oldestIndexVisible = viewableItems.some(
+          entry => entry.index === listLengthRef.current - 1,
+        );
+
+        if (oldestIndexVisible) {
+          setFloatingDate(null);
+        } else {
+          setFloatingDate(itemDate);
+        }
       }
 
       // 3. Track if we are at the bottom of the list (index 0 is visible) and min index

@@ -5,8 +5,8 @@ high priority
 --------------------------------------
 
 all the delete related ws can can messages from different chats, update the lasttextmessage for multiple chats if present.
-the bottom tab badge should have the value of the unread chat count
-floating chatdate separator showing if only 1 message is present
+done - the bottom tab badge should have the value of the unread chat count
+done - floating chatdate separator showing if if the oldest message is visible
 all delete events can have messages from different chats. update chat's last updated text accordingly
 websocket disconnection online offline transition
 mark as read receieve ws should change the status of all previous messages 
