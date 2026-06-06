@@ -1,0 +1,23 @@
+todo
+-----
+
+high priority
+--------------------------------------
+
+all the delete related ws can can messages from different chats, update the lasttextmessage for multiple chats if present.
+the bottom tab badge should have the value of the unread chat count
+floating chatdate separator showing if only 1 message is present
+all delete events can have messages from different chats. update chat's last updated text accordingly
+websocket disconnection online offline transition
+mark as read receieve ws should change the status of all previous messages 
+last message of the queued mssg chat gets overwritten by chats api - this can be fixed by adding updated_at value when we update the last message text of the chat. and then when we call chats api, only if the updated at value from the server is latest, we need to update the chat.
+call chats api and do the upsert chats if a new message is recieved from a stranger
+
+
+
+low priority
+--------------------------------
+delete ws presence and all its dependency
+deliverd i have to send? what if app is killed?
+mark as read offline queue
+open a chat should initially scroll to last read message.

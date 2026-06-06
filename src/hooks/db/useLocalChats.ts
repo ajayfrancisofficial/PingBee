@@ -20,6 +20,7 @@ import { useGuardedFetch } from '../useGuardedFetch';
  */
 export function useLocalChats() {
   const [chats, setChats] = useState<Chat[]>([]);
+  const [unreadChatsCount, setUnreadChatsCount] = useState(0);
 
   // ── Live WatermelonDB observer ─────────────────────────────────────────────
   useEffect(() => {
@@ -29,6 +30,8 @@ export function useLocalChats() {
       .observe()
       .subscribe(newChats => {
         setChats(newChats);
+        const count = newChats.filter(c => c.unreadCount > 0).length;
+        setUnreadChatsCount(count);
       });
 
     return () => subscription.unsubscribe();
@@ -59,5 +62,5 @@ export function useLocalChats() {
     'useLocalChats:refresh',
   );
 
-  return { chats, isSyncing, refreshChats, isRefreshing };
+  return { chats, isSyncing, refreshChats, isRefreshing, unreadChatsCount };
 }

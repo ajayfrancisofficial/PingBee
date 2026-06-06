@@ -18,13 +18,15 @@ import { ChatCard } from '../components/chat/ChatCard';
 
 const ChatsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
-  const { chats, refreshChats, isRefreshing } = useLocalChats();
+  const { chats, refreshChats, isRefreshing, unreadChatsCount } =
+    useLocalChats();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       title: 'Chats',
+      tabBarBadge: unreadChatsCount > 0 ? unreadChatsCount : undefined,
       headerRight: () => (
         <Pressable
           onPress={() => navigation.navigate('NewChat')}
@@ -40,7 +42,7 @@ const ChatsScreen = () => {
         </Pressable>
       ),
     });
-  }, [navigation, theme]);
+  }, [navigation, theme, unreadChatsCount]);
 
   const handleChatPress = (chat: Chat) => {
     navigation.navigate('Chat', { name: chat.name, chatId: chat.id });
