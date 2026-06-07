@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ViewToken, ViewabilityConfig } from 'react-native';
 import { websocketApi } from '../api/WebsocketApi/websocketApi';
-import { database } from '../db';
-import Chat from '../db/models/Chat';
+import { DBService } from '../services/DB/DBService';
 
 export interface ViewableChatItem {
   type: string;
@@ -40,10 +39,13 @@ export function useChatViewabilityTracker<
 
   // Poll/interval to send read status update every 2 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const msg = latestUnreadRef.current;
       if (msg && msg.id !== lastMarkedIdRef.current) {
         lastMarkedIdRef.current = msg.id;
+
+        // Optimistically update the message status to read and adjust unreadCount locally
+        await DBService.markMessageAsRead(msg.id);
 
         if (websocketApi.getIsConnected()) {
           console.log(

@@ -325,6 +325,64 @@ export const DBService = {
   },
 
   /**
+   * Mark a message and all older incoming messages in the same chat as read,
+   * then recalculate and update the chat's unread count.
+   * @param messageId - The ID of the message that was read.
+   */
+  markMessageAsRead: async (messageId: string): Promise<void> => {
+    try {
+      await database.write(async () => {
+        const messagesCollection = database.get<Message>('messages');
+        const chatsCollection = database.get<Chat>('chats');
+
+        const message = await messagesCollection.find(messageId);
+        const chatId = message.chatId;
+
+        // 1. Mark this message and all previous incoming messages as read
+        const messagesToUpdate = await messagesCollection
+          .query(
+            Q.where('chat_id', chatId),
+            Q.where('is_mine', false),
+            Q.where('status', Q.notEq('read')),
+            Q.where('created_at', Q.lte(message.createdAt)),
+          )
+          .fetch();
+
+        const messageUpdates = messagesToUpdate.map(m =>
+          m.prepareUpdate(msg => {
+            msg.status = 'read';
+          }),
+        );
+        console.log('🚀 ~ messageUpdates:', messageUpdates);
+
+        // 2. Query remaining unread incoming messages to calculate new unreadCount
+        const totalUnreadIncoming = await messagesCollection
+          .query(
+            Q.where('chat_id', chatId),
+            Q.where('is_mine', false),
+            Q.where('status', Q.notEq('read')),
+          )
+          .fetch();
+
+        const remainingUnreadCount = Math.max(
+          0,
+          totalUnreadIncoming.length - messagesToUpdate.length,
+        );
+
+        // 3. Update the chat record
+        const chat = await chatsCollection.find(chatId);
+        const chatUpdate = chat.prepareUpdate(c => {
+          c.unreadCount = remainingUnreadCount;
+        });
+
+        await database.batch(...messageUpdates, chatUpdate);
+      });
+    } catch (err) {
+      console.warn('[DBService] markMessageAsRead failed:', err);
+    }
+  },
+
+  /**
    * Clears the entire WatermelonDB database.
    * Wrapped in a writer transaction as required by WatermelonDB.
    */
