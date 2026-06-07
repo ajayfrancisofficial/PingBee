@@ -7,6 +7,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Snackbar } from './src/components/foundations/Snackbar';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { startNetworkListener } from './src/store/networkStore';
+
+// Start the global network listener once at app boot.
+// Add future app-wide network reactions to networkStore instead of new listeners.
+startNetworkListener();
 
 const queryClient = new QueryClient();
 
