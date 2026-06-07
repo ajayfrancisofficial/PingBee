@@ -227,17 +227,3 @@ export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
   }
 };
 
-/**
- * Send presence status (online/offline) to the server.
- */
-export const sendPresenceStatus = (status: 'online' | 'offline') => {
-  if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
-      event: 'PRESENCE',
-      payload: {
-        status,
-      },
-      timestamp: new Date().toISOString(),
-    });
-  }
-};
