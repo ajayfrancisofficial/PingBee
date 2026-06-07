@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import { websocketApi } from '../api/WebsocketApi/websocketApi';
 import { useAuthStore } from '../store/authStore';
 
@@ -7,23 +8,23 @@ import { useAuthStore } from '../store/authStore';
  * Should be called in a component that is mounted when the user is authenticated (e.g., AppStack).
  */
 export const useWebsocket = () => {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isLoggedIn = useAuthStore(state => state.isLoggedIn);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!isLoggedIn) return;
+    websocketApi.connect(true);
 
-    const startWebsocket = async () => {
-      if (!isLoggedIn) return;
-      if (isMounted) {
-        websocketApi.connect();
+    // Reconnect to WebSocket when we come back online
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        if (!websocketApi.getIsConnected()) {
+          websocketApi.connect(true);
+        }
       }
-    };
-
-    startWebsocket();
+    });
 
     return () => {
-      isMounted = false;
-      console.log('[useWebsocket] Component unmounting, disconnecting...');
+      unsubscribe();
       websocketApi.disconnect();
     };
   }, [isLoggedIn]);

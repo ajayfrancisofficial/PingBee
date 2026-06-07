@@ -13,6 +13,8 @@ done - when a mssg is read, make the update in local db also. also for chat unre
 done - last message of the queued mssg chat gets overwritten by chats api - this can be fixed by adding updated_at value when we update the last message text of the chat. and then when we call chats api, only if the updated at value from the server is latest, we need to update the chat.
 done - offline support apis shouldnt show network error snackbar. make an array of offline supported apis
 websocket disconnection online offline transition
+profile picture update
+typing ddoes not go off when the other user goes offline when typing
 
 
 

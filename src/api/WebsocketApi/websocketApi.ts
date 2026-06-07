@@ -10,6 +10,7 @@ import { WS_BASE_URL } from '../RESTApi/endpoints';
 
 let socket: WebSocket | null = null;
 let isConnected: boolean = false;
+let isConnecting: boolean = false;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let shouldReconnect: boolean = true;
 const reconnectInterval: number = 3000;
@@ -21,7 +22,28 @@ export const websocketApi = {
   /** Check if the WebSocket is currently connected */
   getIsConnected: (): boolean => isConnected,
 
-  connect: async () => {
+  connect: async (force: boolean = false) => {
+    if (isConnected && !force) {
+      console.log('[websocketApi] Already connected. Skipping.');
+      return;
+    }
+    if (isConnecting) {
+      console.log('[websocketApi] Connection attempt already in progress. Skipping.');
+      return;
+    }
+
+    isConnecting = true;
+
+    if (force) {
+      console.log('[websocketApi] Force connect/reconnect requested. Resetting state.');
+      retryCount = 0;
+      shouldReconnect = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+    }
+
     // If it's the initial connection attempt, refresh the token first
     if (retryCount === 0) {
       try {
@@ -33,6 +55,7 @@ export const websocketApi = {
           '[websocketApi] Token refresh failed on initial load:',
           error,
         );
+        isConnecting = false;
         // Error already handled (snackbar + logout) inside authService.refreshToken
         return;
       }
@@ -40,6 +63,7 @@ export const websocketApi = {
 
     if (!currentToken) {
       console.error('[websocketApi] Cannot connect: No token available');
+      isConnecting = false;
       return;
     }
 
@@ -58,6 +82,7 @@ export const websocketApi = {
     socket.onopen = () => {
       console.log('[websocketApi] ✅ Connected');
       isConnected = true;
+      isConnecting = false;
       retryCount = 0; // Reset retry count upon successful connection
       if (reconnectTimer) {
         clearTimeout(reconnectTimer);
@@ -81,6 +106,7 @@ export const websocketApi = {
 
     socket.onclose = event => {
       isConnected = false;
+      isConnecting = false;
       console.log(`[websocketApi] ❌ Disconnected (Code: ${event.code})`);
 
       // Record the disconnect time so IncomingSync can skip if reconnect was brief
@@ -110,6 +136,7 @@ export const websocketApi = {
 
     socket.onerror = error => {
       console.error('[websocketApi] Error:', error);
+      isConnecting = false;
     };
   },
 
