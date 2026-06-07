@@ -39,11 +39,15 @@ export const DBService = {
           return existingRecord.prepareUpdate(c => {
             c.name = api.name;
             c.type = api.type;
-            c.lastMessageText = api.last_message_text || undefined;
-            c.unreadCount = api.unread_count;
-            c.updatedAt = parseDateToMillis(api.updated_at);
             c.avatarUrl = api.avatar_url || undefined;
-            c.lastMessageSentUsername = api.lastMessageSentUsername;
+
+            const apiUpdatedAt = parseDateToMillis(api.updated_at);
+            if (apiUpdatedAt > existingRecord.updatedAt) {
+              c.lastMessageText = api.last_message_text || undefined;
+              c.unreadCount = api.unread_count;
+              c.updatedAt = apiUpdatedAt;
+              c.lastMessageSentUsername = api.lastMessageSentUsername;
+            }
           });
         } else {
           return chatsCollection.prepareCreate(c => {
