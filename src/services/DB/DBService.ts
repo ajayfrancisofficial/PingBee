@@ -119,6 +119,7 @@ export const DBService = {
               m.status = api.is_read ? 'read' : 'sent';
               m.isMine = isMine;
               m.isDeletedForEveryone = api.is_deleted_for_everyone;
+              m.isEdited = api.is_edited;
             });
           } else {
             shouldUpdateLastMessage = true;
@@ -134,6 +135,7 @@ export const DBService = {
               m.isMine = isMine;
               m.createdAt = parseDateToMillis(api.created_at);
               m.isDeletedForEveryone = api.is_deleted_for_everyone;
+              m.isEdited = api.is_edited;
             });
           }
         })

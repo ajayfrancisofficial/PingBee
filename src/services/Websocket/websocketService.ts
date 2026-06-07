@@ -35,6 +35,7 @@ export const websocketService = {
               msg.isMine = false;
               msg.createdAt = parseDateToMillis(p.createdAt);
               msg.serverTimestamp = parseDateToMillis(p.serverTimestamp);
+              msg.isEdited = p.isEdited;
               if (p.replyTo) {
                 msg.replyToId = p.replyTo;
               }

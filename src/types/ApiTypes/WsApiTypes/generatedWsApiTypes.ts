@@ -80,6 +80,11 @@ export interface components {
        * @default null
        */
       replyTo: string | null;
+      /**
+       * Createdat
+       * @default null
+       */
+      createdAt: number | string | null;
     };
     /** TypingPayload */
     TypingPayload: {
@@ -189,6 +194,11 @@ export interface components {
        * @default null
        */
       editedAt: string | null;
+      /**
+       * Isedited
+       * @default true
+       */
+      isEdited: boolean;
     };
     /** ReceiveMessagePayload */
     ReceiveMessagePayload: {
@@ -206,6 +216,11 @@ export interface components {
       serverTimestamp: string;
       /** Isdeletedforeveryone */
       isDeletedForEveryone: boolean;
+      /**
+       * Isedited
+       * @default false
+       */
+      isEdited: boolean;
       /**
        * Replyto
        * @default null

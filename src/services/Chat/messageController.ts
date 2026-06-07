@@ -17,6 +17,7 @@ export const buildSendMessageEvent = (message: Message): WsClientMessage => ({
     chatId: Number(message.chatId),
     text: message.text,
     replyTo: message.replyToId ?? null,
+    createdAt: message.createdAt,
   },
   timestamp: new Date().toISOString(),
 });

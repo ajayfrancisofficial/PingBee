@@ -20,5 +20,4 @@ low priority
 --------------------------------
 delete ws presence and all its dependency
 deliverd i have to send? what if app is killed?
-mark as read offline queue
 open a chat should initially scroll to last read message.
