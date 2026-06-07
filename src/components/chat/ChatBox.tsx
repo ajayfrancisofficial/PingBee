@@ -49,6 +49,7 @@ import { useChatViewabilityTracker } from '../../hooks/useChatViewabilityTracker
 import { ConfirmationModal } from '../common/ConfirmationModal';
 import { DeleteActionSheet, DeleteType } from './DeleteActionSheet';
 import { ChatDateSeparator } from './ChatDateSeparator';
+import { FloatingDateHeader } from './FloatingDateHeader';
 import { MessageBubble } from './MessageBubble';
 import { ChatBoxFooter } from './ChatBoxFooter';
 
@@ -437,16 +438,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
         viewabilityConfig={viewabilityConfig}
       />
 
-      {floatingDate && (
-        <Animated.View
-          entering={FadeIn.duration(250)}
-          exiting={FadeOut.duration(200)}
-          style={styles.floatingHeaderContainer}
-          pointerEvents="none"
-        >
-          <ChatDateSeparator date={floatingDate} floating />
-        </Animated.View>
-      )}
+      <FloatingDateHeader date={floatingDate} />
 
       {/* Floating Scroll to Bottom Indicator */}
       {minVisibleIndex >= 10 && (
@@ -530,14 +522,6 @@ const makeStyles = ({ colors, spacing }: AppTheme) =>
     },
     loadMoreSpinner: {
       marginVertical: spacing.md,
-    },
-    floatingHeaderContainer: {
-      position: 'absolute',
-      top: spacing.sm,
-      left: 0,
-      right: 0,
-      alignItems: 'center',
-      zIndex: 10,
     },
     scrollToBottomContainer: {
       position: 'absolute',
