@@ -85,6 +85,7 @@ export const websocketService = {
               if (chat.lastMessageText === oldText) {
                 await chat.update(c => {
                   c.lastMessageText = p.text;
+                  c.updatedAt = Date.now();
                 });
               }
             } catch (e) {
@@ -112,12 +113,13 @@ export const websocketService = {
         case 'RECEIVE_DELETE_MSGS': {
           const p = payload as ServerEventPayloads['RECEIVE_DELETE_MSGS'];
           await database.write(async () => {
+            const chatIdsToUpdate = new Set<string>();
             for (const item of p.messages) {
               try {
                 const message = await database
                   .get<Message>('messages')
                   .find(item.id);
-                const oldText = message.text;
+                const chatId = message.chatId;
 
                 await message.update(m => {
                   m.isDeletedForEveryone = true;
@@ -127,19 +129,7 @@ export const websocketService = {
                   );
                   m.deleteStatus = 'synced';
                 });
-
-                try {
-                  const chat = await database
-                    .get<Chat>('chats')
-                    .find(message.chatId);
-                  if (chat.lastMessageText === oldText) {
-                    await chat.update(c => {
-                      c.lastMessageText = 'This message was deleted';
-                    });
-                  }
-                } catch {
-                  // Chat update is optional
-                }
+                chatIdsToUpdate.add(chatId);
               } catch (e) {
                 console.warn(
                   '[websocketService] RECEIVE_DELETE_MSGS: message not found:',
@@ -147,6 +137,10 @@ export const websocketService = {
                 );
               }
             }
+
+            await DBService.updateChatsLastMessageInTransaction(
+              chatIdsToUpdate,
+            );
           });
           break;
         }
@@ -154,6 +148,7 @@ export const websocketService = {
         case 'ACK_DELETE_MSGS': {
           const p = payload as ServerEventPayloads['ACK_DELETE_MSGS'];
           await database.write(async () => {
+            const chatIdsToUpdate = new Set<string>();
             for (const item of p.messages) {
               if (item.error) {
                 console.warn(
@@ -168,6 +163,7 @@ export const websocketService = {
                 const message = await database
                   .get<Message>('messages')
                   .find(item.id);
+                const chatId = message.chatId;
 
                 if (
                   item.deleteType === 'deleteForMe' ||
@@ -186,6 +182,7 @@ export const websocketService = {
                     }
                   });
                 }
+                chatIdsToUpdate.add(chatId);
               } catch (e) {
                 console.warn(
                   '[websocketService] ACK_DELETE_MSGS: message not found:',
@@ -193,6 +190,10 @@ export const websocketService = {
                 );
               }
             }
+
+            await DBService.updateChatsLastMessageInTransaction(
+              chatIdsToUpdate,
+            );
           });
           break;
         }

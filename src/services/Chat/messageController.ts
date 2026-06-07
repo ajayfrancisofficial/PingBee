@@ -40,6 +40,8 @@ export const editMessage = async (
       throw new Error('Message is not editable');
     }
 
+    const oldText = message.text;
+
     await message.update(m => {
       m.text = newText;
       m.isEdited = true;
@@ -50,9 +52,10 @@ export const editMessage = async (
     // Update parent chat's last message text if this was the last message
     try {
       const chat = await database.get<Chat>('chats').find(message.chatId);
-      if (chat.lastMessageText === message.text) {
+      if (chat.lastMessageText === oldText) {
         await chat.update(c => {
           c.lastMessageText = newText;
+          c.updatedAt = Date.now();
         });
       }
     } catch {
@@ -76,6 +79,7 @@ export const editMessage = async (
 /**
  * Batch-delete multiple messages in a single WebSocket round-trip.
  * All messages are deleted with the same type.
+ * All messages will be from the same chat.
  *
  * @param messageIds - IDs of the messages to delete
  * @param type       - 'deleteForEveryone' or 'deleteForMe'
@@ -129,7 +133,7 @@ export const deleteMessages = async (
     }
 
     if (chatIdToUpdate) {
-      await DBService.updateChatLastMessageInTransaction(chatIdToUpdate);
+      await DBService.updateChatsLastMessageInTransaction(chatIdToUpdate);
     }
     return records;
   });

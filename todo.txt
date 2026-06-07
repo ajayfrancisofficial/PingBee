@@ -4,14 +4,15 @@ todo
 high priority
 --------------------------------------
 
-all the delete related ws can can messages from different chats, update the lasttextmessage for multiple chats if present.
+done - all the delete related ws can have messages from different chats, update the lasttextmessage for multiple chats if present.
 done - the bottom tab badge should have the value of the unread chat count
 done - floating chatdate separator showing if if the oldest message is visible
-all delete events can have messages from different chats. update chat's last updated text accordingly
 websocket disconnection online offline transition
+when a mssg is read, make the update in local db also. also for chat unread count
 mark as read receieve ws should change the status of all previous messages 
 last message of the queued mssg chat gets overwritten by chats api - this can be fixed by adding updated_at value when we update the last message text of the chat. and then when we call chats api, only if the updated at value from the server is latest, we need to update the chat.
 call chats api and do the upsert chats if a new message is recieved from a stranger
+offline support apis shouldnt show network error snackbar. make an array of offline supported apis
 
 
 

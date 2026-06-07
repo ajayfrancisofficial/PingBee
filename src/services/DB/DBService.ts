@@ -137,7 +137,7 @@ export const DBService = {
       await database.batch(...operations);
 
       if (shouldUpdateLastMessage) {
-        await DBService.updateChatLastMessageInTransaction(chatId);
+        await DBService.updateChatsLastMessageInTransaction(chatId);
       }
     });
   },
@@ -260,36 +260,62 @@ export const DBService = {
   },
 
   /**
-   * Recalculate and update the last message text of a chat based on its newest local message.
+   * Recalculate and update the last message text of one or multiple chats based on their newest local messages.
    * Assumes it is already running inside a database write transaction.
-   * @param chatId - The ID of the chat to update
+   * @param chatIdOrIds - The ID or IDs of the chats to update (can be a string, string[], or Set<string>)
    */
-  updateChatLastMessageInTransaction: async (chatId: string): Promise<void> => {
+  updateChatsLastMessageInTransaction: async (
+    chatIdOrIds: string | string[] | Set<string>,
+  ): Promise<void> => {
     try {
       const chatsCollection = database.get<Chat>('chats');
-      const chat = await chatsCollection.find(chatId);
+      const messagesCollection = database.get<Message>('messages');
+      const chatIds =
+        typeof chatIdOrIds === 'string'
+          ? [chatIdOrIds]
+          : Array.from(chatIdOrIds);
 
-      const latestMessages = await database
-        .get<Message>('messages')
-        .query(
-          Q.where('chat_id', chatId),
-          Q.where('is_deleted_for_me', Q.notEq(true)),
-          Q.sortBy('created_at', Q.desc),
-          Q.take(1),
-        )
+      if (chatIds.length === 0) return;
+
+      const chats = await chatsCollection
+        .query(Q.where('id', Q.oneOf(chatIds)))
         .fetch();
+      const existingMap = new Map(chats.map(c => [c.id, c]));
 
-      const latest = latestMessages[0] ?? null;
-      let newText: string | undefined = undefined;
-      if (latest) {
-        newText = latest.isDeletedForEveryone
-          ? 'This message was deleted'
-          : latest.text;
+      const operations: any[] = [];
+
+      for (const id of chatIds) {
+        const chat = existingMap.get(id);
+        if (!chat) continue;
+
+        const latestMessages = await messagesCollection
+          .query(
+            Q.where('chat_id', id),
+            Q.where('is_deleted_for_me', Q.notEq(true)),
+            Q.sortBy('created_at', Q.desc),
+            Q.take(1),
+          )
+          .fetch();
+
+        const latest = latestMessages[0] ?? null;
+        let newText: string | undefined = undefined;
+        if (latest) {
+          newText = latest.isDeletedForEveryone
+            ? 'This message was deleted'
+            : latest.text;
+        }
+
+        operations.push(
+          chat.prepareUpdate(c => {
+            c.lastMessageText = newText;
+            c.updatedAt = Date.now();
+          }),
+        );
       }
 
-      await chat.update(c => {
-        c.lastMessageText = newText;
-      });
+      if (operations.length > 0) {
+        await database.batch(...operations);
+      }
     } catch (err) {
       console.warn(
         '[DBService] updateChatLastMessageInTransaction failed:',
