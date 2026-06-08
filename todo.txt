@@ -14,13 +14,24 @@ done - last message of the queued mssg chat gets overwritten by chats api - this
 done - offline support apis shouldnt show network error snackbar. make an array of offline supported apis
 done - websocket disconnection online offline transition
 done - global network listener?
-profile picture update
-typing ddoes not go off when the other user goes offline when typing
+done already - Disconnect ws on logout
+
+ performance issue - Send button not clearing input and add a debounce
+ chats table updatedAt value
+
+ profile pic related changes:
+ Compress image before uploading
+ crop image before uploading profile picture.
+ profile picture uploading forboth gallery and camera
+ profile pic show in header in chatscreen
+
+typing ddoes not go off when the other user goes offline when typing - check for presence also. show typing only if the other user is online and typing
 
 
 
 low priority
 --------------------------------
+ should we migrate to socket.io or should we stick to the current websocket architecture?
 delete ws presence and all its dependency
 deliverd i have to send? what if app is killed?
 open a chat should initially scroll to last read message.

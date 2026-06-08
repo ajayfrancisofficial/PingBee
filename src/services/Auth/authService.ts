@@ -1,4 +1,5 @@
 import * as Keychain from 'react-native-keychain';
+import { isAxiosError } from 'axios';
 import { authApi } from '../../api/RESTApi/authApi';
 import { useAuthStore } from '../../store/authStore';
 import { useUserStore } from '../../store/userStore';
@@ -189,7 +190,14 @@ export const authService = {
 
       return refreshTokenData.access_token;
     } catch (error) {
-      // If refresh fails, we should probably logout
+      if (isAxiosError(error) && !error.response) {
+        console.warn(
+          '[authService] Network error during token refresh. Not logging out.',
+        );
+        throw error;
+      }
+
+      // If refresh fails due to server rejecting it (e.g. invalid token), we log out
       snackbar.show({
         message: 'Session expired. Please log in again.',
         type: 'warning',

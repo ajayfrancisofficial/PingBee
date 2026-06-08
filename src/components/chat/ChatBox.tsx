@@ -255,21 +255,41 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
   const handleSend = useCallback(async () => {
     const text = inputText.trim();
     if (!text) return;
+
+    // Optimistically clear input and typing state to prevent duplicate sends
+    setInputText('');
+    setReplyingTo(null);
+    notifyTyping(false);
+    const originalEditingMessage = editingMessage;
+    if (editingMessage) {
+      setEditingMessage(null);
+    }
+
     try {
-      if (editingMessage) {
-        await editMessage(editingMessage.id, text);
-        setEditingMessage(null);
+      if (originalEditingMessage) {
+        await editMessage(originalEditingMessage.id, text);
       } else {
         await sendMessage(text, chatId, replyingTo?.id);
       }
     } catch (err) {
       console.error('[ChatBox] send/edit failed:', err);
+      // Restore input text and state on failure so user doesn't lose their message
+      setInputText(text);
+      if (originalEditingMessage) {
+        setEditingMessage(originalEditingMessage);
+      } else if (replyingTo) {
+        setReplyingTo(replyingTo);
+      }
     }
-    setInputText('');
-    setReplyingTo(null);
-    // Clear typing indicator immediately on send
-    notifyTyping(false);
-  }, [inputText, editingMessage, chatId, replyingTo, notifyTyping]);
+  }, [
+    inputText,
+    editingMessage,
+    chatId,
+    replyingTo,
+    notifyTyping,
+    editMessage,
+    sendMessage,
+  ]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingMessage(null);

@@ -1,7 +1,6 @@
 import { setWsDisconnectedAt } from '../../utils/syncStorage';
 import { websocketService } from '../../services/Websocket/websocketService';
 import { authService } from '../../services/Auth/authService';
-import { snackbar } from '../../components/foundations/Snackbar';
 import type {
   WsServerMessage,
   WsClientMessage,
@@ -28,14 +27,18 @@ export const websocketApi = {
       return;
     }
     if (isConnecting) {
-      console.log('[websocketApi] Connection attempt already in progress. Skipping.');
+      console.log(
+        '[websocketApi] Connection attempt already in progress. Skipping.',
+      );
       return;
     }
 
     isConnecting = true;
 
     if (force) {
-      console.log('[websocketApi] Force connect/reconnect requested. Resetting state.');
+      console.log(
+        '[websocketApi] Force connect/reconnect requested. Resetting state.',
+      );
       retryCount = 0;
       shouldReconnect = true;
       if (reconnectTimer) {
@@ -126,10 +129,6 @@ export const websocketApi = {
           console.error(
             '[websocketApi] Max retries reached. Stopping reconnection.',
           );
-          snackbar.show({
-            message: 'Unable to connect to server. Please Try again later',
-            type: 'error',
-          });
         }
       }
     };
