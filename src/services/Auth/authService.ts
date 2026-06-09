@@ -35,7 +35,12 @@ export const authService = {
       useUserStore.getState().setUser({
         userId: loginData.user_id,
         isVerified: loginData.is_verified,
+        username: loginData.username,
+        email: loginData.email,
+        name: loginData.full_name,
       });
+      const avatarUrl = loginData.avatar_url || '';
+      useUserStore.getState().updateProfilePicture(avatarUrl);
       useAuthStore.getState().setLoggedIn(true);
 
       return data;
@@ -64,7 +69,12 @@ export const authService = {
       useUserStore.getState().setUser({
         userId: registerData.user_id,
         isVerified: registerData.is_verified,
+        username: registerData.username,
+        email: registerData.email,
+        name: registerData.full_name,
       });
+      const avatarUrl = registerData.avatar_url || '';
+      useUserStore.getState().updateProfilePicture(avatarUrl);
       useAuthStore.getState().setLoggedIn(true);
       snackbar.show({
         message: data?.message || 'Registration Successfull',
