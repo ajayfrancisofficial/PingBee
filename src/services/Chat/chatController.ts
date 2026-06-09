@@ -38,6 +38,9 @@ export const setupConversation = async (
         chat.type = 'individual';
         chat.unreadCount = 0;
         chat.updatedAt = Date.now();
+        if (otherUser.avatar_url) {
+          chat.avatarUrl = otherUser.avatar_url;
+        }
       });
     }
   });

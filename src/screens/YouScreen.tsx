@@ -187,9 +187,6 @@ export const YouScreen = () => {
               {/* Name */}
               <Animated.View style={[styles.nameRow, bodyNameStyle]}>
                 <Text style={styles.nameText}>{name}</Text>
-                <View style={styles.plusBadge}>
-                  <Text style={styles.plusText}>+</Text>
-                </View>
               </Animated.View>
             </View>
 
@@ -332,20 +329,6 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       ...typography.variants.heading3,
       color: colors.text.primary,
       fontWeight: typography.weights.bold,
-    },
-    plusBadge: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      backgroundColor: colors.semantic.success,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    plusText: {
-      color: colors.absolute.white,
-      fontSize: 14,
-      fontWeight: typography.weights.bold,
-      lineHeight: 18,
     },
 
     /* Section label */
