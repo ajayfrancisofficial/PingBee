@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Platform,
-  FlatList,
   TouchableOpacity,
 } from 'react-native';
 import {
@@ -33,6 +32,7 @@ import {
   Lock,
   MessageCircle,
   ChevronRight,
+  UserCircle,
 } from 'lucide-react-native';
 import { TransitionTags } from '../constants/transitions';
 
@@ -79,7 +79,7 @@ export const YouScreen = () => {
   const navigation = useNavigation();
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-  const { name, about, profilePicture } = useUserStore();
+  const { name, profilePicture } = useUserStore();
   const iconColor = theme.colors.text.secondary;
   const iconSize = sizing.iconSizes.base;
   // Sync user profile on focus
@@ -133,18 +133,9 @@ export const YouScreen = () => {
     };
   });
 
-  const aboutBubbleStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      scrollY.value,
-      [0, 50],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    return { opacity };
-  });
-
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerTitleAlign: 'center',
       headerTitle: () => (
         <Animated.View style={headerTitleStyle}>
           <Text style={styles.headerTitleText}>{name}</Text>
@@ -166,22 +157,28 @@ export const YouScreen = () => {
           <>
             {/* Profile Section */}
             <View style={styles.profileSection}>
-              {/* About tooltip */}
-              <Animated.View style={[styles.aboutBubble, aboutBubbleStyle]}>
-                <Text style={styles.aboutText}>{about}</Text>
-                <View style={styles.aboutBubbleArrow} />
-              </Animated.View>
-
               {/* Profile Image */}
               <TouchableOpacity
                 onPress={() => navigation.navigate('Profile')}
                 activeOpacity={0.8}
               >
-                <Animated.Image
-                  source={{ uri: profilePicture }}
-                  style={styles.profileImage}
-                  sharedTransitionTag={TransitionTags.profileImage}
-                />
+                {profilePicture ? (
+                  <Animated.Image
+                    source={{ uri: profilePicture }}
+                    style={styles.profileImage}
+                    sharedTransitionTag={TransitionTags.profileImage}
+                  />
+                ) : (
+                  <View
+                    style={[styles.profileImage, styles.placeholderContainer]}
+                  >
+                    <UserCircle
+                      size={100}
+                      color={theme.colors.text.tertiary}
+                      strokeWidth={1}
+                    />
+                  </View>
+                )}
               </TouchableOpacity>
 
               {/* Name */}
@@ -284,35 +281,16 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       alignItems: 'center',
       paddingVertical: spacing.lg,
     },
-    aboutBubble: {
-      backgroundColor: colors.surfaces.default,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.lg,
-      marginBottom: spacing.sm,
-      position: 'relative',
-    },
-    aboutText: {
-      ...typography.variants.body,
-      color: colors.text.primary,
-    },
-    aboutBubbleArrow: {
-      position: 'absolute',
-      bottom: -6,
-      alignSelf: 'center',
-      left: '50%',
-      marginLeft: -6,
-      width: 12,
-      height: 12,
-      backgroundColor: colors.surfaces.default,
-      transform: [{ rotate: '45deg' }],
-    },
     profileImage: {
       width: 120,
       height: 120,
       borderRadius: 60,
-      borderWidth: 3,
-      borderColor: colors.surfaces.tertiary,
+    },
+    placeholderContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaces.default,
+      borderStyle: 'dashed',
     },
     nameRow: {
       flexDirection: 'row',

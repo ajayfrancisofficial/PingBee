@@ -49,6 +49,11 @@ export const useUserStore = create<UserState>()(
       setUser: user => set(state => ({ ...state, ...user })),
 
       updateProfilePicture: async (url: string) => {
+        if (!url) {
+          set(state => ({ ...state, profilePicture: '', avatar: '' }));
+          return;
+        }
+
         // Instantly set the profile picture for immediate UI feedback (could be local path or remote URL)
         set(state => ({ ...state, profilePicture: url }));
 

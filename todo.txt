@@ -27,7 +27,7 @@ check if we are using special field updatedAt and createdat, whatever.. watermel
  done - profile pic show in header in chatscreen
  done - delete profile pic api
  done - after updating the picture, should we delete the old pic to save storage
-fix the 2 warnings
+ done - fix the 2 warnings
 the login itself gives me api response. start downloading the profile pic from there itself?
 
 typing ddoes not go off when the other user goes offline when typing - check for presence also. show typing only if the other user is online and typing
