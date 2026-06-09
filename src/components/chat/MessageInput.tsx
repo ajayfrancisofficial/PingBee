@@ -79,6 +79,27 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   const lastSenderName = useRef<string>('');
   const lastEditingMessage = useRef<Message | null>(null);
 
+  const textInputRef = useRef<TextInput>(null);
+  const lastSendTimeRef = useRef(0);
+  const isSendLockedRef = useRef(false);
+
+  const handleSend = () => {
+    const now = Date.now();
+    if (now - lastSendTimeRef.current < 500) {
+      return;
+    }
+    lastSendTimeRef.current = now;
+
+    // Block any typing events for 250ms and clear input
+    isSendLockedRef.current = true;
+    textInputRef.current?.clear();
+    onSend();
+
+    setTimeout(() => {
+      isSendLockedRef.current = false;
+    }, 500);
+  };
+
   // Clear reply mode if editing mode is entered
   useEffect(() => {
     if (editingMessage && replyingTo) {
@@ -195,9 +216,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           layout={LinearTransition.duration(200)}
         >
           <TextInput
+            ref={textInputRef}
             style={styles.textInput}
             value={value}
             onChangeText={text => {
+              if (isSendLockedRef.current) {
+                textInputRef.current?.clear();
+                return;
+              }
               onChangeText(text);
               onTyping?.(text.length > 0);
             }}
@@ -234,7 +260,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           <Animated.View layout={LinearTransition.duration(200)}>
             <TouchableOpacity
               style={styles.iconButton}
-              onPress={onSend}
+              onPress={handleSend}
               activeOpacity={0.7}
             >
               <SendHorizontal size={24} color={theme.colors.brand.primary} />
