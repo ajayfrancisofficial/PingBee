@@ -1,5 +1,6 @@
 import { userApi } from '../../api/RESTApi/userApi';
 import { useUserStore } from '../../store/userStore';
+import { MediaUtils } from '../../utils/media';
 import type {
   GetMeResponse,
   GetAllUsersResponse,
@@ -52,6 +53,10 @@ export const userService = {
       type,
     } as any);
 
+    // Capture old local paths to clean up later on successful upload and cache write
+    const oldProfilePicture = useUserStore.getState().profilePicture;
+    const oldAvatar = useUserStore.getState().avatar;
+
     try {
       const response = await userApi.uploadAvatar(formData);
       if (response.success && response.data) {
@@ -59,6 +64,14 @@ export const userService = {
 
         // Update the Zustand store and trigger caching/compression of the remote URL
         await useUserStore.getState().updateProfilePicture(avatarUrl);
+
+        // Delete old local media files only after successful update/cache write
+        if (oldProfilePicture && oldProfilePicture.startsWith('file://')) {
+          await MediaUtils.deleteMedia(oldProfilePicture);
+        }
+        if (oldAvatar && oldAvatar.startsWith('file://')) {
+          await MediaUtils.deleteMedia(oldAvatar);
+        }
 
         return { success: true, url: avatarUrl };
       }
