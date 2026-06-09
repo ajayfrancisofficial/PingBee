@@ -6,6 +6,7 @@ import {
   FlatList,
   Pressable,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { Search } from 'lucide-react-native';
@@ -49,6 +50,7 @@ const NewChatScreen = () => {
         navigation.navigate('Chat', {
           name,
           chatId,
+          avatarUrl: user.avatar_url || undefined,
         });
       }
     } catch (error) {
@@ -75,7 +77,11 @@ const NewChatScreen = () => {
         disabled={isStarting}
       >
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{getInitials(item)}</Text>
+          {item.avatar_url ? (
+            <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
+          ) : (
+            <Text style={styles.avatarText}>{getInitials(item)}</Text>
+          )}
         </View>
         <View style={styles.userInfo}>
           <Text style={styles.userName}>
@@ -183,6 +189,11 @@ const makeStyles = ({
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: spacing.md,
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: '100%',
+      height: '100%',
     },
     avatarText: {
       ...typography.variants.heading3,

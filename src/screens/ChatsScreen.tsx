@@ -45,7 +45,7 @@ const ChatsScreen = () => {
   }, [navigation, theme, unreadChatsCount]);
 
   const handleChatPress = (chat: Chat) => {
-    navigation.navigate('Chat', { name: chat.name, chatId: chat.id });
+    navigation.navigate('Chat', { name: chat.name, chatId: chat.id, avatarUrl: chat.avatarUrl });
   };
 
   const renderItem = ({ item }: { item: Chat }) => (

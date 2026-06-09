@@ -5,6 +5,7 @@ import type {
   GetAllUsersResponse,
   SearchUsersResponse,
   UserSearchBody,
+  UploadAvatarResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const userApi = {
@@ -37,6 +38,22 @@ export const userApi = {
     const { data } = await apiClient.post<SearchUsersResponse>(
       ENDPOINTS.USERS.SEARCH,
       body,
+    );
+    return data;
+  },
+
+  /**
+   * POST /users-avatar
+   */
+  uploadAvatar: async (formData: FormData): Promise<UploadAvatarResponse> => {
+    const { data } = await apiClient.post<UploadAvatarResponse>(
+      ENDPOINTS.USERS.AVATAR_UPLOAD,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
     );
     return data;
   },

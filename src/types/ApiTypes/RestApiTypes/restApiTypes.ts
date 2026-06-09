@@ -133,6 +133,9 @@ export type GetAllUsersResponse = SuccessBody<'get_all_users_users_post'>;
 /** POST /user-search → 200 response */
 export type SearchUsersResponse = SuccessBody<'search_users_user_search_post'>;
 
+/** POST /users-avatar → 200 response */
+export type UploadAvatarResponse = SuccessBody<'upload_avatar_users_avatar_post'>;
+
 /** POST /conversation → 200 response */
 export type ConversationResponse =
   SuccessBody<'create_or_get_conversation_conversation_post'>;

@@ -11,6 +11,7 @@ import { Users } from 'lucide-react-native';
 import { useUserStore } from '../../store/userStore';
 import { useChatStore } from '../../store/chatStore';
 import { getTypingText } from '../../utils/TypingUtils';
+import { getInitials } from '../../utils/StringUtils';
 
 interface ChatCardProps {
   chat: Chat;
@@ -48,15 +49,6 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
     if (remoteTypers.length === 0) return null;
     return getTypingText(remoteTypers, typerNames, chat.type);
   }, [remoteTypers, typerNames, chat.type]);
-
-  const getInitials = (name: string) => {
-    if (!name) return '?';
-    const parts = name.split(' ').filter(Boolean);
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
 
   const formatTime = (timestamp: number) => {
     if (!timestamp) return '';

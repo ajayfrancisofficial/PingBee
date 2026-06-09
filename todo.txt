@@ -18,12 +18,15 @@ done already - Disconnect ws on logout
 
  performance issue - Send button not clearing input and add a debounce
  chats table updatedAt value
+check if we are using special field updatedAt and createdat, whatever.. watermelondb special fields in message table
 
  profile pic related changes:
- Compress image before uploading
- crop image before uploading profile picture.
- profile picture uploading forboth gallery and camera
- profile pic show in header in chatscreen
+ done - Compress image before uploading
+ done - crop image before uploading profile picture.
+ done - profile picture uploading forboth gallery and camera
+ done - profile pic show in header in chatscreen
+ delete profile pic api
+ after updating the picture, should we delete the old pic to save storage
 
 typing ddoes not go off when the other user goes offline when typing - check for presence also. show typing only if the other user is online and typing
 

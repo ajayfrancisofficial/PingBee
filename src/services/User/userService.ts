@@ -5,19 +5,25 @@ import type {
   GetAllUsersResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
-export type UpdateProfilePictureType = 'removed' | 'gallery' | 'camera';
-
 export const userService = {
   getProfile: async (): Promise<GetMeResponse> => {
     try {
       const response = await userApi.getMe();
       if (response.data) {
-        useUserStore.getState().setUser({
+        const store = useUserStore.getState();
+
+        // First set the standard textual user details
+        store.setUser({
           userId: response.data.user_id,
           username: response.data.username,
           email: response.data.email,
           isVerified: response.data.is_verified,
+          name: response.data.full_name,
         });
+
+        // Delegate profile image download & compression cache to the store's action
+        const avatarUrl = response.data.avatar_url || '';
+        await store.updateProfilePicture(avatarUrl);
       }
       return response;
     } catch (error) {
@@ -26,26 +32,40 @@ export const userService = {
   },
 
   /**
-   * Mock API service for updating the user profile picture.
-   * Shows how a multipart/form-data request would be structured.
+   * Uploads a (pre-compressed) profile picture to the backend.
+   * On success, updates the Zustand store and triggers caching/compression of the remote URL.
+   * The caller is responsible for compressing the image before calling this.
+   *
+   * @param localUri - The local file URI of the (compressed) image to upload.
    */
-  updateProfilePicture: async (
+  uploadProfilePicture: async (
     localUri: string,
-    updateType: UpdateProfilePictureType,
   ): Promise<{ success: boolean; url: string }> => {
-    console.log(
-      `[userService] Updating profile picture. Type: ${updateType}, URI: ${localUri}`,
-    );
+    const formData = new FormData();
+    const filename = localUri.split('/').pop() || 'avatar.jpg';
+    const match = /\.(\w+)$/.exec(filename);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
 
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(() => resolve(undefined), 800));
+    formData.append('file', {
+      uri: localUri,
+      name: filename,
+      type,
+    } as any);
 
-    // Mock response
-    if (updateType === 'removed') {
-      return { success: true, url: '' };
-    } else {
-      // Returning the local URI conceptually representing the remote CDN URL success
-      return { success: true, url: localUri };
+    try {
+      const response = await userApi.uploadAvatar(formData);
+      if (response.success && response.data) {
+        const avatarUrl = (response.data.avatar_url as string) || '';
+
+        // Update the Zustand store and trigger caching/compression of the remote URL
+        await useUserStore.getState().updateProfilePicture(avatarUrl);
+
+        return { success: true, url: avatarUrl };
+      }
+      throw new Error(response.message || 'Failed to upload profile picture');
+    } catch (error) {
+      console.error('[userService] Failed to upload profile picture:', error);
+      throw error;
     }
   },
 

@@ -11,6 +11,127 @@ import {
   CameraOptions,
   Asset,
 } from 'react-native-image-picker';
+import ImageCropPicker, {
+  Image as CropPickerImage,
+} from 'react-native-image-crop-picker';
+import { Platform, PermissionsAndroid, Linking } from 'react-native';
+import { snackbar } from '../../components/foundations/Snackbar';
+
+/**
+ * Requests camera permission on Android.
+ * On iOS the OS handles permissions natively via the picker UI.
+ * @returns true if permission is granted, false if denied.
+ */
+const requestCameraPermissionAndroid = async (): Promise<boolean> => {
+  if (Platform.OS !== 'android') {
+    return true;
+  }
+  try {
+    const result = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA
+    );
+    const isGranted = result === PermissionsAndroid.RESULTS.GRANTED;
+
+    if (!isGranted) {
+      snackbar.show({
+        message: 'Camera permission is required to take a profile photo. Please allow permission.',
+        type: 'warning',
+        action: {
+          label: 'Settings',
+          onPress: () => {
+            Linking.openSettings().catch(err => {
+              console.error('Failed to open app settings:', err);
+            });
+          },
+        },
+      });
+    }
+
+    return isGranted;
+  } catch (error) {
+    console.error('[mediaPicker] requestCameraPermissionAndroid error:', error);
+    return false;
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Profile photo pickers — use react-native-image-crop-picker for
+// crop support. Always single-select, always 1:1 square crop.
+// ---------------------------------------------------------------------------
+
+/**
+ * Opens the image gallery for selecting a profile photo.
+ * Enforces single-select and a 1:1 square crop UI.
+ * @returns The picked & cropped image, or null if cancelled.
+ */
+export const pickProfilePhotoFromGallery =
+  async (): Promise<CropPickerImage | null> => {
+    try {
+      const image = await ImageCropPicker.openPicker({
+        mediaType: 'photo',
+        multiple: false,
+        cropping: true,
+        cropperCircleOverlay: false,
+        width: 800,
+        height: 800, // forces 1:1 square crop
+        compressImageQuality: 1, // no compression here — we compress separately before upload
+        includeBase64: false,
+      });
+      return image;
+    } catch (error: unknown) {
+      // User cancelled — react-native-image-crop-picker throws with code 'E_PICKER_CANCELLED'
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as { code: string }).code === 'E_PICKER_CANCELLED'
+      ) {
+        return null;
+      }
+      console.error('[mediaPicker] pickProfilePhotoFromGallery error:', error);
+      throw error;
+    }
+  };
+
+/**
+ * Opens the camera for capturing a profile photo.
+ * Immediately launches the 1:1 square crop UI after capture.
+ * @returns The captured & cropped image, or null if cancelled.
+ */
+export const takeProfilePhoto = async (): Promise<CropPickerImage | null> => {
+  // Request camera permission on Android first.
+  const hasPermission = await requestCameraPermissionAndroid();
+  if (!hasPermission) {
+    console.warn('[mediaPicker] Camera permission denied by user.');
+    return null;
+  }
+
+  try {
+    const image = await ImageCropPicker.openCamera({
+      mediaType: 'photo',
+      cropping: true,
+      cropperCircleOverlay: false,
+      width: 800,
+      height: 800, // forces 1:1 square crop
+      compressImageQuality: 1,
+      includeBase64: false,
+    });
+    return image;
+  } catch (error: unknown) {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code: string }).code === 'E_PICKER_CANCELLED'
+    ) {
+      return null;
+    }
+    console.error('[mediaPicker] takeProfilePhoto error:', error);
+    throw error;
+  }
+};
+
+// ---------------------------------------------------------------------------
 
 export interface PickDocumentOptions {
   types?: (keyof typeof libTypes)[];
