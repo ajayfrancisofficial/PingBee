@@ -136,6 +136,9 @@ export type SearchUsersResponse = SuccessBody<'search_users_user_search_post'>;
 /** POST /users-avatar → 200 response */
 export type UploadAvatarResponse = SuccessBody<'upload_avatar_users_avatar_post'>;
 
+/** DELETE /users-avatar → 200 response */
+export type DeleteAvatarResponse = SuccessBody<'delete_avatar_users_avatar_delete'>;
+
 /** POST /conversation → 200 response */
 export type ConversationResponse =
   SuccessBody<'create_or_get_conversation_conversation_post'>;

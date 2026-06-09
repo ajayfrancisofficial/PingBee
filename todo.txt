@@ -25,7 +25,7 @@ check if we are using special field updatedAt and createdat, whatever.. watermel
  done - crop image before uploading profile picture.
  done - profile picture uploading forboth gallery and camera
  done - profile pic show in header in chatscreen
- delete profile pic api
+ done - delete profile pic api
  done - after updating the picture, should we delete the old pic to save storage
 fix the 2 warnings
 the login itself gives me api response. start downloading the profile pic from there itself?

@@ -83,17 +83,11 @@ export const ProfilePictureSection = () => {
 
   const confirmDelete = async () => {
     setIsConfirmVisible(false);
-    
-    // Delete local media files from cache if present
-    if (profilePicture) {
-      await MediaUtils.deleteMedia(profilePicture);
+    try {
+      await userService.deleteProfilePicture();
+    } catch (error) {
+      console.error('[ProfilePictureSection] Failed to delete picture:', error);
     }
-    if (avatar) {
-      await MediaUtils.deleteMedia(avatar);
-    }
-    
-    deleteProfilePicture();
-    // TODO: Call DELETE API endpoint when backend supports it
   };
 
   return (

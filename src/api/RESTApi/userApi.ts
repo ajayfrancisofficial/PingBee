@@ -6,6 +6,7 @@ import type {
   SearchUsersResponse,
   UserSearchBody,
   UploadAvatarResponse,
+  DeleteAvatarResponse,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 
 export const userApi = {
@@ -54,6 +55,16 @@ export const userApi = {
           'Content-Type': 'multipart/form-data',
         },
       },
+    );
+    return data;
+  },
+
+  /**
+   * DELETE /users-avatar
+   */
+  deleteAvatar: async (): Promise<DeleteAvatarResponse> => {
+    const { data } = await apiClient.delete<DeleteAvatarResponse>(
+      ENDPOINTS.USERS.AVATAR_DELETE,
     );
     return data;
   },

@@ -82,6 +82,35 @@ export const userService = {
     }
   },
 
+  /**
+   * Deletes the profile picture from the backend.
+   * On success, clears the Zustand store and deletes local cached media.
+   */
+  deleteProfilePicture: async (): Promise<{ success: boolean }> => {
+    const oldProfilePicture = useUserStore.getState().profilePicture;
+    const oldAvatar = useUserStore.getState().avatar;
+
+    try {
+      const response = await userApi.deleteAvatar();
+      if (response.success) {
+        useUserStore.getState().deleteProfilePicture();
+
+        if (oldProfilePicture && oldProfilePicture.startsWith('file://')) {
+          await MediaUtils.deleteMedia(oldProfilePicture);
+        }
+        if (oldAvatar && oldAvatar.startsWith('file://')) {
+          await MediaUtils.deleteMedia(oldAvatar);
+        }
+
+        return { success: true };
+      }
+      throw new Error(response.message || 'Failed to delete profile picture');
+    } catch (error) {
+      console.error('[userService] Failed to delete profile picture:', error);
+      throw error;
+    }
+  },
+
   getAllUsers: async (): Promise<GetAllUsersResponse> => {
     return await userApi.getAllUsers();
   },
