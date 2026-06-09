@@ -1,5 +1,12 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {
   useNavigation,
   type StaticScreenProps,
@@ -10,6 +17,7 @@ import { useChatStore } from '../store/chatStore';
 import { AppTheme } from '../theme';
 import { ChatBox } from '../components/chat/ChatBox';
 import { getInitials } from '../utils/StringUtils';
+import { ImagePreviewModal } from '../components/common/ImagePreviewModal';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -28,6 +36,7 @@ const ChatScreen = ({ route }: Props) => {
   const styles = useMemo(() => makeStyles(appTheme), [appTheme]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   // Register active chat (used by WebSocket routing)
   useEffect(() => {
@@ -41,7 +50,12 @@ const ChatScreen = ({ route }: Props) => {
       headerTitle: () => (
         <View style={styles.headerTitleRow}>
           {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.headerAvatar} />
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setIsPreviewVisible(true)}
+            >
+              <Image source={{ uri: avatarUrl }} style={styles.headerAvatar} />
+            </TouchableOpacity>
           ) : (
             <View style={styles.avatarPlaceholder}>
               <Text style={styles.avatarText}>{getInitials(name)}</Text>
@@ -68,7 +82,17 @@ const ChatScreen = ({ route }: Props) => {
 
   // ─── Render ────────────────────────────────────────────────────────────────
 
-  return <ChatBox chatId={chatId} onLoadingChange={setIsLoading} />;
+  return (
+    <>
+      <ChatBox chatId={chatId} onLoadingChange={setIsLoading} />
+      <ImagePreviewModal
+        visible={isPreviewVisible}
+        imageUrl={avatarUrl}
+        title={name}
+        onClose={() => setIsPreviewVisible(false)}
+      />
+    </>
+  );
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────

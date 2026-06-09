@@ -29,7 +29,7 @@ check if we are using special field updatedAt and createdat, whatever.. watermel
  done - after updating the picture, should we delete the old pic to save storage
  done - fix the 2 warnings
  done - the login itself gives me api response. start downloading the profile pic from there itself?
- The profile pic image should be previewed when touched
+ done - The profile pic image should be previewed when touched
 
 typing ddoes not go off when the other user goes offline when typing - check for presence also. show typing only if the other user is online and typing
 

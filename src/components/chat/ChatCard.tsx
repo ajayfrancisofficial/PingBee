@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { withObservables } from '@nozbe/watermelondb/react';
 import { Q } from '@nozbe/watermelondb';
 import Chat from '../../db/models/Chat';
@@ -12,6 +19,7 @@ import { useUserStore } from '../../store/userStore';
 import { useChatStore } from '../../store/chatStore';
 import { getTypingText } from '../../utils/TypingUtils';
 import { getInitials } from '../../utils/StringUtils';
+import { ImagePreviewModal } from '../common/ImagePreviewModal';
 
 interface ChatCardProps {
   chat: Chat;
@@ -25,6 +33,7 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   const currentUserId = useUserStore(state => state.userId);
   const typingUsers = useChatStore(state => state.typingUsers[chat.id]);
   const [typerNames, setTyperNames] = useState<Map<string, string>>(new Map());
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   const remoteTypers = useMemo(() => {
     return (typingUsers || []).filter(id => id !== String(currentUserId));
@@ -70,75 +79,98 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   };
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.chatItem,
-        pressed && styles.chatItemPressed,
-      ]}
-      onPress={() => onPress(chat)}
-    >
-      <View style={styles.avatar}>
+    <>
+      <Pressable
+        style={({ pressed }) => [
+          styles.chatItem,
+          pressed && styles.chatItemPressed,
+        ]}
+        onPress={() => onPress(chat)}
+      >
         {chat.avatarUrl ? (
-          <Image source={{ uri: chat.avatarUrl }} style={styles.avatarImage} />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setIsPreviewVisible(true)}
+            style={styles.avatar}
+          >
+            <Image
+              source={{ uri: chat.avatarUrl }}
+              style={styles.avatarImage}
+            />
+          </TouchableOpacity>
         ) : (
-          <Text style={styles.avatarText}>{getInitials(chat.name)}</Text>
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.avatar}
+            onPress={() => {}}
+          >
+            <Text style={styles.avatarText}>{getInitials(chat.name)}</Text>
+          </TouchableOpacity>
         )}
-      </View>
 
-      <View style={styles.chatContent}>
-        <View style={styles.headerRow}>
-          <View style={styles.nameRow}>
-            {chat.type === 'group' && (
-              <Users
-                color={theme.colors.text.secondary}
-                size={theme.typography.variants.bodyMedium.fontSize}
-                style={styles.groupIcon}
-              />
-            )}
-            <Text style={styles.chatName} numberOfLines={1}>
-              {chat.name}
-            </Text>
-          </View>
-          <Text style={styles.timeText}>{formatTime(chat.updatedAt)}</Text>
-        </View>
-
-        <View style={styles.messageRow}>
-          {typingText ? (
-            <Text
-              style={[styles.lastMessage, styles.typingText]}
-              numberOfLines={1}
-            >
-              {typingText}
-            </Text>
-          ) : (
-            <Text
-              style={[
-                styles.lastMessage,
-                chat.unreadCount ? styles.lastMessageUnread : null,
-              ]}
-              numberOfLines={2}
-            >
-              {chat.lastMessageSentUsername
-                ? chat.lastMessageSentUsername === currentUser
-                  ? 'You: '
-                  : chat.type !== 'individual'
-                  ? `${chat.lastMessageSentUsername}: `
-                  : null
-                : null}
-              {chat.lastMessageText ?? ''}
-            </Text>
-          )}
-
-          {chat.unreadCount ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+        <View style={styles.chatContent}>
+          <View style={styles.headerRow}>
+            <View style={styles.nameRow}>
+              {chat.type === 'group' && (
+                <Users
+                  color={theme.colors.text.secondary}
+                  size={theme.typography.variants.bodyMedium.fontSize}
+                  style={styles.groupIcon}
+                />
+              )}
+              <Text style={styles.chatName} numberOfLines={1}>
+                {chat.name}
               </Text>
             </View>
-          ) : null}
+            <Text style={styles.timeText}>
+              {formatTime(chat.lastUpdatedAt)}
+            </Text>
+          </View>
+
+          <View style={styles.messageRow}>
+            {typingText ? (
+              <Text
+                style={[styles.lastMessage, styles.typingText]}
+                numberOfLines={1}
+              >
+                {typingText}
+              </Text>
+            ) : (
+              <Text
+                style={[
+                  styles.lastMessage,
+                  chat.unreadCount ? styles.lastMessageUnread : null,
+                ]}
+                numberOfLines={2}
+              >
+                {chat.lastMessageSentUsername
+                  ? chat.lastMessageSentUsername === currentUser
+                    ? 'You: '
+                    : chat.type !== 'individual'
+                    ? `${chat.lastMessageSentUsername}: `
+                    : null
+                  : null}
+                {chat.lastMessageText ?? ''}
+              </Text>
+            )}
+
+            {chat.unreadCount ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+      <ImagePreviewModal
+        visible={isPreviewVisible}
+        imageUrl={chat.avatarUrl || undefined}
+        title={chat.name}
+        onClose={() => setIsPreviewVisible(false)}
+      />
+    </>
   );
 };
 

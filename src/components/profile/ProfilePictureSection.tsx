@@ -10,17 +10,24 @@ import { ProfilePictureOptionsModal } from './ProfilePictureOptionsModal';
 import { MediaUtils } from '../../utils/media';
 import { userService } from '../../services/User/userService';
 import { TransitionTags } from '../../constants/transitions';
+import { ImagePreviewModal } from '../common/ImagePreviewModal';
 
 export const ProfilePictureSection = () => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-  const { profilePicture, avatar, updateProfilePicture, deleteProfilePicture } =
-    useUserStore();
+  const {
+    profilePicture,
+    avatar,
+    updateProfilePicture,
+    deleteProfilePicture,
+    name,
+  } = useUserStore();
 
   const hasImage = Boolean(profilePicture);
 
   const [isOptionsVisible, setIsOptionsVisible] = React.useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = React.useState(false);
 
   /**
    * Shared handler for both gallery and camera picks.
@@ -94,11 +101,16 @@ export const ProfilePictureSection = () => {
     <>
       <View style={styles.imageSection}>
         {hasImage ? (
-          <Animated.Image
-            source={{ uri: profilePicture }}
-            style={styles.profileImage}
-            sharedTransitionTag={TransitionTags.profileImage}
-          />
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setIsPreviewVisible(true)}
+          >
+            <Animated.Image
+              source={{ uri: profilePicture }}
+              style={styles.profileImage}
+              sharedTransitionTag={TransitionTags.profileImage}
+            />
+          </TouchableOpacity>
         ) : (
           <View style={styles.placeholderContainer}>
             <UserCircle
@@ -141,6 +153,14 @@ export const ProfilePictureSection = () => {
           isDestructive={true}
         />
       )}
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        visible={isPreviewVisible}
+        imageUrl={profilePicture}
+        title={name}
+        onClose={() => setIsPreviewVisible(false)}
+      />
     </>
   );
 };
