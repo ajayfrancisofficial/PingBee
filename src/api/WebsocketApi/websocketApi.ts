@@ -7,160 +7,169 @@ import type {
 } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
 import { WS_BASE_URL } from '../RESTApi/endpoints';
 
-let socket: WebSocket | null = null;
-let isConnected: boolean = false;
-let isConnecting: boolean = false;
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let shouldReconnect: boolean = true;
-const reconnectInterval: number = 3000;
-let currentToken: string | null = null;
-let retryCount: number = 0;
-const MAX_RETRIES: number = 5;
+const MAX_RETRIES = 3;
+const RECONNECT_DELAY = 3000;
 
-export const websocketApi = {
-  /** Check if the WebSocket is currently connected */
-  getIsConnected: (): boolean => isConnected,
+class WebSocketManager {
+  private socket: WebSocket | null = null;
+  private isConnected: boolean = false;
+  private isConnecting: boolean = false;
+  private shouldReconnect: boolean = true;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private retryCount: number = 0;
+  private currentToken: string | null = null;
 
-  connect: async (force: boolean = false) => {
-    if (isConnected && !force) {
-      console.log('[websocketApi] Already connected. Skipping.');
+  async connect(force: boolean = false): Promise<void> {
+    if (this.isConnected && !force) {
+      console.log('[WebSocketManager] Already connected. Skipping.');
       return;
     }
-    if (isConnecting) {
+
+    if (this.isConnecting) {
       console.log(
-        '[websocketApi] Connection attempt already in progress. Skipping.',
+        '[WebSocketManager] Connection attempt already in progress. Skipping.',
       );
       return;
     }
 
-    isConnecting = true;
+    this.isConnecting = true;
 
     if (force) {
       console.log(
-        '[websocketApi] Force connect/reconnect requested. Resetting state.',
+        '[WebSocketManager] Force connect requested. Resetting state.',
       );
-      retryCount = 0;
-      shouldReconnect = true;
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
+      this.retryCount = 0;
+      this.shouldReconnect = true;
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
       }
     }
 
-    // If it's the initial connection attempt, refresh the token first
-    if (retryCount === 0) {
+    if (this.retryCount === 0) {
       try {
-        console.log('[websocketApi] Initial load: Refreshing token...');
+        console.log('[WebSocketManager] Refreshing token...');
         const newToken = await authService.refreshToken();
-        currentToken = newToken;
+        this.currentToken = newToken;
       } catch (error) {
-        console.error(
-          '[websocketApi] Token refresh failed on initial load:',
-          error,
-        );
-        isConnecting = false;
-        // Error already handled (snackbar + logout) inside authService.refreshToken
+        console.error('[WebSocketManager] Token refresh failed:', error);
+        this.isConnecting = false;
         return;
       }
     }
 
-    if (!currentToken) {
-      console.error('[websocketApi] Cannot connect: No token available');
-      isConnecting = false;
+    if (!this.currentToken) {
+      console.error('[WebSocketManager] Cannot connect: No token available.');
+      this.isConnecting = false;
       return;
     }
 
-    shouldReconnect = true;
-    const url = `${WS_BASE_URL}?token=${currentToken}`;
+    this.shouldReconnect = true;
 
-    console.log('[websocketApi] Connecting...');
-
-    if (socket) {
-      console.log('[websocketApi] Closing existing socket before reconnecting');
-      socket.close();
+    if (this.socket) {
+      console.log(
+        '[WebSocketManager] Closing existing socket before reconnecting.',
+      );
+      this.socket.close();
+      this.socket = null;
     }
 
-    socket = new WebSocket(url);
+    const url = `${WS_BASE_URL}?token=${this.currentToken}`;
+    console.log('[WebSocketManager] Connecting...');
 
-    socket.onopen = () => {
-      console.log('[websocketApi] ✅ Connected');
-      isConnected = true;
-      isConnecting = false;
-      retryCount = 0; // Reset retry count upon successful connection
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-        reconnectTimer = null;
-      }
+    this.socket = new WebSocket(url);
+    this.socket.onopen = () => this.handleOpen();
+    this.socket.onmessage = (event: WebSocketMessageEvent) =>
+      this.handleMessage(event);
+    this.socket.onclose = (event: WebSocketCloseEvent) =>
+      this.handleClose(event);
+    this.socket.onerror = (error: WebSocketErrorEvent) =>
+      this.handleError(error);
+  }
 
-      // Delegate "on-connect" logic to the service
-      websocketService.handleConnectionSuccess();
-    };
+  disconnect(): void {
+    console.log('[WebSocketManager] Disconnecting...');
+    this.shouldReconnect = false;
 
-    socket.onmessage = event => {
-      try {
-        const parsedData: WsServerMessage = JSON.parse(event.data);
-        console.log('[websocketApi] Received message:', parsedData);
-        // Delegate message handling to the service
-        websocketService.handleIncomingMessage(parsedData);
-      } catch (e) {
-        console.warn('[websocketApi] Failed to parse message', e);
-      }
-    };
-
-    socket.onclose = event => {
-      isConnected = false;
-      isConnecting = false;
-      console.log(`[websocketApi] ❌ Disconnected (Code: ${event.code})`);
-
-      // Record the disconnect time so IncomingSync can skip if reconnect was brief
-      setWsDisconnectedAt(Date.now());
-
-      if (shouldReconnect) {
-        if (retryCount < MAX_RETRIES) {
-          retryCount++;
-          console.log(
-            `[websocketApi] Reconnecting (Attempt ${retryCount}/${MAX_RETRIES}) in ${reconnectInterval}ms...`,
-          );
-          if (reconnectTimer) clearTimeout(reconnectTimer);
-          reconnectTimer = setTimeout(() => {
-            websocketApi.connect();
-          }, reconnectInterval);
-        } else {
-          console.error(
-            '[websocketApi] Max retries reached. Stopping reconnection.',
-          );
-        }
-      }
-    };
-
-    socket.onerror = error => {
-      console.error('[websocketApi] Error:', error);
-      isConnecting = false;
-    };
-  },
-
-  disconnect: () => {
-    console.log('[websocketApi] Manually disconnecting...');
-    shouldReconnect = false;
-    currentToken = null;
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer);
-      reconnectTimer = null;
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-    retryCount = 0;
-    if (socket) {
-      socket.close();
-      socket = null;
-    }
-    isConnected = false;
-  },
 
-  sendRaw: (data: WsClientMessage) => {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      console.log('[websocketApi] Sending raw data:', data);
-      socket.send(JSON.stringify(data));
+    this.retryCount = 0;
+    this.currentToken = null;
+
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+
+    this.isConnected = false;
+  }
+
+  send(data: WsClientMessage): void {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      console.log('[WebSocketManager] ⬆️ Sending:', data);
+      this.socket.send(JSON.stringify(data));
     } else {
-      console.warn('[websocketApi] Cannot send, socket not connected');
+      console.warn('[WebSocketManager] Cannot send: socket is not open.');
     }
-  },
-};
+  }
+
+  getIsConnected(): boolean {
+    return this.isConnected;
+  }
+
+  private handleOpen(): void {
+    console.log('[WebSocketManager] ✅ Connected.');
+    this.isConnected = true;
+    this.isConnecting = false;
+    this.retryCount = 0;
+
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    websocketService.handleConnectionSuccess();
+  }
+
+  private handleMessage(event: WebSocketMessageEvent): void {
+    try {
+      const parsedData: WsServerMessage = JSON.parse(event.data as string);
+      console.log('[WebSocketManager] ⬇️ Received:', parsedData);
+      websocketService.handleIncomingMessage(parsedData);
+    } catch {
+      console.warn('[WebSocketManager] Failed to parse incoming message.');
+    }
+  }
+
+  private handleClose(event: WebSocketCloseEvent): void {
+    this.isConnected = false;
+    this.isConnecting = false;
+    console.log(
+      `[WebSocketManager] ❌ Disconnected (Code: ${event.code ?? 'unknown'}).`,
+    );
+
+    setWsDisconnectedAt(Date.now());
+
+    if (this.shouldReconnect && this.retryCount < MAX_RETRIES) {
+      this.retryCount++;
+      console.log(
+        `[WebSocketManager] Reconnecting attempt ${this.retryCount}/${MAX_RETRIES} in ${RECONNECT_DELAY}ms...`,
+      );
+      this.reconnectTimer = setTimeout(() => this.connect(), RECONNECT_DELAY);
+    } else if (this.retryCount >= MAX_RETRIES) {
+      console.log(
+        '[WebSocketManager] Max retries reached. Stopping reconnection.',
+      );
+    }
+  }
+
+  private handleError(error: WebSocketErrorEvent): void {
+    console.error('[WebSocketManager] Error:', error);
+    this.isConnecting = false;
+  }
+}
+
+export const websocketApi = new WebSocketManager();

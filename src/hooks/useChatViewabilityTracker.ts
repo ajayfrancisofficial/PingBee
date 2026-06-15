@@ -52,7 +52,7 @@ export function useChatViewabilityTracker<
             '[useChatViewabilityTracker] Marking message as read:',
             msg.id,
           );
-          websocketApi.sendRaw({
+          websocketApi.send({
             event: 'MSG_STATUS',
             payload: {
               messageId: msg.id,

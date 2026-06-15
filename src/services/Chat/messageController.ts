@@ -65,7 +65,7 @@ export const editMessage = async (
   });
 
   if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
+    websocketApi.send({
       event: 'EDIT_MSG',
       payload: {
         id: messageId,
@@ -141,7 +141,7 @@ export const deleteMessages = async (
 
   if (websocketApi.getIsConnected() && updatedMessages.length > 0) {
     const nowIso = new Date(now).toISOString();
-    websocketApi.sendRaw({
+    websocketApi.send({
       event: 'DELETE_MSGS',
       payload: {
         protocolVersion: '1.0',
@@ -206,7 +206,7 @@ export const sendMessage = async (
   });
 
   if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw(buildSendMessageEvent(savedMessage));
+    websocketApi.send(buildSendMessageEvent(savedMessage));
   }
 
   return savedMessage.id;
@@ -217,7 +217,7 @@ export const sendMessage = async (
  */
 export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
   if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
+    websocketApi.send({
       event: 'TYPING',
       payload: {
         chatId: Number(chatId),

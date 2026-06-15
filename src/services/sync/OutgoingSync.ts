@@ -24,12 +24,12 @@ export const performOutgoingSync = async () => {
 
     // 1. Sync New Messages
     for (const message of pendingNew) {
-      websocketApi.sendRaw(buildSendMessageEvent(message));
+      websocketApi.send(buildSendMessageEvent(message));
     }
 
     // 2. Sync Edits
     for (const message of pendingEdits) {
-      websocketApi.sendRaw({
+      websocketApi.send({
         event: 'EDIT_MSG',
         payload: {
           id: message.id,
@@ -43,7 +43,7 @@ export const performOutgoingSync = async () => {
     // 3. Sync Deletions — send all pending deletes as a single batch
     if (pendingDeletes.length > 0) {
       const nowIso = new Date().toISOString();
-      websocketApi.sendRaw({
+      websocketApi.send({
         event: 'DELETE_MSGS',
         payload: {
           protocolVersion: '1.0',
