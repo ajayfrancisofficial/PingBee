@@ -9,7 +9,9 @@ const borderRadius = {
   sm: 4,
   md: 8,
   lg: 12,
+  card: 16,
   xl: 24,
+  xxl: 50,
   pill: 9999,
 };
 

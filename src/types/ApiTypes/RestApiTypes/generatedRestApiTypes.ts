@@ -202,7 +202,12 @@ export interface paths {
     put?: never;
     /** Upload Avatar */
     post: operations['upload_avatar_users_avatar_post'];
-    delete?: never;
+    /**
+     * Delete Avatar
+     * @description Delete the authenticated user's profile picture.
+     *     Removes the file from object storage (if stored) and clears the avatar URL in the DB.
+     */
+    delete: operations['delete_avatar_users_avatar_delete'];
     options?: never;
     head?: never;
     patch?: never;
@@ -358,6 +363,14 @@ export interface components {
       user_id: number;
       /** Is Verified */
       is_verified: boolean;
+      /** Username */
+      username: string;
+      /** Email */
+      email: string;
+      /** Avatar Url */
+      avatar_url?: string | null;
+      /** Full Name */
+      full_name: string;
     };
     /** Body_upload_avatar_users_avatar_post */
     Body_upload_avatar_users_avatar_post: {
@@ -488,10 +501,17 @@ export interface components {
       created_at: string;
       /** Is Read */
       is_read: boolean;
+      /**
+       * Is Edited
+       * @default false
+       */
+      is_edited: boolean;
       /** Is Deleted For Everyone */
       is_deleted_for_everyone: boolean;
       /** Is Delete For Me */
       is_delete_for_me: boolean;
+      /** Reply To */
+      reply_to?: string | null;
     };
     /** MessageList */
     MessageList: {
@@ -687,6 +707,8 @@ export interface components {
       is_verified: boolean;
       /** Avatar Url */
       avatar_url?: string | null;
+      /** Full Name */
+      full_name: string;
     };
     /** UserRegister */
     UserRegister: {
@@ -1372,6 +1394,26 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_avatar_users_avatar_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_dict_'];
         };
       };
     };

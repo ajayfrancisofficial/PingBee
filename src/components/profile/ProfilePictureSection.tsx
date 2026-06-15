@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { UserCircle } from 'lucide-react-native';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { useUserStore } from '../../store/userStore';
@@ -9,44 +10,60 @@ import { ProfilePictureOptionsModal } from './ProfilePictureOptionsModal';
 import { MediaUtils } from '../../utils/media';
 import { userService } from '../../services/User/userService';
 import { TransitionTags } from '../../constants/transitions';
+import { ImagePreviewModal } from '../common/ImagePreviewModal';
 
 export const ProfilePictureSection = () => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-  const { profilePicture, avatar, updateProfilePicture, deleteProfilePicture } =
-    useUserStore();
+  const {
+    profilePicture,
+    avatar,
+    updateProfilePicture,
+    deleteProfilePicture,
+    name,
+  } = useUserStore();
+
+  const hasImage = Boolean(profilePicture);
 
   const [isOptionsVisible, setIsOptionsVisible] = React.useState(false);
   const [isConfirmVisible, setIsConfirmVisible] = React.useState(false);
+  const [isPreviewVisible, setIsPreviewVisible] = React.useState(false);
+
+  /**
+   * Shared handler for both gallery and camera picks.
+   * Receives the raw local path from crop-picker, compresses it, then uploads.
+   */
+  const handleImagePicked = async (localPath: string) => {
+    try {
+      // Slight compression before upload (70% quality)
+      const compressedUri = await MediaUtils.compressImage(localPath, 0.7);
+
+      // Optimistic local update (also creates local avatar thumbnail for offline cache)
+      await updateProfilePicture(compressedUri);
+
+      // Upload to server
+      await userService.uploadProfilePicture(compressedUri);
+    } catch (error) {
+      console.error('[ProfilePictureSection] Failed to update picture:', error);
+      // Revert optimistic update on failure
+      if (profilePicture) {
+        await updateProfilePicture(profilePicture);
+      } else {
+        deleteProfilePicture();
+      }
+    }
+  };
 
   const handleChoosePhoto = () => {
     setIsOptionsVisible(false);
     requestAnimationFrame(async () => {
       try {
-        const assets = await MediaUtils.pickFromGallery({
-          mediaType: 'photo',
-          selectionLimit: 1,
-        });
-        if (assets && assets.length > 0) {
-          const uri = assets[0].uri;
-          if (uri) {
-            const oldProfileUri = profilePicture;
-            const oldAvatarUri = avatar;
-
-            await updateProfilePicture(uri);
-            await userService.updateProfilePicture(uri, 'gallery');
-
-            // Delete old profile picture and avatar ONLY after successful update
-            if (oldProfileUri) {
-              await MediaUtils.deleteMedia(oldProfileUri);
-            }
-            if (oldAvatarUri) {
-              await MediaUtils.deleteMedia(oldAvatarUri);
-            }
-          }
+        const image = await MediaUtils.pickProfilePhotoFromGallery();
+        if (image?.path) {
+          await handleImagePicked(image.path);
         }
       } catch (error) {
-        console.error('Failed to update picture', error);
+        console.error('[ProfilePictureSection] Gallery pick failed:', error);
       }
     });
   };
@@ -56,29 +73,12 @@ export const ProfilePictureSection = () => {
     // do we need this request animation frame?
     requestAnimationFrame(async () => {
       try {
-        const assets = await MediaUtils.pickUsingCamera({
-          mediaType: 'photo',
-        });
-        if (assets && assets.length > 0) {
-          const uri = assets[0].uri;
-          if (uri) {
-            const oldProfileUri = profilePicture;
-            const oldAvatarUri = avatar;
-
-            await updateProfilePicture(uri);
-            await userService.updateProfilePicture(uri, 'camera');
-
-            // Delete old profile picture and avatar ONLY after successful update
-            if (oldProfileUri) {
-              await MediaUtils.deleteMedia(oldProfileUri);
-            }
-            if (oldAvatarUri) {
-              await MediaUtils.deleteMedia(oldAvatarUri);
-            }
-          }
+        const image = await MediaUtils.takeProfilePhoto();
+        if (image?.path) {
+          await handleImagePicked(image.path);
         }
       } catch (error) {
-        console.error('Failed to take photo', error);
+        console.error('[ProfilePictureSection] Camera capture failed:', error);
       }
     });
   };
@@ -90,35 +90,50 @@ export const ProfilePictureSection = () => {
 
   const confirmDelete = async () => {
     setIsConfirmVisible(false);
-    if (profilePicture) {
-      await MediaUtils.deleteMedia(profilePicture);
+    try {
+      await userService.deleteProfilePicture();
+    } catch (error) {
+      console.error('[ProfilePictureSection] Failed to delete picture:', error);
     }
-    if (avatar) {
-      await MediaUtils.deleteMedia(avatar);
-    }
-    deleteProfilePicture();
-    userService.updateProfilePicture('', 'removed').catch(console.error);
   };
 
   return (
     <>
       <View style={styles.imageSection}>
-        <Animated.Image
-          source={{ uri: profilePicture }}
-          style={styles.profileImage}
-          sharedTransitionTag={TransitionTags.profileImage}
-        />
+        {hasImage ? (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setIsPreviewVisible(true)}
+          >
+            <Animated.Image
+              source={{ uri: profilePicture }}
+              style={styles.profileImage}
+              sharedTransitionTag={TransitionTags.profileImage}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.placeholderContainer}>
+            <UserCircle
+              size={styles.profileImage.width}
+              color={theme.colors.text.tertiary}
+              strokeWidth={1}
+            />
+          </View>
+        )}
         <TouchableOpacity
           activeOpacity={0.6}
           onPress={() => setIsOptionsVisible(true)}
         >
-          <Text style={styles.editText}>Edit</Text>
+          <Text style={hasImage ? styles.editText : styles.addText}>
+            {hasImage ? 'Edit' : 'Add'}
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Picture Options Sheet */}
       <ProfilePictureOptionsModal
         visible={isOptionsVisible}
+        hasImage={hasImage}
         onClose={() => setIsOptionsVisible(false)}
         onTakePhoto={handleTakePhoto}
         onChoosePhoto={handleChoosePhoto}
@@ -138,6 +153,14 @@ export const ProfilePictureSection = () => {
           isDestructive={true}
         />
       )}
+
+      {/* Image Preview Modal */}
+      <ImagePreviewModal
+        visible={isPreviewVisible}
+        imageUrl={profilePicture}
+        title={name}
+        onClose={() => setIsPreviewVisible(false)}
+      />
     </>
   );
 };
@@ -153,8 +176,20 @@ const makeStyles = ({ colors, spacing, typography }: AppTheme) =>
       height: 140,
       borderRadius: 70,
     },
+    placeholderContainer: {
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     editText: {
       color: colors.brand.primary,
+      ...typography.variants.bodyMedium,
+      marginTop: spacing.sm,
+    },
+    addText: {
+      color: colors.semantic.success,
       ...typography.variants.bodyMedium,
       marginTop: spacing.sm,
     },

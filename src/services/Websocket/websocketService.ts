@@ -1,13 +1,16 @@
+import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
 import { useChatStore } from '../../store/chatStore';
 import { performOutgoingSync } from '../Sync/OutgoingSync';
+import { DBService } from '../DB/DBService';
+import { chatApi } from '../../api/RESTApi/chatApi';
 import type {
   WsServerMessage,
   ServerEventPayloads,
 } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
-import { parseDateToMillis } from '../../utils/time';
+import { parseDateToMillis } from '../../utils/DateTimeUtils';
 
 export const websocketService = {
   /**
@@ -23,6 +26,8 @@ export const websocketService = {
           await database.write(async () => {
             const messagesCollection = database.get<Message>('messages');
             await messagesCollection.create(msg => {
+              // @ts-ignore
+              msg._raw.id = p.id;
               msg.chatId = p.chatId;
               msg.senderId = p.senderId;
               msg.text = p.text;
@@ -30,8 +35,9 @@ export const websocketService = {
               msg.isMine = false;
               msg.createdAt = parseDateToMillis(p.createdAt);
               msg.serverTimestamp = parseDateToMillis(p.serverTimestamp);
-              if ((p as any).replyToId) {
-                msg.replyToId = (p as any).replyToId as string;
+              msg.isEdited = p.isEdited;
+              if (p.replyTo) {
+                msg.replyToId = p.replyTo;
               }
             });
 
@@ -44,16 +50,23 @@ export const websocketService = {
                 c.updatedAt = Date.now();
               });
             } catch (error) {
-              // Chat doesn't exist locally, create it
-              await chatsCollection.create(c => {
-                // @ts-ignore
-                c._raw.id = p.chatId;
-                c.name = 'Chat';
-                c.type = 'individual';
-                c.lastMessageText = p.text;
-                c.unreadCount = 1;
-                c.updatedAt = Date.now();
-              });
+              // Chat doesn't exist locally (e.g. message from a stranger).
+              // Instead of creating a temporary placeholder chat row, we trigger a fetch
+              // to sync chats from the REST API to get the correct user details, name, type, and avatar.
+              // Note: We use setTimeout(..., 0) to schedule the network request *outside* the active
+              // WatermelonDB write transaction, preventing the database lock from being held during the network fetch.
+              setTimeout(async () => {
+                try {
+                  const response = await chatApi.fetchChats();
+                  const apiChats = response.data?.chats ?? [];
+                  await DBService.upsertChats(apiChats);
+                } catch (err) {
+                  console.error(
+                    '[websocketService] Failed to sync chats for stranger:',
+                    err,
+                  );
+                }
+              }, 0);
             }
           });
           break;
@@ -83,6 +96,7 @@ export const websocketService = {
               if (chat.lastMessageText === oldText) {
                 await chat.update(c => {
                   c.lastMessageText = p.text;
+                  c.updatedAt = Date.now();
                 });
               }
             } catch (e) {
@@ -107,55 +121,90 @@ export const websocketService = {
           break;
         }
 
-        case 'RECEIVE_DELETE_MSG': {
-          const p = payload as ServerEventPayloads['RECEIVE_DELETE_MSG'];
-
-          if (p.deleteType === 'deleteForMe') {
-            break;
-          }
-
+        case 'RECEIVE_DELETE_MSGS': {
+          const p = payload as ServerEventPayloads['RECEIVE_DELETE_MSGS'];
           await database.write(async () => {
-            try {
-              const message = await database
-                .get<Message>('messages')
-                .find(p.id);
-              const oldText = message.text;
+            const chatIdsToUpdate = new Set<string>();
+            for (const item of p.messages) {
+              try {
+                const message = await database
+                  .get<Message>('messages')
+                  .find(item.id);
+                const chatId = message.chatId;
 
-              await message.update(m => {
-                m.isDeleted = true;
-                if (p.deletedAt) {
-                  m.deletedAt = parseDateToMillis(p.deletedAt);
-                }
-                m.deleteType = p.deleteType as any;
-                m.deleteStatus = 'synced';
-              });
-
-              const chat = await database
-                .get<Chat>('chats')
-                .find(message.chatId);
-              if (chat.lastMessageText === oldText) {
-                await chat.update(c => {
-                  c.lastMessageText = 'This message was deleted';
+                await message.update(m => {
+                  m.isDeletedForEveryone = true;
+                  m.text = 'This message was deleted';
+                  m.deletedForEveryoneAt = parseDateToMillis(
+                    item.deletedForEveryoneAt,
+                  );
+                  m.deleteStatus = 'synced';
                 });
+                chatIdsToUpdate.add(chatId);
+              } catch (e) {
+                console.warn(
+                  '[websocketService] RECEIVE_DELETE_MSGS: message not found:',
+                  item.id,
+                );
               }
-            } catch (e) {
-              console.warn(
-                '[websocketService] Cannot process incoming RECEIVE_DELETE_MSG, message not found:',
-                p.id,
-              );
             }
+
+            await DBService.updateChatsLastMessageInTransaction(
+              chatIdsToUpdate,
+            );
           });
           break;
         }
 
-        case 'ACK_DELETE_MSG': {
-          const p = payload as ServerEventPayloads['ACK_DELETE_MSG'];
+        case 'ACK_DELETE_MSGS': {
+          const p = payload as ServerEventPayloads['ACK_DELETE_MSGS'];
           await database.write(async () => {
-            const message = await database.get<Message>('messages').find(p.id);
-            await message.update(m => {
-              m.deleteStatus = 'synced';
-              m.deletedAt = parseDateToMillis(p.deletedAt);
-            });
+            const chatIdsToUpdate = new Set<string>();
+            for (const item of p.messages) {
+              if (item.error) {
+                console.warn(
+                  '[websocketService] ACK_DELETE_MSGS error for message:',
+                  item.id,
+                  item.error,
+                );
+                continue;
+              }
+
+              try {
+                const message = await database
+                  .get<Message>('messages')
+                  .find(item.id);
+                const chatId = message.chatId;
+
+                if (
+                  item.deleteType === 'deleteForMe' ||
+                  item.deleteType === 'both'
+                ) {
+                  // Destroy locally — message is only hidden for us
+                  await message.destroyPermanently();
+                } else {
+                  await message.update(m => {
+                    m.deleteStatus = 'synced';
+                    m.text = 'This message was deleted';
+                    if (item.deletedForEveryoneAt) {
+                      m.deletedForEveryoneAt = parseDateToMillis(
+                        item.deletedForEveryoneAt,
+                      );
+                    }
+                  });
+                }
+                chatIdsToUpdate.add(chatId);
+              } catch (e) {
+                console.warn(
+                  '[websocketService] ACK_DELETE_MSGS: message not found:',
+                  item.id,
+                );
+              }
+            }
+
+            await DBService.updateChatsLastMessageInTransaction(
+              chatIdsToUpdate,
+            );
           });
           break;
         }
@@ -164,13 +213,6 @@ export const websocketService = {
           const p = payload as ServerEventPayloads['TYPING'];
           const { setTyping } = useChatStore.getState();
           setTyping(p.chatId, p.userId, p.isTyping);
-          break;
-        }
-
-        case 'PRESENCE': {
-          const p = payload as ServerEventPayloads['PRESENCE'];
-          const { setPresence } = useChatStore.getState();
-          setPresence(p.userId, p.status as any);
           break;
         }
 
@@ -189,12 +231,39 @@ export const websocketService = {
         case 'MSG_STATUS': {
           const p = payload as ServerEventPayloads['MSG_STATUS'];
           await database.write(async () => {
-            const message = await database
-              .get<Message>('messages')
-              .find(p.messageId);
-            await message.update(m => {
-              m.status = p.status as any;
-            });
+            const messagesCollection = database.get<Message>('messages');
+            try {
+              const message = await messagesCollection.find(p.messageId);
+
+              if (p.status === 'read') {
+                // Cascading read status update: mark all previous sent/delivered messages in this chat as read
+                const messagesToUpdate = await messagesCollection
+                  .query(
+                    Q.where('chat_id', message.chatId),
+                    Q.where('is_mine', true),
+                    Q.where('status', Q.notEq('read')),
+                    Q.where('created_at', Q.lte(message.createdAt)),
+                  )
+                  .fetch();
+
+                const ops = messagesToUpdate.map(m =>
+                  m.prepareUpdate(msg => {
+                    msg.status = 'read';
+                  }),
+                );
+                await database.batch(...ops);
+              } else {
+                // Single message status update (e.g. 'delivered')
+                await message.update(m => {
+                  m.status = p.status as any;
+                });
+              }
+            } catch (err) {
+              console.warn(
+                '[websocketService] MSG_STATUS: message not found:',
+                p.messageId,
+              );
+            }
           });
           break;
         }

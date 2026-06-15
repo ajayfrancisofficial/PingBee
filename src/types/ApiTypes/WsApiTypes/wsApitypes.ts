@@ -28,8 +28,8 @@ export type ServerEventPayloads = {
   PRESENCE: components['schemas']['PresenceBroadcastPayload'];
   ACK_EDIT_MSG: components['schemas']['AckEditMessagePayload'];
   RECEIVE_EDIT_MSG: components['schemas']['ReceiveEditMessagePayload'];
-  ACK_DELETE_MSG: components['schemas']['AckDeleteMessagePayload'];
-  RECEIVE_DELETE_MSG: components['schemas']['ReceiveDeleteMessagePayload'];
+  ACK_DELETE_MSGS: components['schemas']['AckDeleteMultipleMessagesPayload'];
+  RECEIVE_DELETE_MSGS: components['schemas']['ReceiveDeleteMultipleMessagesPayload'];
   ERROR: components['schemas']['ErrorPayload'];
 };
 
@@ -62,10 +62,14 @@ export type AckEditMessagePayload =
   components['schemas']['AckEditMessagePayload'];
 export type ReceiveEditMessagePayload =
   components['schemas']['ReceiveEditMessagePayload'];
-export type AckDeleteMessagePayload =
-  components['schemas']['AckDeleteMessagePayload'];
-export type ReceiveDeleteMessagePayload =
-  components['schemas']['ReceiveDeleteMessagePayload'];
+export type AckDeleteMultipleMessagesPayload =
+  components['schemas']['AckDeleteMultipleMessagesPayload'];
+export type AckDeleteMultipleMessagesItem =
+  components['schemas']['AckDeleteMultipleMessagesItem'];
+export type ReceiveDeleteMultipleMessagesPayload =
+  components['schemas']['ReceiveDeleteMultipleMessagesPayload'];
+export type ReceiveDeleteMultipleMessagesItem =
+  components['schemas']['ReceiveDeleteMultipleMessagesItem'];
 export type ErrorPayload = components['schemas']['ErrorPayload'];
 
 // ── Client Payload Aliases ───────────────────────────────────────────────────
@@ -76,8 +80,10 @@ export type MessageStatusPayload =
   components['schemas']['MessageStatusPayload'];
 export type PresencePayload = components['schemas']['PresencePayload'];
 export type EditMessagePayload = components['schemas']['EditMessagePayload'];
-export type DeleteMessagePayload =
-  components['schemas']['DeleteMessagePayload'];
+export type DeleteMultipleMessagesPayload =
+  components['schemas']['DeleteMultipleMessagesPayload'];
+export type DeleteMultipleMessagesItem =
+  components['schemas']['DeleteMultipleMessagesItem'];
 
 /** Mapping of Client Event names to their respective Payload types */
 export type ClientEventPayloads = {
@@ -86,7 +92,7 @@ export type ClientEventPayloads = {
   MSG_STATUS: MessageStatusPayload;
   PRESENCE: PresencePayload;
   EDIT_MSG: EditMessagePayload;
-  DELETE_MSG: DeleteMessagePayload;
+  DELETE_MSGS: DeleteMultipleMessagesPayload;
 };
 
 /** All possible Client Event names */

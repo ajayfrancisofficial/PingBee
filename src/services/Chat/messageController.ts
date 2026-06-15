@@ -1,122 +1,26 @@
-import { IMessage } from 'react-native-gifted-chat';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
 import { useUserStore } from '../../store/userStore';
 import { websocketApi } from '../../api/WebsocketApi/websocketApi';
 import type { WsClientMessage } from '../../types/ApiTypes/WsApiTypes/wsApitypes';
+import { DBService } from '../DB/DBService';
 
 /**
- * Detect media type from an IMessage's optional fields.
+ * Build the full WebSocket client message for sending a new message (SEND_MSG event).
+ * Also used by OutgoingSync to retry pending messages.
  */
-const getMediaInfo = (
-  message: IMessage,
-): { mediaUrl?: string; mediaType?: 'image' | 'video' | 'file' } => {
-  if (message.image) {
-    return { mediaUrl: message.image, mediaType: 'image' };
-  }
-  if (message.video) {
-    return { mediaUrl: message.video, mediaType: 'video' };
-  }
-  return {};
-};
-
-/**
- * Format a WatermelonDB Message record into the WebSocket MSG payload.
- * This is also used by OutgoingSync to retry pending messages.
- */
-export const formatMessagePayload = (message: Message): WsClientMessage => ({
+export const buildSendMessageEvent = (message: Message): WsClientMessage => ({
   event: 'SEND_MSG',
   payload: {
     id: message.id,
-    chatId: message.chatId,
+    chatId: Number(message.chatId),
     text: message.text,
-    senderId: message.senderId,
-    createdAt: new Date(message.createdAt).toISOString(),
-    ...(message.mediaUrl && {
-      mediaUrl: message.mediaUrl,
-      mediaType: message.mediaType,
-    }),
-    ...(message.replyToId && { replyToId: message.replyToId }),
-  } as any,
+    replyTo: message.replyToId ?? null,
+    createdAt: message.createdAt,
+  },
   timestamp: new Date().toISOString(),
 });
-
-/**
- * Send a chat message — saves locally first, then sends via WebSocket if online.
- *
- * This is the ONLY function you should call to send messages. Import it anywhere:
- * ```
- * import { sendMessage } from '../services/Chat/messageController';
- *
- * // In GiftedChat's onSend:
- * const onSend = (messages: IMessage[]) => {
- *   sendMessage(messages[0], chatId);
- * };
- * ```
- *
- * @param message - The IMessage object from GiftedChat's onSend callback
- * @param chatId  - The ID of the chat this message belongs to
- * @returns The WatermelonDB record ID of the saved message
- */
-export const sendMessage = async (
-  message: IMessage,
-  chatId: string,
-): Promise<string> => {
-  const { userId } = useUserStore.getState();
-  const { mediaUrl, mediaType } = getMediaInfo(message);
-
-  // Extract reply ID from GiftedChat's replyMessage if present
-  const replyToId = message.replyMessage?._id?.toString();
-
-  // 1. Atomically save message + update chat in a single DB write
-  const savedMessage = await database.write(async () => {
-    const messagesCollection = database.get<Message>('messages');
-
-    const newMessage = await messagesCollection.create(msg => {
-      msg.chatId = chatId;
-      msg.senderId = String(userId);
-      msg.text = message.text;
-      msg.status = 'pending';
-      msg.isMine = true;
-      msg.createdAt =
-        message.createdAt instanceof Date
-          ? message.createdAt.getTime()
-          : message.createdAt;
-      if (mediaUrl) {
-        msg.mediaUrl = mediaUrl;
-      }
-      if (mediaType) {
-        msg.mediaType = mediaType;
-      }
-      if (replyToId) {
-        msg.replyToId = replyToId;
-      }
-    });
-
-    // Update the parent chat's metadata
-    try {
-      const chat = await database.get<Chat>('chats').find(chatId);
-      await chat.update(c => {
-        c.lastMessageText = message.text;
-        c.updatedAt = Date.now();
-      });
-    } catch {
-      // Chat might not exist yet (e.g. first message in a new conversation)
-      console.warn('[MessageController] Chat not found for update:', chatId);
-    }
-
-    return newMessage;
-  });
-
-  // 2. If online, send via WebSocket immediately
-  if (websocketApi.getIsConnected()) {
-    const payload = formatMessagePayload(savedMessage);
-    websocketApi.sendRaw(payload);
-  }
-
-  return savedMessage.id;
-};
 
 /**
  * Edit an existing message.
@@ -137,6 +41,8 @@ export const editMessage = async (
       throw new Error('Message is not editable');
     }
 
+    const oldText = message.text;
+
     await message.update(m => {
       m.text = newText;
       m.isEdited = true;
@@ -147,9 +53,10 @@ export const editMessage = async (
     // Update parent chat's last message text if this was the last message
     try {
       const chat = await database.get<Chat>('chats').find(message.chatId);
-      if (chat.lastMessageText === message.text) {
+      if (chat.lastMessageText === oldText) {
         await chat.update(c => {
           c.lastMessageText = newText;
+          c.updatedAt = Date.now();
         });
       }
     } catch {
@@ -158,7 +65,7 @@ export const editMessage = async (
   });
 
   if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
+    websocketApi.send({
       event: 'EDIT_MSG',
       payload: {
         id: messageId,
@@ -171,57 +78,138 @@ export const editMessage = async (
 };
 
 /**
- * Delete a message.
- * @param messageId - ID of message to delete
- * @param type - 'deleteForEveryone' (syncs to everyone) or 'deleteForMe' (syncs to your other devices only)
+ * Batch-delete multiple messages in a single WebSocket round-trip.
+ * All messages are deleted with the same type.
+ * All messages will be from the same chat.
+ *
+ * @param messageIds - IDs of the messages to delete
+ * @param type       - 'deleteForEveryone' or 'deleteForMe'
  */
-export const deleteMessage = async (
-  messageId: string,
+export const deleteMessages = async (
+  messageIds: string[],
   type: 'deleteForEveryone' | 'deleteForMe',
 ): Promise<void> => {
-  const deletedAt = new Date().toISOString();
+  if (messageIds.length === 0) return;
 
-  await database.write(async () => {
-    const message = await database.get<Message>('messages').find(messageId);
+  const now = Date.now();
 
-    if (type === 'deleteForEveryone' && !message.isDeletable) {
-      throw new Error('Message is no longer deletable for everyone');
+  const updatedMessages = await database.write(async () => {
+    const records: Message[] = [];
+    let chatIdToUpdate: string | null = null;
+    for (const messageId of messageIds) {
+      try {
+        const message = await database.get<Message>('messages').find(messageId);
+
+        if (type === 'deleteForEveryone' && !message.isDeletable) {
+          console.warn(
+            '[MessageController] Skipping non-deletable message:',
+            messageId,
+          );
+          continue;
+        }
+
+        if (type === 'deleteForMe') {
+          await message.update(m => {
+            m.isDeletedForMe = true;
+            m.deletedForMeAt = now;
+            m.deleteStatus = 'pending';
+          });
+        } else {
+          await message.update(m => {
+            m.isDeletedForEveryone = true;
+            m.text = 'This message was deleted';
+            m.deletedForEveryoneAt = now;
+            m.deleteStatus = 'pending';
+          });
+        }
+        chatIdToUpdate = message.chatId;
+        records.push(message);
+      } catch (err) {
+        console.error(
+          '[MessageController] Failed to delete message locally:',
+          messageId,
+          err,
+        );
+      }
     }
 
-    await message.update(m => {
-      m.isDeleted = true;
-      m.deletedAt = new Date(deletedAt).getTime();
-      m.deleteType = type;
-      m.deleteStatus = 'pending'; // Always sync delete preference
-      if (type === 'deleteForMe') {
-        m.isDeletedForMe = true;
+    if (chatIdToUpdate) {
+      await DBService.updateChatsLastMessageInTransaction(chatIdToUpdate);
+    }
+    return records;
+  });
+
+  if (websocketApi.getIsConnected() && updatedMessages.length > 0) {
+    const nowIso = new Date(now).toISOString();
+    websocketApi.send({
+      event: 'DELETE_MSGS',
+      payload: {
+        protocolVersion: '1.0',
+        messages: updatedMessages.map(msg => ({
+          id: msg.id,
+          deleteType: type,
+          deletedForEveryoneAt: msg.deletedForEveryoneAt
+            ? new Date(msg.deletedForEveryoneAt).toISOString()
+            : null,
+          deletedForMeAt: msg.deletedForMeAt
+            ? new Date(msg.deletedForMeAt).toISOString()
+            : null,
+        })),
+      },
+      timestamp: nowIso,
+    });
+  }
+};
+
+/**
+ * Send a chat message using plain primitives.
+ * This is the preferred function when using the custom message UI.
+ *
+ * @param text      - Message body text
+ * @param chatId    - Target chat ID
+ * @param replyToId - Optional ID of the message being replied to
+ */
+export const sendMessage = async (
+  text: string,
+  chatId: string,
+  replyToId?: string,
+): Promise<string> => {
+  const { userId } = useUserStore.getState();
+  const now = Date.now();
+
+  const savedMessage = await database.write(async () => {
+    const messagesCollection = database.get<Message>('messages');
+
+    const newMessage = await messagesCollection.create(msg => {
+      msg.chatId = chatId;
+      msg.senderId = String(userId);
+      msg.text = text;
+      msg.status = 'pending';
+      msg.isMine = true;
+      msg.createdAt = now;
+      if (replyToId) {
+        msg.replyToId = replyToId;
       }
     });
 
-    // For "delete for everyone", update chat's last message text
-    if (type === 'deleteForEveryone') {
-      try {
-        const chat = await database.get<Chat>('chats').find(message.chatId);
-        await chat.update(c => {
-          c.lastMessageText = 'This message was deleted';
-        });
-      } catch {
-        // Chat update optional
-      }
+    try {
+      const chat = await database.get<Chat>('chats').find(chatId);
+      await chat.update(c => {
+        c.lastMessageText = text;
+        c.updatedAt = now;
+      });
+    } catch {
+      console.warn('[MessageController] Chat not found for update:', chatId);
     }
+
+    return newMessage;
   });
 
   if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
-      event: 'DELETE_MSG',
-      payload: {
-        id: messageId,
-        deleteType: type,
-        deletedAt,
-      },
-      timestamp: new Date().toISOString(),
-    });
+    websocketApi.send(buildSendMessageEvent(savedMessage));
   }
+
+  return savedMessage.id;
 };
 
 /**
@@ -229,10 +217,10 @@ export const deleteMessage = async (
  */
 export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
   if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
+    websocketApi.send({
       event: 'TYPING',
       payload: {
-        chatId,
+        chatId: Number(chatId),
         isTyping,
       },
       timestamp: new Date().toISOString(),
@@ -240,17 +228,3 @@ export const sendTypingStatus = (chatId: string, isTyping: boolean) => {
   }
 };
 
-/**
- * Send presence status (online/offline) to the server.
- */
-export const sendPresenceStatus = (status: 'online' | 'offline') => {
-  if (websocketApi.getIsConnected()) {
-    websocketApi.sendRaw({
-      event: 'PRESENCE',
-      payload: {
-        status,
-      },
-      timestamp: new Date().toISOString(),
-    });
-  }
-};

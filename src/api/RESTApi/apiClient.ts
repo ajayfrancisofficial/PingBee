@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as Keychain from 'react-native-keychain';
-import { API_BASE_URL } from './endpoints';
+import { API_BASE_URL, ENDPOINTS } from './endpoints';
 import { authService } from '../../services/Auth/authService';
 import { snackbar } from '../../components/foundations/Snackbar';
 
@@ -25,6 +25,12 @@ apiClient.interceptors.request.use(
   },
   error => Promise.reject(error),
 );
+
+export const OFFLINE_SUPPORTED_ENDPOINTS = [
+  ENDPOINTS.CHATS.LIST, // '/chats'
+  ENDPOINTS.CHATS.MESSAGES, // '/messages'
+  ENDPOINTS.CHATS.USER_DETAILS, // '/chat-users-details'
+];
 
 // Response interceptor: auto-refresh token if 401 triggers & global error handling
 apiClient.interceptors.response.use(
@@ -78,10 +84,17 @@ apiClient.interceptors.response.use(
       }
     } else {
       // Network errors (e.g. timeout, no internet connection)
-      snackbar.show({
-        message: 'Network error. Please check your internet connection.',
-        type: 'error',
-      });
+      const requestUrl = error.config?.url || '';
+      const isOfflineSupported = OFFLINE_SUPPORTED_ENDPOINTS.some(endpoint =>
+        requestUrl.includes(endpoint),
+      );
+
+      if (!isOfflineSupported) {
+        snackbar.show({
+          message: 'Network error. Please check your internet connection.',
+          type: 'error',
+        });
+      }
     }
 
     // Always reject the promise so the calling component's catch block is still triggered!

@@ -8,10 +8,6 @@ interface ChatState {
   /** Map of chatId -> array of userIds who are currently typing */
   typingUsers: Record<string, string[]>;
   setTyping: (chatId: string, userId: string, isTyping: boolean) => void;
-
-  /** Map of userId -> online status */
-  presence: Record<string, 'online' | 'offline'>;
-  setPresence: (userId: string, status: 'online' | 'offline') => void;
 }
 
 export const useChatStore = create<ChatState>(set => ({
@@ -33,13 +29,4 @@ export const useChatStore = create<ChatState>(set => ({
         },
       };
     }),
-
-  presence: {},
-  setPresence: (userId, status) =>
-    set(state => ({
-      presence: {
-        ...state.presence,
-        [userId]: status,
-      },
-    })),
 }));

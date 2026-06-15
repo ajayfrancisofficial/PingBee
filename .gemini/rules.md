@@ -1,5 +1,27 @@
 # PingBee Project Rules for AI Agents
 
+## Codebase Purpose
+PingBee is an offline-first, real-time messaging application structured as a "Digital Hive" with a friendly, warm, bee-themed visual identity.
+The codebase is a **React Native** client that utilizes **WatermelonDB** for persistent offline-first data, **Zustand** and **TanStack Query** for state management, and **WebSockets** (backed up by REST APIs) for real-time synchronization.
+
+## Critical Files
+- **Database & Architecture**:
+  - [src/db/schema.ts](file:///Users/ajayfrancis/Projects/PingBee/src/db/schema.ts) — The database schema for `users`, `chats`, `messages`, and `chat_participants`.
+  - [src/db/models/Message.ts](file:///Users/ajayfrancis/Projects/PingBee/src/db/models/Message.ts), [Chat.ts](file:///Users/ajayfrancis/Projects/PingBee/src/db/models/Chat.ts), [User.ts](file:///Users/ajayfrancis/Projects/PingBee/src/db/models/User.ts), [ChatParticipant.ts](file:///Users/ajayfrancis/Projects/PingBee/src/db/models/ChatParticipant.ts) — WatermelonDB models specifying relations and properties.
+- **Services & Real-Time Sync**:
+  - [src/services/Websocket/websocketService.ts](file:///Users/ajayfrancis/Projects/PingBee/src/services/Websocket/websocketService.ts) — Handles incoming WebSocket messages (`RECEIVE_MSG`, `RECEIVE_EDIT_MSG`, `RECEIVE_DELETE_MSGS`, `MSG_STATUS`, etc.) and performs local WatermelonDB transactions.
+  - [src/services/Sync/OutgoingSync.ts](file:///Users/ajayfrancis/Projects/PingBee/src/services/Sync/OutgoingSync.ts) — Retries pending edits, deletes, and unsent messages when connection transitions from offline to online.
+  - [src/services/Chat/messageController.ts](file:///Users/ajayfrancis/Projects/PingBee/src/services/Chat/messageController.ts) — Directs sending, editing, and deleting messages locally first, then dispatching to WebSockets.
+- **UI Components & Themes**:
+  - [src/components/chat/ChatBox.tsx](file:///Users/ajayfrancis/Projects/PingBee/src/components/chat/ChatBox.tsx) — Main chat room component containing list logs, selection modes, typing indicator animations, and date separators.
+  - [DESIGN.md](file:///Users/ajayfrancis/Projects/PingBee/DESIGN.md) — The visual design spec.
+  - [src/theme/colors.ts](file:///Users/ajayfrancis/Projects/PingBee/src/theme/colors.ts) — The theme configuration files containing Honey Gold brand color values and surface elevations.
+
+## Project Goals & Key Workflows
+- **Offline-First Synchronization**: Real-time messaging uses a local-first pattern: messages are written to local database instantly with status `pending` or `sent` and then pushed/synced online. If connection drops, mutations remain queued and sync resumes automatically on reconnection.
+- **WebSocket Message Updates**: Messages deleted/edited on the server or other devices send websocket updates which must propagate to all affected chats and update `last_message_text`, unread counts, and timestamps.
+- **Strict Visual Cohesion**: The application theme enforces warm yellow/gold and honey hues in light mode and bright amber with charcoal grays in dark mode. All design components must reference theme tokens from `useAppTheme`.
+
 ## Tech Stack
 - **Framework**: React Native (0.84+)
 - **Language**: TypeScript (Strict Mode)

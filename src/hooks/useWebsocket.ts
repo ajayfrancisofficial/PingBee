@@ -5,25 +5,17 @@ import { useAuthStore } from '../store/authStore';
 /**
  * Hook to manage the WebSocket lifecycle.
  * Should be called in a component that is mounted when the user is authenticated (e.g., AppStack).
+ *
+ * Network-change reconnection is handled globally in networkStore.
  */
 export const useWebsocket = () => {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isLoggedIn = useAuthStore(state => state.isLoggedIn);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const startWebsocket = async () => {
-      if (!isLoggedIn) return;
-      if (isMounted) {
-        websocketApi.connect();
-      }
-    };
-
-    startWebsocket();
+    if (!isLoggedIn) return;
+    websocketApi.connect(true);
 
     return () => {
-      isMounted = false;
-      console.log('[useWebsocket] Component unmounting, disconnecting...');
       websocketApi.disconnect();
     };
   }, [isLoggedIn]);

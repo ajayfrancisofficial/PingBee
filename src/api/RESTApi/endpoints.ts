@@ -19,6 +19,8 @@ export const ENDPOINTS = {
     ME: '/me',
     LIST: '/users',
     SEARCH: '/user-search',
+    AVATAR_UPLOAD: '/users-avatar',
+    AVATAR_DELETE: '/users-avatar',
   },
   CHATS: {
     LIST: '/chats',

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Platform,
-  FlatList,
   TouchableOpacity,
 } from 'react-native';
 import {
@@ -25,14 +24,11 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { useUserStore } from '../store/userStore';
 import { AppTheme } from '../theme';
 import {
-  List,
-  Star,
-  Megaphone,
-  Monitor,
-  UserRound,
-  Lock,
-  MessageCircle,
-  ChevronRight,
+  Mail,
+  User as UserIcon,
+  CheckCircle,
+  AlertCircle,
+  UserCircle,
 } from 'lucide-react-native';
 import { TransitionTags } from '../constants/transitions';
 
@@ -44,42 +40,11 @@ const edges: Edges = Platform.select({
 import { sizing } from '../theme/sizing';
 import { useUserProfile } from '../hooks/useUserProfile';
 
-interface SettingsRowProps {
-  icon: React.ReactNode;
-  label: string;
-  onPress?: () => void;
-  styles: ReturnType<typeof makeStyles>;
-  theme: AppTheme;
-}
-
-const SettingsRow = ({
-  icon,
-  label,
-  onPress,
-  styles,
-  theme,
-}: SettingsRowProps) => (
-  <TouchableOpacity
-    style={styles.settingsRow}
-    onPress={onPress}
-    activeOpacity={0.6}
-  >
-    <View style={styles.settingsRowLeft}>
-      {icon}
-      <Text style={styles.settingsRowLabel}>{label}</Text>
-    </View>
-    <ChevronRight
-      size={sizing.iconSizes.md}
-      color={theme.colors.text.tertiary}
-    />
-  </TouchableOpacity>
-);
-
 export const YouScreen = () => {
   const navigation = useNavigation();
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
-  const { name, about, profilePicture } = useUserStore();
+  const { name, profilePicture, email, isVerified, username } = useUserStore();
   const iconColor = theme.colors.text.secondary;
   const iconSize = sizing.iconSizes.base;
   // Sync user profile on focus
@@ -133,18 +98,9 @@ export const YouScreen = () => {
     };
   });
 
-  const aboutBubbleStyle = useAnimatedStyle(() => {
-    const opacity = interpolate(
-      scrollY.value,
-      [0, 50],
-      [1, 0],
-      Extrapolation.CLAMP,
-    );
-    return { opacity };
-  });
-
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerTitleAlign: 'center',
       headerTitle: () => (
         <Animated.View style={headerTitleStyle}>
           <Text style={styles.headerTitleText}>{name}</Text>
@@ -166,84 +122,83 @@ export const YouScreen = () => {
           <>
             {/* Profile Section */}
             <View style={styles.profileSection}>
-              {/* About tooltip */}
-              <Animated.View style={[styles.aboutBubble, aboutBubbleStyle]}>
-                <Text style={styles.aboutText}>{about}</Text>
-                <View style={styles.aboutBubbleArrow} />
-              </Animated.View>
-
               {/* Profile Image */}
               <TouchableOpacity
                 onPress={() => navigation.navigate('Profile')}
                 activeOpacity={0.8}
               >
-                <Animated.Image
-                  source={{ uri: profilePicture }}
-                  style={styles.profileImage}
-                  sharedTransitionTag={TransitionTags.profileImage}
-                />
+                {profilePicture ? (
+                  <Animated.Image
+                    source={{ uri: profilePicture }}
+                    style={styles.profileImage}
+                    sharedTransitionTag={TransitionTags.profileImage}
+                  />
+                ) : (
+                  <View
+                    style={[styles.profileImage, styles.placeholderContainer]}
+                  >
+                    <UserCircle
+                      size={100}
+                      color={theme.colors.text.tertiary}
+                      strokeWidth={1}
+                    />
+                  </View>
+                )}
               </TouchableOpacity>
 
               {/* Name */}
               <Animated.View style={[styles.nameRow, bodyNameStyle]}>
                 <Text style={styles.nameText}>{name}</Text>
-                <View style={styles.plusBadge}>
-                  <Text style={styles.plusText}>+</Text>
-                </View>
               </Animated.View>
             </View>
 
-            {/* Settings Label */}
-            <Text style={styles.sectionLabel}>Settings</Text>
+            {/* Profile Info Label */}
+            <Text style={styles.sectionLabel}>Profile Info</Text>
 
-            {/* Settings Group 1 */}
             <View style={styles.settingsGroup}>
-              <SettingsRow
-                icon={<List size={iconSize} color={iconColor} />}
-                label="Lists"
-                styles={styles}
-                theme={theme}
-              />
-              <SettingsRow
-                icon={<Star size={iconSize} color={iconColor} />}
-                label="Starred"
-                styles={styles}
-                theme={theme}
-              />
-              <SettingsRow
-                icon={<Megaphone size={iconSize} color={iconColor} />}
-                label="Broadcast messages"
-                styles={styles}
-                theme={theme}
-              />
-              <SettingsRow
-                icon={<Monitor size={iconSize} color={iconColor} />}
-                label="Linked devices"
-                styles={styles}
-                theme={theme}
-              />
-            </View>
+              {/* Username */}
+              <View style={styles.infoRow}>
+                <View style={styles.infoRowLeft}>
+                  <UserIcon size={iconSize} color={iconColor} />
+                  <Text style={styles.infoLabel}>Username</Text>
+                </View>
+                <Text style={styles.infoValue} numberOfLines={1}>
+                  {username || '—'}
+                </Text>
+              </View>
 
-            {/* Settings Group 2 */}
-            <View style={styles.settingsGroup}>
-              <SettingsRow
-                icon={<UserRound size={iconSize} color={iconColor} />}
-                label="Account"
-                styles={styles}
-                theme={theme}
-              />
-              <SettingsRow
-                icon={<Lock size={iconSize} color={iconColor} />}
-                label="Privacy"
-                styles={styles}
-                theme={theme}
-              />
-              <SettingsRow
-                icon={<MessageCircle size={iconSize} color={iconColor} />}
-                label="Chats"
-                styles={styles}
-                theme={theme}
-              />
+              {/* Email with verification badge */}
+              <View style={styles.emailInfoRow}>
+                <View style={styles.emailRowHeader}>
+                  <View style={styles.infoRowLeft}>
+                    <Mail size={iconSize} color={iconColor} />
+                    <Text style={styles.infoLabel}>Email</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('VerifyEmail')}
+                    style={styles.manageButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.manageButtonText}>Manage</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.emailRowBody}>
+                  <Text style={styles.emailText} numberOfLines={1}>
+                    {email || '—'}
+                  </Text>
+                  {isVerified ? (
+                    <CheckCircle
+                      size={sizing.iconSizes.md}
+                      color={theme.colors.semantic.success}
+                    />
+                  ) : (
+                    <AlertCircle
+                      size={sizing.iconSizes.md}
+                      color={theme.colors.semantic.warning}
+                    />
+                  )}
+                </View>
+              </View>
             </View>
             {/* Logout */}
             <LogoutButton />
@@ -254,7 +209,13 @@ export const YouScreen = () => {
   );
 };
 
-const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
+const makeStyles = ({
+  colors,
+  spacing,
+  typography,
+  borderRadius,
+  sizing,
+}: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -287,35 +248,16 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       alignItems: 'center',
       paddingVertical: spacing.lg,
     },
-    aboutBubble: {
-      backgroundColor: colors.surfaces.default,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.lg,
-      marginBottom: spacing.sm,
-      position: 'relative',
-    },
-    aboutText: {
-      ...typography.variants.body,
-      color: colors.text.primary,
-    },
-    aboutBubbleArrow: {
-      position: 'absolute',
-      bottom: -6,
-      alignSelf: 'center',
-      left: '50%',
-      marginLeft: -6,
-      width: 12,
-      height: 12,
-      backgroundColor: colors.surfaces.default,
-      transform: [{ rotate: '45deg' }],
-    },
     profileImage: {
       width: 120,
       height: 120,
       borderRadius: 60,
-      borderWidth: 3,
-      borderColor: colors.surfaces.tertiary,
+    },
+    placeholderContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surfaces.default,
+      borderStyle: 'dashed',
     },
     nameRow: {
       flexDirection: 'row',
@@ -333,20 +275,6 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       color: colors.text.primary,
       fontWeight: typography.weights.bold,
     },
-    plusBadge: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-      backgroundColor: colors.semantic.success,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    plusText: {
-      color: colors.absolute.white,
-      fontSize: 14,
-      fontWeight: typography.weights.bold,
-      lineHeight: 18,
-    },
 
     /* Section label */
     sectionLabel: {
@@ -358,7 +286,7 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       paddingBottom: spacing.sm,
     },
 
-    /* Settings Groups */
+    /* Settings / Info Groups */
     settingsGroup: {
       backgroundColor: colors.surfaces.default,
       marginHorizontal: spacing.md,
@@ -366,29 +294,64 @@ const makeStyles = ({ colors, spacing, typography, borderRadius }: AppTheme) =>
       marginBottom: spacing.md,
       overflow: 'hidden',
     },
-    settingsRow: {
+
+    /* Profile Info rows */
+    infoRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.md,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.borders.separator,
     },
-    settingsRowLeft: {
+    infoRowLeft: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.md,
     },
-    settingsRowLabel: {
+    infoLabel: {
       ...typography.variants.body,
       color: colors.text.primary,
     },
-
-    /* Theme row */
-    themeRow: {
+    infoValue: {
+      ...typography.variants.body,
+      color: colors.text.secondary,
+      flexShrink: 1,
+      textAlign: 'right',
+      marginLeft: spacing.sm,
+    },
+    emailInfoRow: {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.md,
+      gap: spacing.xs,
+    },
+    emailRowHeader: {
       flexDirection: 'row',
-      justifyContent: 'flex-end',
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.xs,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    emailRowBody: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+      paddingLeft: sizing.iconSizes.base + spacing.md,
+    },
+    emailText: {
+      ...typography.variants.body,
+      color: colors.text.secondary,
+      flexShrink: 1,
+    },
+    manageButton: {
+      backgroundColor: colors.surfaces.tertiary,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderRadius: borderRadius.md,
+      marginLeft: spacing.xs,
+    },
+    manageButtonText: {
+      ...typography.variants.description,
+      color: colors.brand.primary,
+      fontWeight: typography.weights.medium,
     },
   });

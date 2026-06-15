@@ -1,20 +1,20 @@
-import { Model, Query } from '@nozbe/watermelondb'
-import type Message from './Message'
-import { field, date, children, lazy } from '@nozbe/watermelondb/decorators'
+import { Model, Query } from '@nozbe/watermelondb';
+import type Message from './Message';
+import { field, children } from '@nozbe/watermelondb/decorators';
 
 export default class Chat extends Model {
-  static table = 'chats'
+  static table = 'chats';
   static associations = {
     messages: { type: 'has_many' as const, foreignKey: 'chat_id' },
-  }
+  };
 
-  @field('name') name!: string
-  @field('type') type!: 'individual' | 'group'
-  @field('unread_count') unreadCount!: number
-  @field('last_message_text') lastMessageText?: string
-  @date('updated_at') updatedAt!: number
-  @field('avatar_url') avatarUrl?: string
-  @field('last_message_sent_username') lastMessageSentUsername?: string
+  @field('name') name!: string;
+  @field('type') type!: 'individual' | 'group';
+  @field('unread_count') unreadCount!: number;
+  @field('last_message_text') lastMessageText?: string;
+  @field('updated_at') updatedAt!: number;
+  @field('avatar_url') avatarUrl?: string;
+  @field('last_message_sent_username') lastMessageSentUsername?: string;
 
-  @children('messages') messages!: Query<Message>
+  @children('messages') messages!: Query<Message>;
 }

@@ -2,7 +2,8 @@ import { StaticParamList } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { YouScreen } from '../screens/YouScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
-import { Search, QrCode } from 'lucide-react-native';
+import { VerifyEmailScreen } from '../screens/VerifyEmailScreen';
+import { Search } from 'lucide-react-native';
 import { sizing } from '../theme/sizing';
 import { ThemeSwitch } from '../components/common/ThemeSwitch';
 
@@ -28,6 +29,12 @@ export const YouStack = createNativeStackNavigator({
       options: {
         title: 'Profile',
         headerBackButtonDisplayMode: 'minimal',
+      },
+    },
+    VerifyEmail: {
+      screen: VerifyEmailScreen,
+      options: {
+        headerShown: false,
       },
     },
   },

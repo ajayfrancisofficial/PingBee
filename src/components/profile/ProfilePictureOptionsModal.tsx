@@ -6,15 +6,13 @@ import { AppTheme } from '../../theme';
 import {
   Camera,
   Image as ImageIcon,
-  Sparkles,
   Trash2,
-  Instagram,
-  Facebook,
 } from 'lucide-react-native';
 import { sizing } from '../../theme/sizing';
 
 export interface ProfilePictureOptionsModalProps
   extends Omit<BottomSheetProps, 'children'> {
+  hasImage: boolean;
   onTakePhoto: () => void;
   onChoosePhoto: () => void;
   onDeletePhoto: () => void;
@@ -22,7 +20,7 @@ export interface ProfilePictureOptionsModalProps
 
 export const ProfilePictureOptionsModal: React.FC<
   ProfilePictureOptionsModalProps
-> = ({ onTakePhoto, onChoosePhoto, onDeletePhoto, ...props }) => {
+> = ({ hasImage, onTakePhoto, onChoosePhoto, onDeletePhoto, ...props }) => {
   const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
@@ -45,8 +43,10 @@ export const ProfilePictureOptionsModal: React.FC<
     </TouchableOpacity>
   );
 
+  const title = hasImage ? 'Edit profile picture' : 'Set profile picture';
+
   return (
-    <BottomSheet {...props} title="Edit profile picture">
+    <BottomSheet {...props} title={title}>
       {/* Primary Options Group */}
       <View style={styles.groupContainer}>
         {renderOption(
@@ -56,6 +56,7 @@ export const ProfilePictureOptionsModal: React.FC<
           />,
           'Take photo',
           onTakePhoto,
+          false,
         )}
         {renderOption(
           <ImageIcon
@@ -64,21 +65,25 @@ export const ProfilePictureOptionsModal: React.FC<
           />,
           'Choose photo',
           onChoosePhoto,
-        )}
-      </View>
-      {/* Destructive Options Group */}
-      <View style={styles.groupContainer}>
-        {renderOption(
-          <Trash2
-            size={sizing.iconSizes.md}
-            color={theme.colors.semantic.error}
-          />,
-          'Delete photo',
-          onDeletePhoto,
-          true,
           true,
         )}
       </View>
+
+      {/* Destructive Options Group — only shown when an image exists */}
+      {hasImage && (
+        <View style={styles.groupContainer}>
+          {renderOption(
+            <Trash2
+              size={sizing.iconSizes.md}
+              color={theme.colors.semantic.error}
+            />,
+            'Delete photo',
+            onDeletePhoto,
+            true,
+            true,
+          )}
+        </View>
+      )}
     </BottomSheet>
   );
 };
@@ -86,7 +91,7 @@ export const ProfilePictureOptionsModal: React.FC<
 const makeStyles = ({ colors, spacing, borderRadius, typography }: AppTheme) =>
   StyleSheet.create({
     groupContainer: {
-      backgroundColor: colors.surfaces.default, // The mock uses a slightly lighter surface over the background
+      backgroundColor: colors.surfaces.default,
       borderRadius: borderRadius.lg,
       marginBottom: spacing.md,
       overflow: 'hidden',

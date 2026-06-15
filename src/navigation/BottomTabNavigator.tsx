@@ -47,8 +47,6 @@ export const BottomTabNavigator = createBottomTabNavigator({
             fill={focused ? color : 'none'}
           />
         ),
-        tabBarBadge: 1,
-        //use unread mssges count
       },
     },
     YouStack: {

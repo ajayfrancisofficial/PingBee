@@ -1,11 +1,25 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { withObservables } from '@nozbe/watermelondb/react';
+import { Q } from '@nozbe/watermelondb';
 import Chat from '../../db/models/Chat';
+import User from '../../db/models/User';
+import { database } from '../../db';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme';
 import { Users } from 'lucide-react-native';
 import { useUserStore } from '../../store/userStore';
+import { useChatStore } from '../../store/chatStore';
+import { getTypingText } from '../../utils/TypingUtils';
+import { getInitials } from '../../utils/StringUtils';
+import { ImagePreviewModal } from '../common/ImagePreviewModal';
 
 interface ChatCardProps {
   chat: Chat;
@@ -16,16 +30,34 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
   const currentUser = useUserStore(state => state.username);
-  console.log('🚀 ~ ChatCardComponent ~ currentUser:', currentUser);
+  const currentUserId = useUserStore(state => state.userId);
+  const typingUsers = useChatStore(state => state.typingUsers[chat.id]);
+  const [typerNames, setTyperNames] = useState<Map<string, string>>(new Map());
+  const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
-  const getInitials = (name: string) => {
-    if (!name) return '?';
-    const parts = name.split(' ').filter(Boolean);
-    if (parts.length > 1) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
+  const remoteTypers = useMemo(() => {
+    return (typingUsers || []).filter(id => id !== String(currentUserId));
+  }, [typingUsers, currentUserId]);
+
+  useEffect(() => {
+    if (remoteTypers.length === 0) return;
+
+    database
+      .get<User>('users')
+      .query(Q.where('id', Q.oneOf(remoteTypers)))
+      .fetch()
+      .then(users => {
+        setTyperNames(new Map(users.map(u => [u.id, u.displayName])));
+      })
+      .catch(err => {
+        console.warn('[ChatCard] Failed to fetch typing user names:', err);
+      });
+  }, [remoteTypers]);
+
+  const typingText = useMemo(() => {
+    if (remoteTypers.length === 0) return null;
+    return getTypingText(remoteTypers, typerNames, chat.type);
+  }, [remoteTypers, typerNames, chat.type]);
 
   const formatTime = (timestamp: number) => {
     if (!timestamp) return '';
@@ -47,66 +79,98 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   };
 
   return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.chatItem,
-        pressed && styles.chatItemPressed,
-      ]}
-      onPress={() => onPress(chat)}
-    >
-      <View style={styles.avatar}>
+    <>
+      <Pressable
+        style={({ pressed }) => [
+          styles.chatItem,
+          pressed && styles.chatItemPressed,
+        ]}
+        onPress={() => onPress(chat)}
+      >
         {chat.avatarUrl ? (
-          <Image source={{ uri: chat.avatarUrl }} style={styles.avatarImage} />
-        ) : (
-          <Text style={styles.avatarText}>{getInitials(chat.name)}</Text>
-        )}
-      </View>
-
-      <View style={styles.chatContent}>
-        <View style={styles.headerRow}>
-          <View style={styles.nameRow}>
-            {chat.type === 'group' && (
-              <Users
-                color={theme.colors.text.secondary}
-                size={theme.typography.variants.bodyMedium.fontSize}
-                style={styles.groupIcon}
-              />
-            )}
-            <Text style={styles.chatName} numberOfLines={1}>
-              {chat.name}
-            </Text>
-          </View>
-          <Text style={styles.timeText}>{formatTime(chat.updatedAt)}</Text>
-        </View>
-
-        <View style={styles.messageRow}>
-          <Text
-            style={[
-              styles.lastMessage,
-              chat.unreadCount ? styles.lastMessageUnread : null,
-            ]}
-            numberOfLines={2}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setIsPreviewVisible(true)}
+            style={styles.avatar}
           >
-            {chat.lastMessageSentUsername
-              ? chat.lastMessageSentUsername === currentUser
-                ? 'You: '
-                : chat.type !== 'individual'
-                ? `${chat.lastMessageSentUsername}: `
-                : null
-              : null}
-            {chat.lastMessageText ?? ''}
-          </Text>
+            <Image
+              source={{ uri: chat.avatarUrl }}
+              style={styles.avatarImage}
+            />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.avatar}
+            onPress={() => {}}
+          >
+            <Text style={styles.avatarText}>{getInitials(chat.name)}</Text>
+          </TouchableOpacity>
+        )}
 
-          {chat.unreadCount ? (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+        <View style={styles.chatContent}>
+          <View style={styles.headerRow}>
+            <View style={styles.nameRow}>
+              {chat.type === 'group' && (
+                <Users
+                  color={theme.colors.text.secondary}
+                  size={theme.typography.variants.bodyMedium.fontSize}
+                  style={styles.groupIcon}
+                />
+              )}
+              <Text style={styles.chatName} numberOfLines={1}>
+                {chat.name}
               </Text>
             </View>
-          ) : null}
+            <Text style={styles.timeText}>
+              {formatTime(chat.lastUpdatedAt)}
+            </Text>
+          </View>
+
+          <View style={styles.messageRow}>
+            {typingText ? (
+              <Text
+                style={[styles.lastMessage, styles.typingText]}
+                numberOfLines={1}
+              >
+                {typingText}
+              </Text>
+            ) : (
+              <Text
+                style={[
+                  styles.lastMessage,
+                  chat.unreadCount ? styles.lastMessageUnread : null,
+                ]}
+                numberOfLines={2}
+              >
+                {chat.lastMessageSentUsername
+                  ? chat.lastMessageSentUsername === currentUser
+                    ? 'You: '
+                    : chat.type !== 'individual'
+                    ? `${chat.lastMessageSentUsername}: `
+                    : null
+                  : null}
+                {chat.lastMessageText ?? ''}
+              </Text>
+            )}
+
+            {chat.unreadCount ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>
+                  {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+      <ImagePreviewModal
+        visible={isPreviewVisible}
+        imageUrl={chat.avatarUrl || undefined}
+        title={chat.name}
+        onClose={() => setIsPreviewVisible(false)}
+      />
+    </>
   );
 };
 
@@ -200,6 +264,10 @@ const makeStyles = ({
       ...typography.variants.description,
       fontWeight: typography.weights.medium,
       color: colors.brand.primary,
+    },
+    typingText: {
+      color: colors.brand.primary,
+      fontWeight: typography.weights.semiBold,
     },
     badge: {
       backgroundColor: colors.brand.primary,

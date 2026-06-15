@@ -1,7 +1,7 @@
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import { websocketApi } from '../../api/WebsocketApi/websocketApi';
-import { formatMessagePayload } from '../Chat/messageController';
+import { buildSendMessageEvent } from '../Chat/messageController';
 
 let isSyncing = false;
 
@@ -24,12 +24,12 @@ export const performOutgoingSync = async () => {
 
     // 1. Sync New Messages
     for (const message of pendingNew) {
-      websocketApi.sendRaw(formatMessagePayload(message));
+      websocketApi.send(buildSendMessageEvent(message));
     }
 
     // 2. Sync Edits
     for (const message of pendingEdits) {
-      websocketApi.sendRaw({
+      websocketApi.send({
         event: 'EDIT_MSG',
         payload: {
           id: message.id,
@@ -40,16 +40,35 @@ export const performOutgoingSync = async () => {
       });
     }
 
-    // 3. Sync Deletions
-    for (const message of pendingDeletes) {
-      websocketApi.sendRaw({
-        event: 'DELETE_MSG',
+    // 3. Sync Deletions — send all pending deletes as a single batch
+    if (pendingDeletes.length > 0) {
+      const nowIso = new Date().toISOString();
+      websocketApi.send({
+        event: 'DELETE_MSGS',
         payload: {
-          id: message.id,
-          deleteType: message.deleteType || 'deleteForEveryone',
-          deletedAt: new Date(message.deletedAt || Date.now()).toISOString(),
+          protocolVersion: '1.0',
+          messages: pendingDeletes.map(message => {
+            let deleteType: 'deleteForMe' | 'deleteForEveryone' | 'both' =
+              'deleteForMe';
+            if (message.isDeletedForEveryone && message.isDeletedForMe) {
+              deleteType = 'both';
+            } else if (message.isDeletedForEveryone) {
+              deleteType = 'deleteForEveryone';
+            }
+
+            return {
+              id: message.id,
+              deleteType,
+              deletedForEveryoneAt: message.deletedForEveryoneAt
+                ? new Date(message.deletedForEveryoneAt).toISOString()
+                : null,
+              deletedForMeAt: message.deletedForMeAt
+                ? new Date(message.deletedForMeAt).toISOString()
+                : null,
+            };
+          }),
         },
-        timestamp: new Date().toISOString(),
+        timestamp: nowIso,
       });
     }
 
