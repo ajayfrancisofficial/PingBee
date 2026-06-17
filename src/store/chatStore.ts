@@ -10,12 +10,33 @@ interface ChatState {
   setTyping: (chatId: string, userId: string, isTyping: boolean) => void;
 }
 
-export const useChatStore = create<ChatState>(set => ({
+// Store typing timeouts globally outside the store to avoid serialization issues
+const typingTimeouts: Record<string, ReturnType<typeof setTimeout>> = {};
+const TYPING_TIMEOUT_MS = 6000; // 6 seconds before clearing stale typing indicator
+
+export const useChatStore = create<ChatState>((set, get) => ({
   activeChatId: null,
-  setActiveChatId: (id) => set({ activeChatId: id }),
+  setActiveChatId: id => set({ activeChatId: id }),
 
   typingUsers: {},
-  setTyping: (chatId, userId, isTyping) =>
+  setTyping: (chatId, userId, isTyping) => {
+    const timeoutKey = `${chatId}-${userId}`;
+
+    // Clear any existing stale timeout for this user in this chat
+    if (typingTimeouts[timeoutKey]) {
+      console.log('clearing timeou');
+
+      clearTimeout(typingTimeouts[timeoutKey]);
+      delete typingTimeouts[timeoutKey];
+    }
+
+    if (isTyping) {
+      // Set a self-cleaning timeout to prevent sticking as typing
+      typingTimeouts[timeoutKey] = setTimeout(() => {
+        get().setTyping(chatId, userId, false);
+      }, TYPING_TIMEOUT_MS);
+    }
+
     set(state => {
       const current = state.typingUsers[chatId] || [];
       const updated = isTyping
@@ -28,5 +49,6 @@ export const useChatStore = create<ChatState>(set => ({
           [chatId]: updated,
         },
       };
-    }),
+    });
+  },
 }));
