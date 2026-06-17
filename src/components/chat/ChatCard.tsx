@@ -17,6 +17,7 @@ import { AppTheme } from '../../theme';
 import { Users } from 'lucide-react-native';
 import { useUserStore } from '../../store/userStore';
 import { useChatStore } from '../../store/chatStore';
+import { useOnlineUsersStore } from '../../store/onlineUsersStore';
 import { getTypingText } from '../../utils/TypingUtils';
 import { getInitials } from '../../utils/StringUtils';
 import { ImagePreviewModal } from '../common/ImagePreviewModal';
@@ -32,12 +33,15 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
   const currentUser = useUserStore(state => state.username);
   const currentUserId = useUserStore(state => state.userId);
   const typingUsers = useChatStore(state => state.typingUsers[chat.id]);
+  const onlineUserIds = useOnlineUsersStore(state => state.onlineUserIds);
   const [typerNames, setTyperNames] = useState<Map<string, string>>(new Map());
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
 
   const remoteTypers = useMemo(() => {
-    return (typingUsers || []).filter(id => id !== String(currentUserId));
-  }, [typingUsers, currentUserId]);
+    return (typingUsers || []).filter(
+      id => id !== String(currentUserId) && onlineUserIds.has(id),
+    );
+  }, [typingUsers, currentUserId, onlineUserIds]);
 
   useEffect(() => {
     if (remoteTypers.length === 0) return;

@@ -42,7 +42,8 @@ const NewChatScreen = () => {
       const response = await startConversation(user.user_id);
       if (response.success && response.data) {
         const chatId = String(response.data.conversation_id);
-        const name = `${user.firstname} ${user.lastname}`.trim() || user.username;
+        const name =
+          `${user.firstname} ${user.lastname}`.trim() || user.username;
 
         // Populate chat, users, and chat_participants tables
         await setupConversation(chatId, user, String(userId));
@@ -51,6 +52,8 @@ const NewChatScreen = () => {
           name,
           chatId,
           avatarUrl: user.avatar_url || undefined,
+          chatType: 'individual',
+          otherUserId: String(user.user_id),
         });
       }
     } catch (error) {
@@ -78,7 +81,10 @@ const NewChatScreen = () => {
       >
         <View style={styles.avatar}>
           {item.avatar_url ? (
-            <Image source={{ uri: item.avatar_url }} style={styles.avatarImage} />
+            <Image
+              source={{ uri: item.avatar_url }}
+              style={styles.avatarImage}
+            />
           ) : (
             <Text style={styles.avatarText}>{getInitials(item)}</Text>
           )}

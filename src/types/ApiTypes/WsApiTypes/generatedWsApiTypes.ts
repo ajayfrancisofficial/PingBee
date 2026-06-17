@@ -154,6 +154,13 @@ export interface components {
       /** Status */
       status: string;
     };
+    /** OnlineUsersPayload */
+    OnlineUsersPayload: {
+      /** User Ids */
+      user_ids: number[];
+      /** Message */
+      message: string;
+    };
     /** PresenceBroadcastPayload */
     PresenceBroadcastPayload: {
       /** Userid */
@@ -279,7 +286,8 @@ export interface components {
         | 'RECEIVE_EDIT_MSG'
         | 'ACK_DELETE_MSGS'
         | 'RECEIVE_DELETE_MSGS'
-        | 'ERROR';
+        | 'ERROR'
+        | 'ONLINE_USERS';
       /** Payload */
       payload:
         | components['schemas']['AckSendMessagePayload']
@@ -291,7 +299,8 @@ export interface components {
         | components['schemas']['ReceiveEditMessagePayload']
         | components['schemas']['AckDeleteMultipleMessagesPayload']
         | components['schemas']['ReceiveDeleteMultipleMessagesPayload']
-        | components['schemas']['ErrorPayload'];
+        | components['schemas']['ErrorPayload']
+        | components['schemas']['OnlineUsersPayload'];
       /** Timestamp */
       timestamp: string;
     };

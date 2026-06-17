@@ -3,6 +3,7 @@ import { database } from '../../db';
 import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
 import { useChatStore } from '../../store/chatStore';
+import { useOnlineUsersStore } from '../../store/onlineUsersStore';
 import { performOutgoingSync } from '../Sync/OutgoingSync';
 import { DBService } from '../DB/DBService';
 import { chatApi } from '../../api/RESTApi/chatApi';
@@ -271,6 +272,13 @@ export const websocketService = {
         case 'ERROR': {
           const p = payload as ServerEventPayloads['ERROR'];
           console.error('[websocketService] Server Error:', p.message);
+          break;
+        }
+
+        case 'ONLINE_USERS': {
+          const p = payload as ServerEventPayloads['ONLINE_USERS'];
+          const { setOnlineUsers } = useOnlineUsersStore.getState();
+          setOnlineUsers(p.user_ids);
           break;
         }
 

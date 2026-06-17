@@ -8,13 +8,10 @@ input resetting fasttyping
 chats table updatedAt value 
 check if we are using special field updatedAt and createdat, whatever.. watermelondb special fields in message table
 
-typing ddoes not go off when the other user goes offline when typing - check for presence also. show typing only if the other user is online and typing
-
 
 
 low priority
 --------------------------------
- should we migrate to socket.io or should we stick to the current websocket architecture?
 delete ws presence and all its dependency
 deliverd i have to send? what if app is killed?
 open a chat should initially scroll to last read message.

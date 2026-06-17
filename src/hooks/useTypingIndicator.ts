@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useChatStore } from '../store/chatStore';
 import { useUserStore } from '../store/userStore';
+import { useOnlineUsersStore } from '../store/onlineUsersStore';
 import { sendTypingStatus } from '../services/Chat/messageController';
 
 /** How long after the last keystroke before we send isTyping: false */
@@ -30,6 +31,7 @@ export const useTypingIndicator = (
 ): UseTypingIndicatorResult => {
   const { userId } = useUserStore();
   const typingUsers = useChatStore(state => state.typingUsers);
+  const onlineUserIds = useOnlineUsersStore(state => state.onlineUserIds);
 
   /** Whether we have already sent isTyping: true to the server */
   const isCurrentlyTypingRef = useRef(false);
@@ -82,9 +84,9 @@ export const useTypingIndicator = (
     };
   }, [chatId]);
 
-  // Filter self out of the incoming typing list
+  // Filter self out AND filter to only online users
   const typingUserIds = (typingUsers[chatId] ?? []).filter(
-    id => id !== String(userId),
+    id => id !== String(userId) && onlineUserIds.has(id),
   );
 
   return { typingUserIds, notifyTyping };

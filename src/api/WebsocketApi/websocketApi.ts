@@ -1,6 +1,7 @@
 import { setWsDisconnectedAt } from '../../utils/syncStorage';
 import { websocketService } from '../../services/Websocket/websocketService';
 import { authService } from '../../services/Auth/authService';
+import { useOnlineUsersStore } from '../../store/onlineUsersStore';
 import type {
   WsServerMessage,
   WsClientMessage,
@@ -147,6 +148,7 @@ class WebSocketManager {
   private handleClose(event: WebSocketCloseEvent): void {
     this.isConnected = false;
     this.isConnecting = false;
+    useOnlineUsersStore.getState().clearOnlineUsers();
     console.log(
       `[WebSocketManager] ❌ Disconnected (Code: ${event.code ?? 'unknown'}).`,
     );

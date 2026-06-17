@@ -31,6 +31,7 @@ export type ServerEventPayloads = {
   ACK_DELETE_MSGS: components['schemas']['AckDeleteMultipleMessagesPayload'];
   RECEIVE_DELETE_MSGS: components['schemas']['ReceiveDeleteMultipleMessagesPayload'];
   ERROR: components['schemas']['ErrorPayload'];
+  ONLINE_USERS: components['schemas']['OnlineUsersPayload'];
 };
 
 /** All possible Server Event names */
@@ -71,6 +72,7 @@ export type ReceiveDeleteMultipleMessagesPayload =
 export type ReceiveDeleteMultipleMessagesItem =
   components['schemas']['ReceiveDeleteMultipleMessagesItem'];
 export type ErrorPayload = components['schemas']['ErrorPayload'];
+export type OnlineUsersPayload = components['schemas']['OnlineUsersPayload'];
 
 // ── Client Payload Aliases ───────────────────────────────────────────────────
 
