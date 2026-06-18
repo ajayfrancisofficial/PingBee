@@ -3,6 +3,7 @@ import { createStaticNavigation } from '@react-navigation/native';
 import { AppStack } from './AppStack';
 import { AuthStack } from './AuthStack';
 import { useAuthStore } from '../store/authStore';
+import { navigationRef } from './navigationRef';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { getNavigationTheme } from '../theme/navigationTheme';
 import { StyleSheet, View } from 'react-native';
@@ -36,7 +37,7 @@ export const AuthSwitch = () => {
   return (
     <View style={styles.rootContainer}>
       {isLoggedIn ? (
-        <AppNavigation theme={navTheme} />
+        <AppNavigation ref={navigationRef} theme={navTheme} />
       ) : (
         <AuthNavigation theme={navTheme} />
       )}

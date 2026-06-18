@@ -3,6 +3,7 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 import { useFcmToken } from './useFcmToken';
+import { navigate } from '../navigation/navigationRef';
 
 /**
  * Custom hook to orchestrate push notification setup:
@@ -97,11 +98,43 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
     init();
   }, [isLoggedIn, requestPermission, createChannel, subscribeToTopic]);
 
-  // Handle FCM messages in foreground
+  // Handle FCM messages and Notifee interactions (clicks and app startup launches)
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
+    // 1. Check if app was launched from a killed state by tapping a notification
+    const checkInitialNotification = async () => {
+      const initialNotification = await notifee.getInitialNotification();
+      if (initialNotification) {
+        console.log(
+          '[Push] App opened from killed state via notification:',
+          initialNotification,
+        );
+        const { notification } = initialNotification;
+        const data = notification?.data;
+        if (data && data.chatId) {
+          console.log(
+            '[Push] Navigating to chat from initial notification:',
+            data.chatId,
+          );
+          // Add a small delay to ensure navigation container is fully mounted and ready
+          setTimeout(() => {
+            navigate('Chat', {
+              chatId: data.chatId as string,
+              name: data.name as string,
+              avatarUrl: data.avatarUrl as string | undefined,
+              chatType: data.chatType as 'individual' | 'group' | undefined,
+              otherUserId: data.otherUserId as string | undefined,
+            });
+          }, 500);
+        }
+      }
+    };
+
+    checkInitialNotification();
+
+    // 2. Handle FCM messages in foreground
+    const unsubscribeFcm = messaging().onMessage(async remoteMessage => {
       console.log('[Push] Foreground message received:', remoteMessage);
 
       // Display foreground notification via Notifee on Android
@@ -112,6 +145,7 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
           await notifee.displayNotification({
             title: title || 'New Message',
             body: body || '',
+            data: remoteMessage.data,
             android: {
               channelId: 'pingbee-messages',
               importance: AndroidImportance.HIGH,
@@ -129,14 +163,8 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
       }
     });
 
-    return unsubscribe;
-  }, [isLoggedIn]);
-
-  // Handle Notifee foreground events (e.g. notification click)
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    const unsubscribeForeground = notifee.onForegroundEvent(event => {
+    // 3. Listen for foreground notification tap events
+    const unsubscribeNotifee = notifee.onForegroundEvent(event => {
       const { type, detail } = event;
 
       if (type === EventType.PRESS) {
@@ -144,12 +172,22 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
           '[Push] Foreground notification pressed:',
           detail.notification,
         );
-        // TODO: Implement deep-linking / navigation later (leave space for it)
+        const data = detail.notification?.data;
+        if (data && data.chatId) {
+          navigate('Chat', {
+            chatId: data.chatId as string,
+            name: data.name as string,
+            avatarUrl: data.avatarUrl as string | undefined,
+            chatType: data.chatType as 'individual' | 'group' | undefined,
+            otherUserId: data.otherUserId as string | undefined,
+          });
+        }
       }
     });
 
     return () => {
-      unsubscribeForeground();
+      unsubscribeFcm();
+      unsubscribeNotifee();
     };
   }, [isLoggedIn]);
 
