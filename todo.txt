@@ -12,6 +12,9 @@ chats table updatedAt value
 check if we are using special field updatedAt and createdat, whatever.. watermelondb special fields in message table
 
 
+fcm 
+  minimised state il tap detect avanilla
+
 
 low priority
 --------------------------------

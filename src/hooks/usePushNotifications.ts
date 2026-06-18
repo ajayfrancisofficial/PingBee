@@ -3,7 +3,7 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 import { useFcmToken } from './useFcmToken';
-import { navigate } from '../navigation/navigationRef';
+import { navigate, navigationRef } from '../navigation/navigationRef';
 
 /**
  * Custom hook to orchestrate push notification setup:
@@ -139,6 +139,17 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
 
       // Display foreground notification via Notifee on Android
       if (Platform.OS === 'android') {
+        // If the user is currently looking at the Chat screen for this chatId, do not display the notification
+        if (navigationRef.isReady()) {
+          const currentRoute = navigationRef.getCurrentRoute();
+          if (
+            currentRoute?.name === 'Chat' &&
+            (currentRoute.params as any)?.chatId === remoteMessage.data?.chatId
+          ) {
+            return;
+          }
+        }
+
         const { title, body } = remoteMessage.notification || {};
 
         try {
