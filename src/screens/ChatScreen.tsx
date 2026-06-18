@@ -5,6 +5,7 @@ import { ChatBox } from '../components/chat/ChatBox';
 import { ChatScreenHeader } from '../components/chat/ChatScreenHeader';
 import { ImagePreviewModal } from '../components/common/ImagePreviewModal';
 import { useChatOnlineStatus } from '../hooks/useChatOnlineStatus';
+import { useClearChatNotifications } from '../hooks/useClearChatNotifications';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,9 @@ const ChatScreen = ({ route }: Props) => {
     chatType,
     routeOtherUserId,
   });
+
+  // Clear notifications for this chat when opened
+  useClearChatNotifications(chatId);
 
   // Register active chat (used by WebSocket routing)
   useEffect(() => {
