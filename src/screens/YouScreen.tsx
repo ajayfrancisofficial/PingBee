@@ -201,7 +201,9 @@ export const YouScreen = () => {
               </View>
             </View>
             {/* Logout */}
-            <LogoutButton />
+            <View style={styles.logoutContainer}>
+              <LogoutButton />
+            </View>
           </>
         }
       />
@@ -353,5 +355,9 @@ const makeStyles = ({
       ...typography.variants.description,
       color: colors.brand.primary,
       fontWeight: typography.weights.medium,
+    },
+    logoutContainer: {
+      marginHorizontal: spacing.md,
+      marginTop: spacing.md,
     },
   });

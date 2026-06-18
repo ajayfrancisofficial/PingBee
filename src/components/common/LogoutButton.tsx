@@ -3,14 +3,16 @@ import { StyleSheet } from 'react-native';
 import { Button } from '../foundations/Button';
 import { authService } from '../../services/Auth/authService';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { AppTheme } from '../../theme';
+import { ConfirmationModal } from './ConfirmationModal';
 
 export const LogoutButton = () => {
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const theme = useAppTheme();
-  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+  const styles = React.useMemo(() => makeStyles(), [theme]);
 
   const handleLogout = async () => {
+    setShowConfirm(false);
     setLoading(true);
     try {
       await authService.logout();
@@ -22,20 +24,31 @@ export const LogoutButton = () => {
   };
 
   return (
-    <Button
-      title="Logout"
-      onPress={handleLogout}
-      variant="outline"
-      isLoading={loading}
-      style={styles.logoutButton}
-    />
+    <>
+      <Button
+        title="Logout"
+        onPress={() => setShowConfirm(true)}
+        variant="outline"
+        isLoading={loading}
+        style={styles.logoutButton}
+      />
+      <ConfirmationModal
+        visible={showConfirm}
+        title="Logout"
+        message="Are you sure you want to log out of PingBee?"
+        confirmText="Logout"
+        cancelText="Cancel"
+        onConfirm={handleLogout}
+        onCancel={() => setShowConfirm(false)}
+        isDestructive={true}
+      />
+    </>
   );
 };
 
-const makeStyles = ({ spacing }: AppTheme) =>
+const makeStyles = () =>
   StyleSheet.create({
     logoutButton: {
       width: '100%',
-      marginTop: spacing.md,
     },
   });

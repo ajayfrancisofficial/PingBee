@@ -233,6 +233,11 @@ export interface components {
        * @default null
        */
       replyTo: string | null;
+      /**
+       * Isbot
+       * @default false
+       */
+      isBot: boolean | null;
     };
     /** TypingBroadcastPayload */
     TypingBroadcastPayload: {

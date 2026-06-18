@@ -51,7 +51,8 @@ export type ForgotPasswordBody = components['schemas']['ForgotPasswordRequest'];
 export type VerifyForgotOTPBody = components['schemas']['VerifyOTPRequest'];
 
 /** POST /reset-password — request body */
-export type ResetPasswordBody = components['schemas']['ResetPasswordByIdRequest'];
+export type ResetPasswordBody =
+  components['schemas']['ResetPasswordByIdRequest'];
 
 /** POST /user-search — request body */
 export type UserSearchBody = components['schemas']['UserSearchRequest'];
@@ -93,7 +94,6 @@ export type AuthData = components['schemas']['AuthResponseData'];
 /** Individual chat item in the list */
 export type ChatItem = components['schemas']['ChatItem'];
 
-
 /** List of chats */
 export type ChatList = components['schemas']['ChatList'];
 
@@ -134,10 +134,12 @@ export type GetAllUsersResponse = SuccessBody<'get_all_users_users_post'>;
 export type SearchUsersResponse = SuccessBody<'search_users_user_search_post'>;
 
 /** POST /users-avatar → 200 response */
-export type UploadAvatarResponse = SuccessBody<'upload_avatar_users_avatar_post'>;
+export type UploadAvatarResponse =
+  SuccessBody<'upload_avatar_users_avatar_post'>;
 
 /** DELETE /users-avatar → 200 response */
-export type DeleteAvatarResponse = SuccessBody<'delete_avatar_users_avatar_delete'>;
+export type DeleteAvatarResponse =
+  SuccessBody<'delete_avatar_users_avatar_delete'>;
 
 /** POST /conversation → 200 response */
 export type ConversationResponse =
@@ -160,23 +162,27 @@ export type SendVerificationResponse =
 export type VerifyEmailResponse = SuccessBody<'verify_email_verify_email_post'>;
 
 /** POST /forgot-password → 200 response */
-export type ForgotPasswordResponse = SuccessBody<'forgot_password_forgot_password_post'>;
+export type ForgotPasswordResponse =
+  SuccessBody<'forgot_password_forgot_password_post'>;
 
 /** POST /verify-forgot-password-otp → 200 response */
-export type VerifyForgotOTPResponse = SuccessBody<'verify_forgot_password_otp_verify_forgot_password_otp_post'>;
+export type VerifyForgotOTPResponse =
+  SuccessBody<'verify_forgot_password_otp_verify_forgot_password_otp_post'>;
 
 /** POST /reset-password → 200 response */
-export type ResetPasswordResponse = SuccessBody<'reset_password_reset_password_post'>;
+export type ResetPasswordResponse =
+  SuccessBody<'reset_password_reset_password_post'>;
 
 /** GET / → 200 response */
 export type RootResponse = SuccessBody<'root__get'>;
 
 /** POST /chat-users-details → request body */
-export type ChatUserDetailsBody = components['schemas']['ChatUserDetailsRequest'];
+export type ChatUserDetailsBody =
+  components['schemas']['ChatUserDetailsRequest'];
 
 /** POST /chat-users-details → 200 response */
-export type ChatUserDetailsResponse = SuccessBody<'get_chat_users_details_chat_users_details_post'>;
-
+export type ChatUserDetailsResponse =
+  SuccessBody<'get_chat_users_details_chat_users_details_post'>;
 
 // ── Path parameter types ──────────────────────────────────────────────────────
 
@@ -185,3 +191,19 @@ export type ChatUserDetailsResponse = SuccessBody<'get_chat_users_details_chat_u
 // ── Query parameter types ─────────────────────────────────────────────────────
 
 // No active query parameters in current spec.
+
+// ── FCM Push Notification types ──────────────────────────────────────────────
+
+/** POST /fcm-token — request body */
+export type SaveFcmTokenBody = components['schemas']['FCMTokenRegisterRequest'];
+
+/** POST /fcm-token — success response */
+export type SaveFcmTokenResponse =
+  SuccessBody<'register_fcm_token_fcm_token_post'>;
+
+/** DELETE /fcm-token — request body */
+export type DeleteFcmTokenBody = components['schemas']['FCMTokenDeleteRequest'];
+
+/** DELETE /fcm-token — success response */
+export type DeleteFcmTokenResponse =
+  SuccessBody<'delete_fcm_token_fcm_token_delete'>;

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "274194420162",
+    "project_id": "pingbee-fee35",
+    "storage_bucket": "pingbee-fee35.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:274194420162:android:9a02f42da823fcaa3d065b",
+        "android_client_info": {
+          "package_name": "com.pingbee"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiUOSwKv3sfkrlMLZlk6PMOefpYCJmsWU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

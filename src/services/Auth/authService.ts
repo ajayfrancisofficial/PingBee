@@ -1,6 +1,8 @@
 import * as Keychain from 'react-native-keychain';
 import { isAxiosError } from 'axios';
+import messaging from '@react-native-firebase/messaging';
 import { authApi } from '../../api/RESTApi/authApi';
+import { pushNotificationApi } from '../../api/RESTApi/pushNotificationApi';
 import { useAuthStore } from '../../store/authStore';
 import { useUserStore } from '../../store/userStore';
 import type {
@@ -159,10 +161,42 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     try {
+      // 1. Capture credentials & FCM token before resetting the keychain/state
+      let authHeader: Record<string, string> | undefined;
+      let currentToken: string | null = null;
+      try {
+        const credentials = await Keychain.getGenericPassword({
+          service: 'accessToken',
+        });
+        if (credentials) {
+          authHeader = { Authorization: `Bearer ${credentials.password}` };
+        }
+        currentToken = await messaging().getToken();
+      } catch (fcmError) {
+        console.warn('[FCM] Failed to capture tokens before logout:', fcmError);
+      }
+
+      // 2. Perform local logout immediately (resets local store, credentials, and local database)
       await useAuthStore.getState().logout();
       useUserStore.getState().clearUser();
-      // Clear the local WatermelonDB data via DBService
       await DBService.clearDatabase();
+
+      // 3. Delete FCM token from server and Firebase last
+      if (currentToken) {
+        try {
+          await pushNotificationApi.deleteFcmToken(
+            { token: currentToken },
+            authHeader,
+          );
+          await messaging().deleteToken();
+          console.log('[FCM] Token deleted successfully during logout');
+        } catch (apiError) {
+          console.warn(
+            '[FCM] Failed to delete token from server/Firebase:',
+            apiError,
+          );
+        }
+      }
     } catch (error) {}
   },
 

@@ -213,6 +213,24 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/fcm-token': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Register Fcm Token */
+    post: operations['register_fcm_token_fcm_token_post'];
+    /** Delete Fcm Token */
+    delete: operations['delete_fcm_token_fcm_token_delete'];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/conversation': {
     parameters: {
       query?: never;
@@ -374,7 +392,10 @@ export interface components {
     };
     /** Body_upload_avatar_users_avatar_post */
     Body_upload_avatar_users_avatar_post: {
-      /** File */
+      /**
+       * File
+       * Format: binary
+       */
       file: string;
     };
     /** ChatItem */
@@ -455,6 +476,30 @@ export interface components {
       /** Message */
       message: string;
       error: components['schemas']['ErrorDetail'];
+    };
+    /** FCMTokenDeleteRequest */
+    FCMTokenDeleteRequest: {
+      /** Token */
+      token: string;
+    };
+    /** FCMTokenDeleteResponse */
+    FCMTokenDeleteResponse: {
+      /** Message */
+      message: string;
+    };
+    /** FCMTokenRegisterRequest */
+    FCMTokenRegisterRequest: {
+      /** Token */
+      token: string;
+    };
+    /** FCMTokenRegisterResponse */
+    FCMTokenRegisterResponse: {
+      /** Fld Fcm Token Id */
+      fld_fcm_token_id: number;
+      /** Fld User Id */
+      fld_user_id: number;
+      /** Fld Token */
+      fld_token: string;
     };
     /** ForgotPasswordRequest */
     ForgotPasswordRequest: {
@@ -567,6 +612,26 @@ export interface components {
       /** Message */
       message: string;
       data?: components['schemas']['ConversationID'] | null;
+    };
+    /** StandardResponse[FCMTokenDeleteResponse] */
+    StandardResponse_FCMTokenDeleteResponse_: {
+      /** Success */
+      success: boolean;
+      /** Status */
+      status: number;
+      /** Message */
+      message: string;
+      data?: components['schemas']['FCMTokenDeleteResponse'] | null;
+    };
+    /** StandardResponse[FCMTokenRegisterResponse] */
+    StandardResponse_FCMTokenRegisterResponse_: {
+      /** Success */
+      success: boolean;
+      /** Status */
+      status: number;
+      /** Message */
+      message: string;
+      data?: components['schemas']['FCMTokenRegisterResponse'] | null;
     };
     /** StandardResponse[List[UserDetail]] */
     StandardResponse_List_UserDetail__: {
@@ -1414,6 +1479,72 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['StandardResponse_dict_'];
+        };
+      };
+    };
+  };
+  register_fcm_token_fcm_token_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FCMTokenRegisterRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_FCMTokenRegisterResponse_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+    };
+  };
+  delete_fcm_token_fcm_token_delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['FCMTokenDeleteRequest'];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_FCMTokenDeleteResponse_'];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['HTTPValidationError'];
         };
       };
     };

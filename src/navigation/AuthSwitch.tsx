@@ -8,6 +8,7 @@ import { getNavigationTheme } from '../theme/navigationTheme';
 import { StyleSheet, View } from 'react-native';
 import { AppTheme } from '../theme';
 import { useWebsocket } from '../hooks/useWebsocket';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 const AppNavigation = createStaticNavigation(AppStack);
 const AuthNavigation = createStaticNavigation(AuthStack);
@@ -19,6 +20,9 @@ export const AuthSwitch = () => {
 
   // Handle WebSocket lifecycle
   useWebsocket();
+
+  // Handle Push Notification setup and lifecycle
+  usePushNotifications(isLoggedIn);
 
   useEffect(() => {
     checkAuth();

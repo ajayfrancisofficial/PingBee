@@ -127,7 +127,7 @@ const ChatCardComponent = ({ chat, onPress }: ChatCardProps) => {
               </Text>
             </View>
             <Text style={styles.timeText}>
-              {formatTime(chat.lastUpdatedAt)}
+              {formatTime(chat.updatedAt)}
             </Text>
           </View>
 
