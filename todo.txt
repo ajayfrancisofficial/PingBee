@@ -14,7 +14,7 @@ check if we are using special field updatedAt and createdat, whatever.. watermel
 
 fcm 
   minimised state il tap detect avanilla
-  clear all notification when app opens, only that opened chat's or fully?
+  killed state il noti tap chat open avunnilla
 
 
 low priority
