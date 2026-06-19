@@ -1,8 +1,10 @@
-export const renderBaseUrl = 'https://chat-app-81bx.onrender.com';
-export const renderWsBaseUrl = 'wss://chat-app-81bx.onrender.com/ws';
+import Config from 'react-native-config';
 
-export const API_BASE_URL = 'https://api-pingbee.duckdns.org';
-export const WS_BASE_URL = 'wss://api-pingbee.duckdns.org/ws';
+export const renderBaseUrl = Config.RENDER_BASE_URL;
+export const renderWsBaseUrl = Config.RENDER_WS_BASE_URL;
+
+export const API_BASE_URL = Config.API_BASE_URL;
+export const WS_BASE_URL = Config.WS_BASE_URL;
 
 export const ENDPOINTS = {
   AUTH: {
