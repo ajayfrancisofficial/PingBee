@@ -15,6 +15,7 @@ import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
 import Chat from '../db/models/Chat';
 import { ChatCard } from '../components/chat/ChatCard';
+import { AiChatbotFab } from '../components/chat/AiChatbotFab';
 
 const ChatsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
@@ -58,17 +59,28 @@ const ChatsScreen = () => {
   );
 
   return (
-    <FlatList
-      style={styles.container}
-      contentInsetAdjustmentBehavior={'automatic'}
-      data={chats}
-      keyExtractor={item => item.id}
-      renderItem={renderItem}
-      contentContainerStyle={styles.list}
-      showsVerticalScrollIndicator={false}
-      onRefresh={refreshChats}
-      refreshing={isRefreshing}
-    />
+    <View style={styles.container}>
+      <FlatList
+        style={styles.listContainer}
+        contentInsetAdjustmentBehavior={'automatic'}
+        data={chats}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        onRefresh={refreshChats}
+        refreshing={isRefreshing}
+      />
+      <AiChatbotFab
+        onPress={() => {
+          navigation.navigate('Chat', {
+            name: 'Pingy',
+            chatId: 'pingy',
+            chatType: 'individual',
+          });
+        }}
+      />
+    </View>
   );
 };
 
@@ -76,13 +88,14 @@ const makeStyles = ({
   colors,
   typography,
   spacing,
-  borderRadius,
-  sizing,
 }: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: colors.backgrounds.default,
+    },
+    listContainer: {
+      flex: 1,
     },
     list: {
       paddingBottom: 100, // accommodate bottom tab bar
