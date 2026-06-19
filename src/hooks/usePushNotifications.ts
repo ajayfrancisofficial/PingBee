@@ -10,7 +10,7 @@ import { navigate, navigationRef } from '../navigation/navigationRef';
  * - Requests Android notification permissions (API 33+)
  * - Configures Notifee notification channel for Android
  * - Sets up FCM foreground message handler to display notifications via Notifee
- * - Listens for foreground notification click events (placeholder for deep-linking)
+ * - Listens for foreground notification click events
  * - Returns FCM token management functions (token lifecycle, delete token)
  */
 export const usePushNotifications = (isLoggedIn: boolean) => {
@@ -98,36 +98,47 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
     init();
   }, [isLoggedIn, requestPermission, createChannel, subscribeToTopic]);
 
-  // Handle FCM messages and Notifee interactions (clicks and app startup launches)
+  // Handle FCM messages and Notifee/FCM interactions (clicks and app startup launches)
   useEffect(() => {
     if (!isLoggedIn) return;
 
+    // Helper to process notification navigation
+    const handleNotificationNavigation = (data: any, source: string) => {
+      if (data && data.chatId && data.name) {
+        console.log(
+          `[Push] Navigating to Chat from ${source} for chatId:`,
+          data.chatId,
+        );
+        navigate('Chat', {
+          chatId: data.chatId as string,
+          name: data.name as string,
+          avatarUrl: data.avatarUrl as string | undefined,
+          chatType: data.chatType as 'individual' | 'group' | undefined,
+          otherUserId: data.otherUserId as string | undefined,
+        });
+      } else {
+        console.warn(
+          `[Push] Pressed notification from ${source} missing chatId or name in data:`,
+          data,
+        );
+      }
+    };
+
     // 1. Check if app was launched from a killed state by tapping a notification
     const checkInitialNotification = async () => {
-      const initialNotification = await notifee.getInitialNotification();
-      if (initialNotification) {
-        console.log(
-          '[Push] App opened from killed state via notification:',
-          initialNotification,
-        );
-        const { notification } = initialNotification;
-        const data = notification?.data;
-        if (data && data.chatId) {
+      try {
+        const initialFcm = await messaging().getInitialNotification();
+        if (initialFcm) {
           console.log(
-            '[Push] Navigating to chat from initial notification:',
-            data.chatId,
+            '[Push] App opened from killed state via FCM notification:',
+            initialFcm,
           );
-          // Add a small delay to ensure navigation container is fully mounted and ready
-          setTimeout(() => {
-            navigate('Chat', {
-              chatId: data.chatId as string,
-              name: data.name as string,
-              avatarUrl: data.avatarUrl as string | undefined,
-              chatType: data.chatType as 'individual' | 'group' | undefined,
-              otherUserId: data.otherUserId as string | undefined,
-            });
-          }, 500);
+          handleNotificationNavigation(initialFcm.data, 'FCM Initial');
+        } else {
+          console.log('[Push] No initial FCM notification found on boot.');
         }
+      } catch (error) {
+        console.warn('[Push] Error checking initial notification:', error);
       }
     };
 
@@ -136,6 +147,14 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
     // 2. Handle FCM messages in foreground
     const unsubscribeFcm = messaging().onMessage(async remoteMessage => {
       console.log('[Push] Foreground message received:', remoteMessage);
+
+      // Guard: Ignore empty or system messages (e.g. syncs, deleted messages callbacks)
+      const hasNotification = !!remoteMessage.notification;
+      const hasData =
+        remoteMessage.data && Object.keys(remoteMessage.data).length > 0;
+      if (!hasNotification && !hasData) {
+        return;
+      }
 
       // Display foreground notification via Notifee on Android
       if (Platform.OS === 'android') {
@@ -174,31 +193,35 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
       }
     });
 
-    // 3. Listen for foreground notification tap events
+    // 3. Listen for foreground notification tap events (via Notifee)
     const unsubscribeNotifee = notifee.onForegroundEvent(event => {
       const { type, detail } = event;
 
       if (type === EventType.PRESS) {
         console.log(
-          '[Push] Foreground notification pressed:',
+          '[Push Foreground] Notification pressed:',
           detail.notification,
         );
-        const data = detail.notification?.data;
-        if (data && data.chatId) {
-          navigate('Chat', {
-            chatId: data.chatId as string,
-            name: data.name as string,
-            avatarUrl: data.avatarUrl as string | undefined,
-            chatType: data.chatType as 'individual' | 'group' | undefined,
-            otherUserId: data.otherUserId as string | undefined,
-          });
-        }
+        const n = detail.notification;
+        handleNotificationNavigation(n?.data, 'Notifee Foreground');
       }
     });
+
+    // 4. Listen for FCM OS-displayed notifications pressed while app was in background
+    const unsubscribeFcmOpened = messaging().onNotificationOpenedApp(
+      remoteMessage => {
+        console.log(
+          '[Push FCM] Notification caused app to open from background:',
+          remoteMessage,
+        );
+        handleNotificationNavigation(remoteMessage.data, 'FCM Background Tap');
+      },
+    );
 
     return () => {
       unsubscribeFcm();
       unsubscribeNotifee();
+      unsubscribeFcmOpened();
     };
   }, [isLoggedIn]);
 

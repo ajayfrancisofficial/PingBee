@@ -37,8 +37,8 @@ const ChatScreen = ({ route }: Props) => {
     routeOtherUserId,
   });
 
-  // Clear notifications for this chat when opened
-  useClearChatNotifications(chatId);
+  // Clear all notifications when opened
+  useClearChatNotifications();
 
   // Register active chat (used by WebSocket routing)
   useEffect(() => {

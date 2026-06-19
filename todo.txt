@@ -13,8 +13,7 @@ check if we are using special field updatedAt and createdat, whatever.. watermel
 
 
 fcm 
-  minimised state il tap detect avanilla
-  killed state il noti tap chat open avunnilla
+rewrite app noti intercations
 
 
 low priority
