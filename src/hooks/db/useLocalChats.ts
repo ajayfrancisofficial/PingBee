@@ -26,7 +26,7 @@ export function useLocalChats() {
   useEffect(() => {
     const subscription = database
       .get<Chat>('chats')
-      .query(Q.sortBy('updated_at', Q.desc))
+      .query(Q.sortBy('last_updated_at', Q.desc))
       .observe()
       .subscribe(newChats => {
         setChats(newChats);

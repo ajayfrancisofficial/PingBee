@@ -42,10 +42,10 @@ export const DBService = {
             c.avatarUrl = api.avatar_url || undefined;
 
             const apiUpdatedAt = parseDateToMillis(api.updated_at);
-            if (apiUpdatedAt > existingRecord.updatedAt) {
+            if (apiUpdatedAt > existingRecord.lastUpdatedAt) {
               c.lastMessageText = api.last_message_text || undefined;
               c.unreadCount = api.unread_count;
-              c.updatedAt = apiUpdatedAt;
+              c.lastUpdatedAt = apiUpdatedAt;
               c.lastMessageSentUsername = api.lastMessageSentUsername;
             }
           });
@@ -57,7 +57,7 @@ export const DBService = {
             c.type = api.type;
             c.lastMessageText = api.last_message_text || undefined;
             c.unreadCount = api.unread_count;
-            c.updatedAt = parseDateToMillis(api.updated_at);
+            c.lastUpdatedAt = parseDateToMillis(api.updated_at);
             c.avatarUrl = api.avatar_url || undefined;
             c.lastMessageSentUsername = api.lastMessageSentUsername;
           });
@@ -298,23 +298,32 @@ export const DBService = {
           .query(
             Q.where('chat_id', id),
             Q.where('is_deleted_for_me', Q.notEq(true)),
-            Q.sortBy('created_at', Q.desc),
+            Q.sortBy('created_time', Q.desc),
             Q.take(1),
           )
           .fetch();
 
         const latest = latestMessages[0] ?? null;
         let newText: string | undefined = undefined;
+        let newUsername: string | undefined = undefined;
         if (latest) {
           newText = latest.isDeletedForEveryone
             ? 'This message was deleted'
             : latest.text;
+
+          try {
+            const sender = await database
+              .get<User>('users')
+              .find(latest.senderId);
+            newUsername = sender.username;
+          } catch (e) {}
         }
 
         operations.push(
           chat.prepareUpdate(c => {
             c.lastMessageText = newText;
-            c.updatedAt = Date.now();
+            c.lastUpdatedAt = Date.now();
+            c.lastMessageSentUsername = newUsername;
           }),
         );
       }
@@ -350,7 +359,7 @@ export const DBService = {
             Q.where('chat_id', chatId),
             Q.where('is_mine', false),
             Q.where('status', Q.notEq('read')),
-            Q.where('created_at', Q.lte(message.createdAt)),
+            Q.where('created_time', Q.lte(message.createdAt)),
           )
           .fetch();
 

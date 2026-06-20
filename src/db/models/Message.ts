@@ -24,7 +24,7 @@ export default class Message extends Model {
   @field('delete_status') deleteStatus?: 'pending' | 'synced';
   @field('is_deleted_for_me') isDeletedForMe!: boolean;
   @field('deleted_for_me_at') deletedForMeAt!: number | null;
-  @field('created_at') createdAt!: number;
+  @field('created_time') createdAt!: number;
   @field('server_timestamp') serverTimestamp?: number;
 
   @immutableRelation('chats', 'chat_id') chat!: Relation<Chat>;

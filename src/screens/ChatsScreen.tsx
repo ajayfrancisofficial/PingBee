@@ -2,14 +2,7 @@ import { Plus } from 'lucide-react-native';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { AppStackParamList } from '../navigation/AppStack';
 import React, { useLayoutEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  FlatList,
-  Image,
-} from 'react-native';
+import { View, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useLocalChats } from '../hooks/db/useLocalChats';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
@@ -84,11 +77,7 @@ const ChatsScreen = () => {
   );
 };
 
-const makeStyles = ({
-  colors,
-  typography,
-  spacing,
-}: AppTheme) =>
+const makeStyles = ({ colors, typography, spacing }: AppTheme) =>
   StyleSheet.create({
     container: {
       flex: 1,

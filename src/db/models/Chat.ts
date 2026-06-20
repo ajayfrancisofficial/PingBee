@@ -12,7 +12,7 @@ export default class Chat extends Model {
   @field('type') type!: 'individual' | 'group';
   @field('unread_count') unreadCount!: number;
   @field('last_message_text') lastMessageText?: string;
-  @field('updated_at') updatedAt!: number;
+  @field('last_updated_at') lastUpdatedAt!: number;
   @field('avatar_url') avatarUrl?: string;
   @field('last_message_sent_username') lastMessageSentUsername?: string;
 

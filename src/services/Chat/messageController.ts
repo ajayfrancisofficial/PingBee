@@ -56,7 +56,7 @@ export const editMessage = async (
       if (chat.lastMessageText === oldText) {
         await chat.update(c => {
           c.lastMessageText = newText;
-          c.updatedAt = Date.now();
+          c.lastUpdatedAt = Date.now();
         });
       }
     } catch {
@@ -196,7 +196,8 @@ export const sendMessage = async (
       const chat = await database.get<Chat>('chats').find(chatId);
       await chat.update(c => {
         c.lastMessageText = text;
-        c.updatedAt = now;
+        c.lastUpdatedAt = now;
+        c.lastMessageSentUsername = useUserStore.getState().username;
       });
     } catch {
       console.warn('[MessageController] Chat not found for update:', chatId);

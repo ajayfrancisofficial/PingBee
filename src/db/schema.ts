@@ -27,7 +27,7 @@ export default appSchema({
         { name: 'type', type: 'string' }, // 'individual' | 'group'
         { name: 'last_message_text', type: 'string', isOptional: true },
         { name: 'unread_count', type: 'number' },
-        { name: 'updated_at', type: 'number', isIndexed: true },
+        { name: 'last_updated_at', type: 'number', isIndexed: true },
         { name: 'avatar_url', type: 'string', isOptional: true },
         {
           name: 'last_message_sent_username',
@@ -45,7 +45,7 @@ export default appSchema({
         { name: 'media_url', type: 'string', isOptional: true },
         { name: 'media_type', type: 'string', isOptional: true }, // 'image' | 'video' | 'file'
         { name: 'status', type: 'string', isIndexed: true }, // 'pending' | 'sent' | 'delivered' | 'read'
-        { name: 'created_at', type: 'number', isIndexed: true },
+        { name: 'created_time', type: 'number', isIndexed: true },
         { name: 'server_timestamp', type: 'number', isOptional: true },
         { name: 'is_mine', type: 'boolean' },
         { name: 'reply_to_id', type: 'string', isOptional: true },

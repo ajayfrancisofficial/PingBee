@@ -24,7 +24,7 @@ export function useLocalMessages(chatId: string, currentUserId: string) {
       .query(
         Q.where('chat_id', chatId),
         Q.where('is_deleted_for_me', Q.notEq(true)),
-        Q.sortBy('created_at', Q.desc),
+        Q.sortBy('created_time', Q.desc),
       )
       .observeWithColumns([
         'status',

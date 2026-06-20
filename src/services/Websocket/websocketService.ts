@@ -2,6 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import Chat from '../../db/models/Chat';
+import User from '../../db/models/User';
 import { useChatStore } from '../../store/chatStore';
 import { useOnlineUsersStore } from '../../store/onlineUsersStore';
 import { performOutgoingSync } from '../Sync/OutgoingSync';
@@ -42,13 +43,22 @@ export const websocketService = {
               }
             });
 
+            let senderUsername: string | undefined;
+            try {
+              const sender = await database.get<User>('users').find(p.senderId);
+              senderUsername = sender.username;
+            } catch (err) {}
+
             const chatsCollection = database.get<Chat>('chats');
             try {
               const chat = await chatsCollection.find(p.chatId);
               await chat.update(c => {
                 c.lastMessageText = p.text;
                 c.unreadCount += 1;
-                c.updatedAt = Date.now();
+                c.lastUpdatedAt = Date.now();
+                if (senderUsername) {
+                  c.lastMessageSentUsername = senderUsername;
+                }
               });
             } catch (error) {
               // Chat doesn't exist locally (e.g. message from a stranger).
@@ -97,7 +107,7 @@ export const websocketService = {
               if (chat.lastMessageText === oldText) {
                 await chat.update(c => {
                   c.lastMessageText = p.text;
-                  c.updatedAt = Date.now();
+                  c.lastUpdatedAt = Date.now();
                 });
               }
             } catch (e) {
@@ -243,7 +253,7 @@ export const websocketService = {
                     Q.where('chat_id', message.chatId),
                     Q.where('is_mine', true),
                     Q.where('status', Q.notEq('read')),
-                    Q.where('created_at', Q.lte(message.createdAt)),
+                    Q.where('created_time', Q.lte(message.createdAt)),
                   )
                   .fetch();
 
