@@ -31,6 +31,7 @@ export const OFFLINE_SUPPORTED_ENDPOINTS = [
   ENDPOINTS.CHATS.MESSAGES, // '/messages'
   ENDPOINTS.CHATS.USER_DETAILS, // '/chat-users-details'
   ENDPOINTS.NOTIFICATIONS.FCM_TOKEN, // '/fcm-token'
+  ENDPOINTS.PINGY.DETAILS, // '/pingy-details'
 ];
 
 // Response interceptor: auto-refresh token if 401 triggers & global error handling
