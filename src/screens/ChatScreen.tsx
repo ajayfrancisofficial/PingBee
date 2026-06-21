@@ -15,6 +15,7 @@ export type ChatScreenParams = {
   avatarUrl?: string;
   chatType?: 'individual' | 'group';
   otherUserId?: string;
+  isPingy?: boolean;
 };
 type Props = StaticScreenProps<ChatScreenParams>;
 
@@ -25,6 +26,7 @@ const ChatScreen = ({ route }: Props) => {
     avatarUrl,
     chatType,
     otherUserId: routeOtherUserId,
+    isPingy = false,
   } = route.params;
   const setActiveChatId = useChatStore(s => s.setActiveChatId);
 
@@ -57,7 +59,11 @@ const ChatScreen = ({ route }: Props) => {
         isLoading={isLoading}
         onAvatarPress={() => setIsPreviewVisible(true)}
       />
-      <ChatBox chatId={chatId} onLoadingChange={setIsLoading} />
+      <ChatBox
+        chatId={chatId}
+        onLoadingChange={setIsLoading}
+        isPingy={isPingy}
+      />
       <ImagePreviewModal
         visible={isPreviewVisible}
         imageUrl={avatarUrl}
@@ -69,3 +75,4 @@ const ChatScreen = ({ route }: Props) => {
 };
 
 export default ChatScreen;
+

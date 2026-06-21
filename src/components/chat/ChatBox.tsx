@@ -59,6 +59,8 @@ export interface ChatBoxProps {
   chatId: string;
   /** Fires when the initial message load starts/finishes (for the header spinner). */
   onLoadingChange?: (isLoading: boolean) => void;
+  /** When true, skips participant sync (Pingy data comes from /pingy-details). */
+  isPingy?: boolean;
 }
 
 // ─── Internal list item types ─────────────────────────────────────────────────
@@ -85,6 +87,7 @@ type ListItem = MessageItem | SeparatorItem | TypingItem;
 export const ChatBox: React.FC<ChatBoxProps> = ({
   chatId,
   onLoadingChange,
+  isPingy = false,
 }) => {
   const { userId } = useUserStore();
   const appTheme = useAppTheme();
@@ -119,7 +122,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
     onLoadingChange?.(isInitialLoading);
   }, [isInitialLoading, onLoadingChange]);
 
-  useSyncChatParticipants(chatId);
+  useSyncChatParticipants(chatId, { enabled: !isPingy });
 
   // ─── Sender name resolution ───────────────────────────────────────────────
   const senderNames = useResolvedSenderNames(messages, userId);

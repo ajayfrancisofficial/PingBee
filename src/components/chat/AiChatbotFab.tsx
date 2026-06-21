@@ -1,26 +1,41 @@
-import React, { useMemo } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Image, Pressable, StyleSheet } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { AppTheme } from '../../theme/index';
 
 interface AiChatbotFabProps {
   onPress: () => void;
+  avatarUrl?: string;
 }
 
-export const AiChatbotFab: React.FC<AiChatbotFabProps> = ({ onPress }) => {
+export const AiChatbotFab: React.FC<AiChatbotFabProps> = ({
+  onPress,
+  avatarUrl,
+}) => {
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
+  const [imageError, setImageError] = useState(false);
+
+  const showImage = !!avatarUrl && !imageError;
 
   return (
     <Pressable
       style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
       onPress={onPress}
     >
-      <Sparkles
-        color={theme.colors.text.onPrimary}
-        size={theme.sizing.iconSizes.lg}
-      />
+      {showImage ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={styles.avatar}
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <Sparkles
+          color={theme.colors.text.onPrimary}
+          size={theme.sizing.iconSizes.lg}
+        />
+      )}
     </Pressable>
   );
 };
@@ -42,9 +57,15 @@ const makeStyles = ({ colors, spacing, borderRadius }: AppTheme) =>
       shadowOpacity: 0.3,
       shadowRadius: 4.65,
       elevation: 8,
+      overflow: 'hidden',
     },
     fabPressed: {
       opacity: 0.8,
       transform: [{ scale: 0.95 }],
+    },
+    avatar: {
+      width: 56,
+      height: 56,
+      borderRadius: borderRadius.pill,
     },
   });

@@ -4,6 +4,7 @@ import { AppStackParamList } from '../navigation/AppStack';
 import React, { useLayoutEffect, useMemo } from 'react';
 import { View, StyleSheet, Pressable, FlatList } from 'react-native';
 import { useLocalChats } from '../hooks/db/useLocalChats';
+import { usePingyDetails } from '../hooks/db/usePingyDetails';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { AppTheme } from '../theme/index';
 import Chat from '../db/models/Chat';
@@ -14,6 +15,7 @@ const ChatsScreen = () => {
   const navigation = useNavigation<NavigationProp<AppStackParamList>>();
   const { chats, refreshChats, isRefreshing, unreadChatsCount } =
     useLocalChats();
+  const { pingyChat, pingyUserId } = usePingyDetails();
   const theme = useAppTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
@@ -64,15 +66,21 @@ const ChatsScreen = () => {
         onRefresh={refreshChats}
         refreshing={isRefreshing}
       />
-      <AiChatbotFab
-        onPress={() => {
-          navigation.navigate('Chat', {
-            name: 'Pingy',
-            chatId: 'pingy',
-            chatType: 'individual',
-          });
-        }}
-      />
+      {pingyChat && (
+        <AiChatbotFab
+          avatarUrl={pingyChat.avatarUrl}
+          onPress={() => {
+            navigation.navigate('Chat', {
+              name: pingyChat.name,
+              chatId: pingyChat.id,
+              avatarUrl: pingyChat.avatarUrl,
+              chatType: 'individual',
+              otherUserId: pingyUserId ?? undefined,
+              isPingy: true,
+            });
+          }}
+        />
+      )}
     </View>
   );
 };

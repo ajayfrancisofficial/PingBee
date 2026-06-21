@@ -12,6 +12,7 @@ import type {
   MessageItem,
   UserSearchResponse,
   ChatUserDetailsResponse,
+  PingyDetailsData,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 import { parseDateToMillis } from '../../utils/DateTimeUtils';
 
@@ -397,6 +398,72 @@ export const DBService = {
     } catch (err) {
       console.warn('[DBService] markMessageAsRead failed:', err);
     }
+  },
+
+  /**
+   * Upsert Pingy AI chatbot data into the local `chats` and `users` tables.
+   * Called after fetching /pingy-details to persist the chatbot configuration.
+   *
+   * @param pingy - The Pingy details received from the API.
+   */
+  upsertPingyChat: async (pingy: PingyDetailsData): Promise<void> => {
+    await database.write(async () => {
+      // 1. Upsert the Pingy chat record
+      const chatsCollection = database.get<Chat>('chats');
+      const chatId = String(pingy.chatId);
+      let existingChat: Chat | null = null;
+      try {
+        existingChat = await chatsCollection.find(chatId);
+      } catch {
+        // Not found — will be created below
+      }
+
+      if (existingChat) {
+        await existingChat.update(c => {
+          c.name = pingy.username;
+          c.type = 'individual';
+          c.avatarUrl = pingy.avatarUrl;
+        });
+      } else {
+        await chatsCollection.create(c => {
+          // @ts-ignore
+          c._raw.id = chatId;
+          c.name = pingy.username;
+          c.type = 'individual';
+          c.unreadCount = 0;
+          c.lastUpdatedAt = Date.now();
+          c.avatarUrl = pingy.avatarUrl;
+        });
+      }
+
+      // 2. Upsert the Pingy user record
+      const usersCollection = database.get<User>('users');
+      const userId = String(pingy.pingyUserId);
+      let existingUser: User | null = null;
+      try {
+        existingUser = await usersCollection.find(userId);
+      } catch {
+        // Not found — will be created below
+      }
+
+      if (existingUser) {
+        await existingUser.update(u => {
+          u.name = pingy.username;
+          u.username = pingy.username;
+          u.firstName = pingy.username;
+          u.avatarUrl = pingy.avatarUrl;
+        });
+      } else {
+        await usersCollection.create(u => {
+          // @ts-ignore
+          u._raw.id = userId;
+          u.name = pingy.username;
+          u.username = pingy.username;
+          u.firstName = pingy.username;
+          u.avatarUrl = pingy.avatarUrl;
+        });
+      }
+    });
   },
 
   /**

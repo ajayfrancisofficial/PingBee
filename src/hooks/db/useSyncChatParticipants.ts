@@ -7,18 +7,32 @@ import type { ChatUserDetailsResponse } from '../../types/ApiTypes/RestApiTypes/
  * Custom hook to synchronize chat participant details (names, avatars, etc.)
  * from the backend to the local WatermelonDB.
  *
+ * @param chatId  - The ID of the chat to sync participants for.
+ * @param options - Optional configuration.
+ *  - `enabled` (default: true) — set to false to skip the sync entirely
+ *    (e.g. for Pingy chats whose participant data comes from a different API).
+ *
  * Returns:
  *  - isLoading   → true while the fetch is in flight
  *  - userDetails → the array of participant profiles returned by the server
  */
-export function useSyncChatParticipants(chatId: string) {
+
+interface SyncChatParticipantsOptions {
+  enabled?: boolean;
+}
+
+export function useSyncChatParticipants(
+  chatId: string,
+  options?: SyncChatParticipantsOptions,
+) {
+  const { enabled = true } = options ?? {};
   const [isLoading, setIsLoading] = useState(false);
   const [userDetails, setUserDetails] = useState<
     ChatUserDetailsResponse['data']
   >([]);
 
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId || !enabled) return;
 
     const sync = async () => {
       setIsLoading(true);
@@ -39,7 +53,7 @@ export function useSyncChatParticipants(chatId: string) {
     };
 
     sync();
-  }, [chatId]);
+  }, [chatId, enabled]);
 
   return { isLoading, userDetails };
 }

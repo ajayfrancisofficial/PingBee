@@ -31,6 +31,9 @@ export const ENDPOINTS = {
     GET_CONVERSATION: '/conversation',
     USER_DETAILS: '/chat-users-details',
   },
+  PINGY: {
+    DETAILS: '/pingy-details',
+  },
   NOTIFICATIONS: {
     FCM_TOKEN: '/fcm-token',
   },
