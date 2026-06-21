@@ -322,7 +322,9 @@ export const DBService = {
         operations.push(
           chat.prepareUpdate(c => {
             c.lastMessageText = newText;
-            c.lastUpdatedAt = Date.now();
+            if (latest) {
+              c.lastUpdatedAt = latest.createdAt;
+            }
             c.lastMessageSentUsername = newUsername;
           }),
         );

@@ -3,10 +3,9 @@ todo
 
 high priority
 --------------------------------------
-
+initial scroll index from backendd. try with dummy and check first.
 input resetting fasttyping
-chats table updatedAt value 
-check if we are using special field updatedAt and createdat, whatever.. watermelondb special fields in message table
+saif parnja issue -  oening a chat and simply coming back will make that chat to top.
 
 low priority
 --------------------------------
