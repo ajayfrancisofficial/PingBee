@@ -29,7 +29,7 @@ export function useLocalChats() {
     const subscription = database
       .get<Chat>('chats')
       .query(Q.sortBy('last_updated_at', Q.desc))
-      .observe()
+      .observeWithColumns(['unread_count'])
       .subscribe(newChats => {
         setChats(newChats);
         const count = newChats.filter(c => c.unreadCount > 0).length;
