@@ -107,6 +107,14 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
   }, [editingMessage, replyingTo, onClearReply]);
 
+  // Auto-focus input and open keyboard when a reply message is set
+  useEffect(() => {
+    if (replyingTo) {
+      textInputRef.current?.focus();
+    }
+  }, [replyingTo]);
+
+
   if (replyingTo && !editingMessage) {
     lastReplyingTo.current = replyingTo;
     lastSenderName.current = replyingToSenderName;
