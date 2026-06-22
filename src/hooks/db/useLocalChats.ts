@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { Q } from '@nozbe/watermelondb';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { database } from '../../db';
 import Chat from '../../db/models/Chat';
 import { chatApi } from '../../api/RESTApi/chatApi';
@@ -21,6 +22,7 @@ import { useGuardedFetch } from '../useGuardedFetch';
 export function useLocalChats() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [unreadChatsCount, setUnreadChatsCount] = useState(0);
+  const isFocused = useIsFocused();
 
   // ── Live WatermelonDB observer ─────────────────────────────────────────────
   useEffect(() => {
@@ -55,6 +57,23 @@ export function useLocalChats() {
       syncChats();
     }, [syncChats]),
   );
+
+  // ── Sync on app foregrounding ──────────────────────────────────────────────
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active' && isFocused) {
+        syncChats();
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [syncChats, isFocused]);
 
   // ── Pull-to-refresh (reuses the same fetch logic) ─────────────────────────
   const { execute: refreshChats, isLoading: isRefreshing } = useGuardedFetch(

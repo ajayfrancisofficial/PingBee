@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import { Q } from '@nozbe/watermelondb';
+import { useIsFocused } from '@react-navigation/native';
 import { database } from '../../db';
 import Message from '../../db/models/Message';
 import { DBService } from '../../services/DB/DBService';
@@ -16,6 +18,7 @@ export function useLocalMessages(chatId: string, currentUserId: string) {
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(() => getHasMoreMessages(chatId));
+  const isFocused = useIsFocused();
 
   // ─── 1. Observe WatermelonDB ───────────────────────────────────────────────
   useEffect(() => {
@@ -97,6 +100,23 @@ export function useLocalMessages(chatId: string, currentUserId: string) {
   useEffect(() => {
     loadInitial();
   }, [loadInitial]);
+
+  // ─── Sync on app foregrounding ──────────────────────────────────────────────
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active' && isFocused) {
+        loadInitial();
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [loadInitial, isFocused]);
 
   // ─── 3. Load More (Cursor-based Pagination) ──────────────────────────────
   //
