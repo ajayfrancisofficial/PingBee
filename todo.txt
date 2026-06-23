@@ -3,9 +3,7 @@ todo
 
 high priority
 --------------------------------------
-keyboard open up on every swipe, even if the user has manually closed. done
-upgrade reactnative to latest.
-replymessage not showing in ovm chats
+
 
 low priority
 --------------------------------
