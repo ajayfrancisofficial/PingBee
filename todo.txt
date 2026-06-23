@@ -3,8 +3,9 @@ todo
 
 high priority
 --------------------------------------
-initial scroll index from backendd. try with dummy and check first.
-input resetting fasttyping
+keyboard open up on every swipe, even if the user has manually closed. done
+upgrade reactnative to latest.
+replymessage not showing in ovm chats
 
 low priority
 --------------------------------
