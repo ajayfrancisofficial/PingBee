@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Keyboard,
 } from 'react-native';
 import Animated, {
   LinearTransition,
@@ -110,10 +111,20 @@ export const MessageInput: React.FC<MessageInputProps> = ({
   // Auto-focus input and open keyboard when a reply message is set
   useEffect(() => {
     if (replyingTo) {
-      textInputRef.current?.focus();
+      // If the input is already focused but the keyboard was manually closed by the user,
+      // calling focus() alone won't reopen the keyboard. We must blur first, then focus.
+      if (textInputRef.current?.isFocused() && !Keyboard.isVisible()) {
+        textInputRef.current?.blur();
+        const timer = setTimeout(() => {
+          textInputRef.current?.focus();
+        }, 50);
+        return () => clearTimeout(timer);
+      } else if (!textInputRef.current?.isFocused()) {
+        // If not focused at all, focus normally to open the keyboard
+        textInputRef.current?.focus();
+      }
     }
   }, [replyingTo]);
-
 
   if (replyingTo && !editingMessage) {
     lastReplyingTo.current = replyingTo;
