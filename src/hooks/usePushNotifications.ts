@@ -133,7 +133,9 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
             '[Push] App opened from killed state via FCM notification:',
             initialFcm,
           );
-          handleNotificationNavigation(initialFcm.data, 'FCM Initial');
+          if (initialFcm.data?.type === 'NEW_MESSAGE') {
+            handleNotificationNavigation(initialFcm.data, 'FCM Initial');
+          }
         } else {
           console.log('[Push] No initial FCM notification found on boot.');
         }
@@ -156,40 +158,54 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
         return;
       }
 
-      // Display foreground notification via Notifee on Android
-      if (Platform.OS === 'android') {
-        // If the user is currently looking at the Chat screen for this chatId, do not display the notification
-        if (navigationRef.isReady()) {
-          const currentRoute = navigationRef.getCurrentRoute();
-          if (
-            currentRoute?.name === 'Chat' &&
-            (currentRoute.params as any)?.chatId === remoteMessage.data?.chatId
-          ) {
-            return;
+      const type = remoteMessage.data?.type;
+      if (!type) {
+        console.log('[Push] Foreground message has no type. Skipping.');
+        return;
+      }
+
+      switch (type) {
+        case 'NEW_MESSAGE': {
+          // Display foreground notification via Notifee on Android
+          if (Platform.OS === 'android') {
+            // If the user is currently looking at the Chat screen for this chatId, do not display the notification
+            if (navigationRef.isReady()) {
+              const currentRoute = navigationRef.getCurrentRoute();
+              if (
+                currentRoute?.name === 'Chat' &&
+                (currentRoute.params as any)?.chatId ===
+                  remoteMessage.data?.chatId
+              ) {
+                return;
+              }
+            }
+
+            const { title, body } = remoteMessage.notification || {};
+
+            try {
+              await notifee.displayNotification({
+                title: title || 'New Message',
+                body: body || '',
+                data: remoteMessage.data,
+                android: {
+                  channelId: 'pingbee-messages',
+                  importance: AndroidImportance.HIGH,
+                  pressAction: {
+                    id: 'default',
+                  },
+                },
+              });
+            } catch (error) {
+              console.warn(
+                '[Push] Failed to display notification via Notifee:',
+                error,
+              );
+            }
           }
+          break;
         }
-
-        const { title, body } = remoteMessage.notification || {};
-
-        try {
-          await notifee.displayNotification({
-            title: title || 'New Message',
-            body: body || '',
-            data: remoteMessage.data,
-            android: {
-              channelId: 'pingbee-messages',
-              importance: AndroidImportance.HIGH,
-              pressAction: {
-                id: 'default',
-              },
-            },
-          });
-        } catch (error) {
-          console.warn(
-            '[Push] Failed to display notification via Notifee:',
-            error,
-          );
-        }
+        default:
+          console.log(`[Push] Unhandled foreground message type: ${type}`);
       }
     });
 
@@ -203,7 +219,9 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
           detail.notification,
         );
         const n = detail.notification;
-        handleNotificationNavigation(n?.data, 'Notifee Foreground');
+        if (n?.data?.type === 'NEW_MESSAGE') {
+          handleNotificationNavigation(n.data, 'Notifee Foreground');
+        }
       }
     });
 
@@ -214,7 +232,12 @@ export const usePushNotifications = (isLoggedIn: boolean) => {
           '[Push FCM] Notification caused app to open from background:',
           remoteMessage,
         );
-        handleNotificationNavigation(remoteMessage.data, 'FCM Background Tap');
+        if (remoteMessage.data?.type === 'NEW_MESSAGE') {
+          handleNotificationNavigation(
+            remoteMessage.data,
+            'FCM Background Tap',
+          );
+        }
       },
     );
 

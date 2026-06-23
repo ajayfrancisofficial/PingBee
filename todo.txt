@@ -3,7 +3,8 @@ todo
 
 high priority
 --------------------------------------
-
+appstate websocket disconnection check. if disconnects, reconnect it again
+mark as read inital call instantly, then call only after delays
 
 low priority
 --------------------------------

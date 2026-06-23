@@ -28,6 +28,7 @@ export const ENDPOINTS = {
     LIST: '/chats',
     MESSAGES: '/messages',
     MARK_READ: '/mark-as-read',
+    MARK_DELIVERED: '/message-delivered',
     GET_CONVERSATION: '/conversation',
     USER_DETAILS: '/chat-users-details',
   },

@@ -80,6 +80,31 @@ export const websocketService = {
               }, 0);
             }
           });
+
+          // Send delivery receipt back via WebSocket
+          setTimeout(() => {
+            try {
+              const {
+                websocketApi,
+              } = require('../../api/WebsocketApi/websocketApi');
+              if (websocketApi.getIsConnected()) {
+                websocketApi.send({
+                  event: 'MSG_STATUS',
+                  payload: {
+                    messageId: p.id,
+                    status: 'delivered',
+                  },
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            } catch (err) {
+              console.warn(
+                '[websocketService] Failed to send MSG_STATUS receipt:',
+                err,
+              );
+            }
+          }, 0);
+
           break;
         }
 

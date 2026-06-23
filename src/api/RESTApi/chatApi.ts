@@ -22,7 +22,9 @@ export const chatApi = {
    * Fetch all chats for the authenticated user.
    */
   fetchChats: async (): Promise<GetChatsResponse> => {
-    const { data } = await apiClient.get<GetChatsResponse>(ENDPOINTS.CHATS.LIST);
+    const { data } = await apiClient.get<GetChatsResponse>(
+      ENDPOINTS.CHATS.LIST,
+    );
     return data;
   },
 
@@ -80,6 +82,23 @@ export const chatApi = {
     );
     return data;
   },
+
+  /**
+   * POST /messages/delivered
+   * Marks a message as delivered.
+   */
+  markAsDelivered: async (messageId: string): Promise<any> => {
+    const { data } = await apiClient.post(
+      ENDPOINTS.CHATS.MARK_DELIVERED,
+      { messageId },
+      {
+        // @ts-ignore
+        skipSnackbar: true,
+      },
+    );
+    return data;
+  },
+
   /**
    * POST /chat-users-details
    * Fetch details for all users in a chat.

@@ -58,6 +58,11 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Bypass UI alerts if requested (e.g. in background tasks)
+    if ((originalRequest as any)?.skipSnackbar) {
+      return Promise.reject(error);
+    }
+
     // --- GLOBAL ERROR HANDLING FOR ALL OTHER CASES ---
     if (status) {
       if (status === 400) {
