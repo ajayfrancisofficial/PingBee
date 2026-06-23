@@ -3,10 +3,9 @@ todo
 
 high priority
 --------------------------------------
-appstate websocket disconnection check. if disconnects, reconnect it again
-mark as read inital call instantly, then call only after delays
+
+deliverd status
 
 low priority
 --------------------------------
-deliverd i have to send? what if app is killed?
 open a chat should initially scroll to last read message.
