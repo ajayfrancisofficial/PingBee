@@ -36,31 +36,38 @@ export function useChatViewabilityTracker<
   // Keep track of the latest unread message in the current viewport
   const latestUnreadRef = useRef<ViewableChatItem['message'] | null>(null);
   const lastMarkedIdRef = useRef<string | null>(null);
+  // Track if we need to instantly mark the first visible unread message read on screen mount
+  const isFirstMarkRef = useRef(true);
+
+  const markAsRead = async (msg: NonNullable<ViewableChatItem['message']>) => {
+    if (msg.id === lastMarkedIdRef.current) return;
+    lastMarkedIdRef.current = msg.id;
+
+    // Optimistically update the message status to read and adjust unreadCount locally
+    await DBService.markMessageAsRead(msg.id);
+
+    if (websocketApi.getIsConnected()) {
+      console.log(
+        '[useChatViewabilityTracker] Marking message as read:',
+        msg.id,
+      );
+      websocketApi.send({
+        event: 'MSG_STATUS',
+        payload: {
+          messageId: msg.id,
+          status: 'read',
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
 
   // Poll/interval to send read status update every 2 seconds
   useEffect(() => {
     const interval = setInterval(async () => {
       const msg = latestUnreadRef.current;
-      if (msg && msg.id !== lastMarkedIdRef.current) {
-        lastMarkedIdRef.current = msg.id;
-
-        // Optimistically update the message status to read and adjust unreadCount locally
-        await DBService.markMessageAsRead(msg.id);
-
-        if (websocketApi.getIsConnected()) {
-          console.log(
-            '[useChatViewabilityTracker] Marking message as read:',
-            msg.id,
-          );
-          websocketApi.send({
-            event: 'MSG_STATUS',
-            payload: {
-              messageId: msg.id,
-              status: 'read',
-            },
-            timestamp: new Date().toISOString(),
-          });
-        }
+      if (msg) {
+        await markAsRead(msg);
       }
     }, 2000);
 
@@ -99,6 +106,15 @@ export function useChatViewabilityTracker<
           }
         }
         latestUnreadRef.current = latestUnread.message;
+
+        // If it's the first time opening the chat screen, mark the latest unread message read instantly
+        if (
+          isFirstMarkRef.current &&
+          latestUnread.message.id !== lastMarkedIdRef.current
+        ) {
+          isFirstMarkRef.current = false; // Disable instant marking for subsequent messages
+          markAsRead(latestUnread.message);
+        }
       } else {
         latestUnreadRef.current = null;
       }
