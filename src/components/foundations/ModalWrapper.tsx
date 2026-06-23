@@ -68,7 +68,7 @@ const makeStyles = ({ colors }: AppTheme) =>
       backgroundColor: 'rgba(0, 0, 0, 0.6)',
     },
     backdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     contentContainer: {
       flex: 1,

@@ -12,7 +12,7 @@ import type {
   MessageItem,
   UserSearchResponse,
   ChatUserDetailsResponse,
-  PingyDetailsData,
+  PingyDetails,
 } from '../../types/ApiTypes/RestApiTypes/restApiTypes';
 import { parseDateToMillis } from '../../utils/DateTimeUtils';
 
@@ -408,7 +408,7 @@ export const DBService = {
    *
    * @param pingy - The Pingy details received from the API.
    */
-  upsertPingyChat: async (pingy: PingyDetailsData): Promise<void> => {
+  upsertPingyChat: async (pingy: PingyDetails): Promise<void> => {
     await database.write(async () => {
       // 1. Upsert the Pingy chat record
       const chatsCollection = database.get<Chat>('chats');

@@ -211,16 +211,8 @@ export type DeleteFcmTokenResponse =
 // ── Pingy AI Chatbot types ──────────────────────────────────────────────────
 
 /** Data returned by the /pingy-details endpoint */
-export interface PingyDetailsData {
-  username: string;
-  chatId: string;
-  avatarUrl: string;
-  pingyUserId: string;
-  isEnabled: boolean;
-}
+export type PingyDetails = components['schemas']['PingyDetails'];
 
 /** GET /pingy-details — response */
-export interface PingyDetailsResponse {
-  success: boolean;
-  data: PingyDetailsData;
-}
+export type PingyDetailsResponse =
+  SuccessBody<'get_pingy_details_pingy_details_get'>;

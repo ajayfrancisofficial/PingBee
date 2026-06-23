@@ -316,6 +316,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/pingy-details': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Pingy Details */
+    get: operations['get_pingy_details_pingy_details_get'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/asyncapi.json': {
     parameters: {
       query?: never;
@@ -563,6 +580,19 @@ export interface components {
       /** Messages */
       messages: components['schemas']['MessageItem'][];
     };
+    /** PingyDetails */
+    PingyDetails: {
+      /** Username */
+      username: string;
+      /** Chatid */
+      chatId: string;
+      /** Avatarurl */
+      avatarUrl: string;
+      /** Pingyuserid */
+      pingyUserId: string;
+      /** Isenabled */
+      isEnabled: boolean;
+    };
     /** RefreshTokenRequest */
     RefreshTokenRequest: {
       /** Refresh Token */
@@ -664,6 +694,16 @@ export interface components {
       message: string;
       /** Data */
       data?: null;
+    };
+    /** StandardResponse[PingyDetails] */
+    StandardResponse_PingyDetails_: {
+      /** Success */
+      success: boolean;
+      /** Status */
+      status: number;
+      /** Message */
+      message: string;
+      data?: components['schemas']['PingyDetails'] | null;
     };
     /** StandardResponse[Token] */
     StandardResponse_Token_: {
@@ -1868,6 +1908,53 @@ export interface operations {
         };
         content: {
           'application/json': components['schemas']['HTTPValidationError'];
+        };
+      };
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+    };
+  };
+  get_pingy_details_pingy_details_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['StandardResponse_PingyDetails_'];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['ErrorResponse'];
         };
       };
       /** @description Internal Server Error */
