@@ -5,6 +5,9 @@ high priority
 --------------------------------------
 
 deliverd status
+haptics
+audio recording
+
 
 low priority
 --------------------------------
