@@ -82,7 +82,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
 
   const textInputRef = useRef<TextInput>(null);
   const lastSendTimeRef = useRef(0);
-  const isSendLockedRef = useRef(false);
 
   const handleSend = () => {
     const now = Date.now();
@@ -91,14 +90,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
     }
     lastSendTimeRef.current = now;
 
-    // Block any typing events for 250ms and clear input
-    isSendLockedRef.current = true;
-    textInputRef.current?.clear();
     onSend();
-
-    setTimeout(() => {
-      isSendLockedRef.current = false;
-    }, 500);
   };
 
   // Clear reply mode if editing mode is entered
@@ -239,10 +231,6 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             style={styles.textInput}
             value={value}
             onChangeText={text => {
-              if (isSendLockedRef.current) {
-                textInputRef.current?.clear();
-                return;
-              }
               onChangeText(text);
               onTyping?.(text.length > 0);
             }}
